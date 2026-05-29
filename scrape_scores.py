@@ -1,7 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+import os
+import re
 from datetime import datetime, timezone
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 PLAYERS = [
     "David Peters", "Josh Arieh", "Viktor Blom", "Ryutaro Suzuki",
@@ -15,6 +19,8 @@ PLAYERS = [
     "Andrew Ostapchenko", "Brock Wilson", "Joey Weissman"
 ]
 
+BASE_URL = "https://www.25kfantasy.com"
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 }
@@ -22,10 +28,13 @@ HEADERS = {
 def normalize(name):
     return name.lower().strip()
 
+def player_slug(name):
+    return name.lower().replace(" ", "-")
+
 def scrape_totals(player_lookup):
     scores = {p: 0 for p in PLAYERS}
     try:
-        res = requests.get("https://www.25kfantasy.com/players/", headers=HEADERS, timeout=15)
+        res = requests.get(f"{BASE_URL}/players/", headers=HEADERS, timeout=15)
         soup = BeautifulSoup(res.text, "html.parser")
         for row in soup.find_all("tr"):
             cells = row.find_all("td")
@@ -41,22 +50,16 @@ def scrape_totals(player_lookup):
     return scores
 
 def scrape_events(player_lookup):
-    """
-    Returns list of dicts: { date, player, event, points }
-    Only entries where player is in our PLAYERS list.
-    Ordered newest date first.
-    """
     events = []
     try:
-        res = requests.get("https://www.25kfantasy.com/all-scores/", headers=HEADERS, timeout=15)
+        res = requests.get(f"{BASE_URL}/all-scores/", headers=HEADERS, timeout=15)
         soup = BeautifulSoup(res.text, "html.parser")
 
         for table in soup.find_all("table"):
-            # Date is in the <th> inside <thead>
             th = table.find("th")
             if not th:
                 continue
-            date_str = th.get_text(strip=True)  # e.g. "May 29, 2026"
+            date_str = th.get_text(strip=True)
 
             for row in table.find_all("tr"):
                 td = row.find("td")
@@ -68,25 +71,41 @@ def scrape_events(player_lookup):
                     continue
 
                 player_name = links[0].get_text(strip=True)
+                player_href = links[0].get("href", "")
                 event_name = links[1].get_text(strip=True)
+                event_href = links[1].get("href", "")
 
                 pts_span = td.find("span", class_="fw-bolder")
                 if not pts_span:
                     continue
 
-                pts_text = pts_span.get_text(strip=True)  # "13 points" or "1 point"
+                pts_text = pts_span.get_text(strip=True)
                 try:
                     pts = int(pts_text.split()[0])
                 except (ValueError, IndexError):
                     continue
 
+                # Try to find placement (e.g. "1st", "2nd", "3rd", "4th")
+                placement = ""
+                full_text = td.get_text(" ", strip=True)
+                place_match = re.search(r'\b(\d+(?:st|nd|rd|th))\b', full_text)
+                if place_match:
+                    placement = place_match.group(1)
+
                 name_norm = normalize(player_name)
                 if name_norm in player_lookup:
+                    canonical_name = player_lookup[name_norm]
+                    event_url = BASE_URL + event_href if event_href.startswith("/") else event_href
+                    player_url = BASE_URL + player_href if player_href.startswith("/") else player_href
+
                     events.append({
                         "date": date_str,
-                        "player": player_lookup[name_norm],
+                        "player": canonical_name,
+                        "player_url": player_url,
                         "event": event_name,
-                        "points": pts
+                        "event_url": event_url,
+                        "points": pts,
+                        "placement": placement
                     })
 
     except Exception as e:
@@ -94,11 +113,29 @@ def scrape_events(player_lookup):
 
     return events
 
+def build_player_urls(player_lookup):
+    """Build profile URLs for all players based on slug pattern."""
+    urls = {}
+    for norm, canonical in player_lookup.items():
+        slug = player_slug(canonical)
+        urls[canonical] = f"{BASE_URL}/players/player-profile/{slug}/"
+    return urls
+
+def init_firebase():
+    sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
+    if not sa_json:
+        raise RuntimeError("FIREBASE_SERVICE_ACCOUNT environment variable is not set")
+    sa_dict = json.loads(sa_json)
+    cred = credentials.Certificate(sa_dict)
+    firebase_admin.initialize_app(cred)
+    return firestore.client()
+
 def main():
     player_lookup = {normalize(p): p for p in PLAYERS}
 
     scores = scrape_totals(player_lookup)
     events = scrape_events(player_lookup)
+    player_urls = build_player_urls(player_lookup)
 
     # Fallback: if totals page missed someone, sum from events
     for entry in events:
@@ -106,16 +143,19 @@ def main():
         if scores.get(p, 0) == 0 and entry["points"] > 0:
             scores[p] = scores.get(p, 0) + entry["points"]
 
-    output = {
-        "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    db = init_firebase()
+    doc_ref = db.collection("scores").document("latest")
+    doc_ref.set({
+        "updated": updated,
         "players": scores,
+        "player_urls": player_urls,
         "events": events
-    }
+    })
 
-    with open("scores.json", "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
-
-    print(f"Done. Players with points: { {k:v for k,v in scores.items() if v > 0} }")
+    print(f"Wrote to Firestore. Updated: {updated}")
+    print(f"Players with points: { {k:v for k,v in scores.items() if v > 0} }")
     print(f"Event entries for our players: {len(events)}")
 
 if __name__ == "__main__":
