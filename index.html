@@ -23,6 +23,11 @@
       --muted2:     #888;
       --green:      #3cb371;
       --red-wsop:   #c0392b;
+      --team-0: #4a9eff;
+      --team-1: #e07b39;
+      --team-2: #7ec86a;
+      --team-3: #c97de0;
+      --team-4: #e8b84b;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -237,10 +242,22 @@
 
     .team-card:hover { border-color: var(--border2); }
 
+    .team-card[data-team="0"] { border-top: 2px solid var(--team-0); }
+    .team-card[data-team="1"] { border-top: 2px solid var(--team-1); }
+    .team-card[data-team="2"] { border-top: 2px solid var(--team-2); }
+    .team-card[data-team="3"] { border-top: 2px solid var(--team-3); }
+    .team-card[data-team="4"] { border-top: 2px solid var(--team-4); }
+
+    .team-card[data-team="0"] .team-score-num { color: var(--team-0); }
+    .team-card[data-team="1"] .team-score-num { color: var(--team-1); }
+    .team-card[data-team="2"] .team-score-num { color: var(--team-2); }
+    .team-card[data-team="3"] .team-score-num { color: var(--team-3); }
+    .team-card[data-team="4"] .team-score-num { color: var(--team-4); }
+
     .team-header {
       position: relative;
       padding: 16px 18px;
-      border-bottom: 2px solid var(--gold-dim);
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
@@ -319,6 +336,26 @@
     .score-positive { color: var(--green); }
     .score-zero { color: #333; }
 
+    .player-dots {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+      margin-left: 6px;
+    }
+
+    .team-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .team-dot[data-team="0"] { background: var(--team-0); }
+    .team-dot[data-team="1"] { background: var(--team-1); }
+    .team-dot[data-team="2"] { background: var(--team-2); }
+    .team-dot[data-team="3"] { background: var(--team-3); }
+    .team-dot[data-team="4"] { background: var(--team-4); }
+
     /* ── FOOTER ── */
     footer {
       text-align: center;
@@ -330,6 +367,36 @@
       color: #333;
       text-transform: uppercase;
     }
+
+    /* ── TABS ── */
+    .tab-bar {
+      display: flex;
+      background: var(--dark);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      gap: 0;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .tab {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 400;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      margin-bottom: -1px;
+    }
+
+    .tab:hover { color: var(--muted2); }
+    .tab.active { color: var(--gold-light); border-bottom-color: var(--gold); }
 
     /* ── EVENT LOG ── */
     .event-date-group { margin-bottom: 2px; }
@@ -428,6 +495,9 @@
       main { padding: 24px 10px 60px; }
       .team-score-num { font-size: 1.8rem; }
       .team-owner { font-size: 1.1rem; }
+      .tab-bar { padding: 0 8px; }
+      .tab { padding: 12px 14px; font-size: 0.62rem; letter-spacing: 2px; }
+      .ev-event { display: none; }
     }
 
   </style>
@@ -457,16 +527,25 @@
   <span id="updated">Hämtar poäng...</span>
 </div>
 
+<nav class="tab-bar">
+  <button class="tab active" data-tab="overview">Översikt</button>
+  <button class="tab" data-tab="history">Poänghistorik</button>
+</nav>
+
 <main>
 
-  <div class="section-label">Ställning</div>
-  <div id="standings"></div>
+  <div id="tab-overview">
+    <div class="section-label">Ställning</div>
+    <div id="standings"></div>
 
-  <div class="section-label" style="margin-top:48px">Lag</div>
-  <div id="teams"></div>
+    <div class="section-label" style="margin-top:48px">Lag</div>
+    <div id="teams"></div>
+  </div>
 
-  <div class="section-label" style="margin-top:48px">Poänghistorik</div>
-  <div id="event-log"></div>
+  <div id="tab-history" style="display:none">
+    <div class="section-label">Poänghistorik</div>
+    <div id="event-log"></div>
+  </div>
 
 </main>
 
@@ -515,37 +594,57 @@
     return team.players.reduce((sum, p) => sum + (scores[p] || 0), 0);
   }
 
+  const SUITS = ['♠', '♣', '♥', '♦', '♠'];
+
+  // Build global ownerMap once: player -> [{index, owner}]
+  function buildOwnerMap(teams) {
+    const map = {};
+    for (let i = 0; i < teams.length; i++) {
+      for (const p of teams[i].players) {
+        if (!map[p]) map[p] = [];
+        map[p].push({ index: i, owner: teams[i].owner });
+      }
+    }
+    return map;
+  }
+
+  function playerDots(playerName, ownerMap) {
+    const entries = ownerMap[playerName] || [];
+    if (entries.length === 0) return '';
+    const dots = entries.map(e => `<span class="team-dot" data-team="${e.index}" title="${e.owner}"></span>`).join('');
+    return `<span class="player-dots">${dots}</span>`;
+  }
+
   function renderStandings(teams, scores) {
     const sorted = [...teams]
-      .map(t => ({ ...t, total: teamTotal(t, scores) }))
+      .map((t, i) => ({ ...t, index: i, total: teamTotal(t, scores) }))
       .sort((a, b) => b.total - a.total);
 
     const el = document.getElementById('standings');
     el.innerHTML = sorted.map((t, i) => `
-      <div class="standing-row rank-${i + 1}">
+      <div class="standing-row rank-${i + 1}" style="border-left: 3px solid var(--team-${t.index})">
         <div class="rank-col">${i + 1}</div>
         <div class="name-col">${t.owner}</div>
-        <div class="pts-col">${t.total}<small>pts</small></div>
+        <div class="pts-col" style="color:var(--team-${t.index})">${t.total}<small>pts</small></div>
       </div>`
     ).join('');
   }
 
-  const SUITS = ['♠', '♣', '♥', '♦', '♠'];
-
-  function renderTeams(teams, scores) {
+  function renderTeams(teams, scores, ownerMap) {
     const el = document.getElementById('teams');
     el.innerHTML = teams.map((team, ti) => {
       const total = teamTotal(team, scores);
       const rows = team.players.map(p => {
         const pts = scores[p] || 0;
         const cls = pts > 0 ? 'score-positive' : 'score-zero';
+        const dots = playerDots(p, ownerMap);
         return `<li class="player-row">
-          <span class="player-name">${p}</span>
+          <span class="player-name">${p}${dots}</span>
           <span class="player-score ${cls}">${pts}</span>
         </li>`;
       }).join('');
 
-      return `<div class="team-card">
+      return `<div class="team-card" data-team="${ti}">
         <div class="team-header" data-suit="${SUITS[ti]}">
           <div class="team-owner">${team.owner}</div>
           <div class="team-score-wrap">
@@ -558,21 +657,12 @@
     }).join('');
   }
 
-  function renderEventLog(teams, events) {
+  function renderEventLog(ownerMap, events) {
     const el = document.getElementById('event-log');
 
     if (!events || events.length === 0) {
       el.innerHTML = '<div class="ev-empty">Inga poäng registrerade ännu</div>';
       return;
-    }
-
-    // Build ownerMap: playerName -> [owners]
-    const ownerMap = {};
-    for (const team of teams) {
-      for (const p of team.players) {
-        if (!ownerMap[p]) ownerMap[p] = [];
-        ownerMap[p].push(team.owner);
-      }
     }
 
     // Group events by date (order preserved from JSON = newest first)
@@ -588,11 +678,11 @@
 
     el.innerHTML = dateOrder.map(date => {
       const rows = byDate[date].map(ev => {
-        const owners = ownerMap[ev.player] || [];
-        const tags = owners.map(o => `<span class="ev-owner-tag">${o}</span>`).join('');
+        const entries = ownerMap[ev.player] || [];
+        const dots = entries.map(e => `<span class="team-dot" data-team="${e.index}" title="${e.owner}"></span>`).join('');
+        const dotWrap = dots ? `<span class="player-dots">${dots}</span>` : '';
         return `<div class="event-row">
-          <div class="ev-player">${ev.player}</div>
-          <div class="ev-owners">${tags}</div>
+          <div class="ev-player">${ev.player}${dotWrap}</div>
           <div class="ev-event">${ev.event}</div>
           <div class="ev-pts">+${ev.points}</div>
         </div>`;
@@ -610,10 +700,11 @@
       const res = await fetch('scores.json?v=' + Date.now());
       const data = await res.json();
       const scores = data.players || {};
+      const ownerMap = buildOwnerMap(TEAMS);
 
       renderStandings(TEAMS, scores);
-      renderTeams(TEAMS, scores);
-      renderEventLog(TEAMS, data.events || []);
+      renderTeams(TEAMS, scores, ownerMap);
+      renderEventLog(ownerMap, data.events || []);
 
       const dot = document.getElementById('status-dot');
       const upd = document.getElementById('updated');
@@ -624,6 +715,17 @@
       document.getElementById('updated').textContent = 'Kunde inte hämta poäng';
     }
   }
+
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      document.getElementById('tab-overview').style.display = tab === 'overview' ? '' : 'none';
+      document.getElementById('tab-history').style.display = tab === 'history' ? '' : 'none';
+    });
+  });
 
   loadScores();
   setInterval(loadScores, 5 * 60 * 1000);
