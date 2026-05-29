@@ -550,7 +550,7 @@
 
 <footer>Made by: David Hefner</footer>
 
-<script>
+<script type="module">
   const TEAMS = [
     {
       owner: "Ante",
@@ -595,7 +595,6 @@
 
   const SUITS = ['♠', '♣', '♥', '♦', '♠'];
 
-  // Build global ownerMap once: player -> [{index, owner}]
   function buildOwnerMap(teams) {
     const map = {};
     for (let i = 0; i < teams.length; i++) {
@@ -664,7 +663,6 @@
       return;
     }
 
-    // Group events by date (order preserved from JSON = newest first)
     const byDate = {};
     const dateOrder = [];
     for (const ev of events) {
@@ -694,26 +692,40 @@
     }).join('');
   }
 
-  async function loadScores() {
-    try {
-      const res = await fetch('scores.json?v=' + Date.now());
-      const data = await res.json();
-      const scores = data.players || {};
-      const ownerMap = buildOwnerMap(TEAMS);
+  // ── FIRESTORE ──
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-      renderStandings(TEAMS, scores);
-      renderTeams(TEAMS, scores, ownerMap);
-      renderEventLog(ownerMap, data.events || []);
+  const firebaseApp = initializeApp({
+    apiKey: "AIzaSyB-6b-MFxeFlmijA5K-guDNTXeEHSNdpj8",
+    projectId: "wsop-54e15"
+  });
+  const db = getFirestore(firebaseApp);
 
-      const dot = document.getElementById('status-dot');
-      const upd = document.getElementById('updated');
-      dot.classList.add('live');
-      const d = new Date(data.updated);
-      upd.textContent = 'Senast uppdaterad · ' + d.toLocaleString('sv-SE');
-    } catch (e) {
-      document.getElementById('updated').textContent = 'Kunde inte hämta poäng';
-    }
+  function applyData(data) {
+    const scores = data.players || {};
+    const ownerMap = buildOwnerMap(TEAMS);
+
+    renderStandings(TEAMS, scores);
+    renderTeams(TEAMS, scores, ownerMap);
+    renderEventLog(ownerMap, data.events || []);
+
+    const dot = document.getElementById('status-dot');
+    const upd = document.getElementById('updated');
+    dot.classList.add('live');
+    const d = new Date(data.updated);
+    upd.textContent = 'Senast uppdaterad · ' + d.toLocaleString('sv-SE');
   }
+
+  onSnapshot(doc(db, "scores", "latest"), (snap) => {
+    if (snap.exists()) {
+      applyData(snap.data());
+    } else {
+      document.getElementById('updated').textContent = 'Inga poäng ännu';
+    }
+  }, () => {
+    document.getElementById('updated').textContent = 'Kunde inte hämta poäng';
+  });
 
   // Tab switching
   document.querySelectorAll('.tab').forEach(btn => {
@@ -725,9 +737,6 @@
       document.getElementById('tab-history').style.display = tab === 'history' ? '' : 'none';
     });
   });
-
-  loadScores();
-  setInterval(loadScores, 5 * 60 * 1000);
 </script>
 
 </body>
