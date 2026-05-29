@@ -636,7 +636,10 @@
 
   function renderTeams(teams, scores, ownerMap, playerUrls) {
     const el = document.getElementById('teams');
-    el.innerHTML = teams.map((team, ti) => {
+    const sorted = [...teams]
+      .map((team, ti) => ({ ...team, ti }))
+      .sort((a, b) => teamTotal(b, scores) - teamTotal(a, scores));
+    el.innerHTML = sorted.map(({ ti, ...team }) => {
       const total = teamTotal(team, scores);
       const sortedPlayers = [...team.players].sort((a, b) => (scores[b] || 0) - (scores[a] || 0));
       const rows = sortedPlayers.map(p => {

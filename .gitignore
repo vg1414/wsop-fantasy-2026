@@ -1,0 +1,8 @@
+# Firebase-nycklar ska aldrig committas
+*firebase-adminsdk*.json
+*service-account*.json
+*.key.json
+
+# Python
+__pycache__/
+*.pyc
