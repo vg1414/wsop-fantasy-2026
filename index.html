@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WSOP Fantasy 2026 – Gänget</title>
+  <style>
+    :root {
+      --gold: #c9a84c;
+      --gold-light: #f0d080;
+      --dark: #0d0d0d;
+      --card: #1a1a1a;
+      --card2: #222;
+      --border: #333;
+      --text: #e8e8e8;
+      --muted: #888;
+      --green: #4caf7d;
+      --red: #e05555;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #111 0%, #1c1200 50%, #111 100%);
+      border-bottom: 2px solid var(--gold);
+      padding: 24px 16px 20px;
+      text-align: center;
+    }
+
+    header .suit-row {
+      font-size: 1.4rem;
+      letter-spacing: 8px;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    header h1 {
+      font-size: clamp(1.4rem, 5vw, 2.2rem);
+      color: var(--gold-light);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+
+    #updated {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 12px 60px;
+    }
+
+    /* STANDINGS */
+    .section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--gold);
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #standings {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 36px;
+    }
+
+    .standing-row {
+      display: flex;
+      align-items: center;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      gap: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .standing-row:hover { border-color: var(--gold); }
+
+    .standing-row.rank-1 { border-color: var(--gold); background: #1c1500; }
+    .standing-row.rank-2 { border-color: #aaa; }
+    .standing-row.rank-3 { border-color: #a0714f; }
+
+    .rank-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      background: var(--border);
+      color: var(--muted);
+    }
+
+    .rank-1 .rank-badge { background: var(--gold); color: #111; }
+    .rank-2 .rank-badge { background: #aaa; color: #111; }
+    .rank-3 .rank-badge { background: #a0714f; color: #fff; }
+
+    .standing-name {
+      flex: 1;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .standing-pts {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--gold-light);
+      min-width: 50px;
+      text-align: right;
+    }
+
+    .standing-pts span {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 400;
+      margin-left: 2px;
+    }
+
+    /* TEAMS GRID */
+    #teams {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .team-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .team-header {
+      background: linear-gradient(90deg, #1c1500, #1a1a1a);
+      border-bottom: 2px solid var(--gold);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .team-owner {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gold-light);
+    }
+
+    .team-total {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--gold);
+    }
+
+    .team-total small {
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .player-list {
+      padding: 0;
+      list-style: none;
+    }
+
+    .player-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 16px;
+      border-bottom: 1px solid #2a2a2a;
+      font-size: 0.88rem;
+    }
+
+    .player-row:last-child { border-bottom: none; }
+
+    .player-row:nth-child(even) { background: #1e1e1e; }
+
+    .player-name { color: var(--text); }
+
+    .player-score {
+      font-weight: 700;
+      font-size: 0.95rem;
+      min-width: 32px;
+      text-align: right;
+    }
+
+    .score-positive { color: var(--green); }
+    .score-zero { color: var(--muted); }
+
+    /* STATUS */
+    #status-bar {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .status-dot.live { background: var(--green); animation: pulse 2s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #444;
+      font-size: 0.75rem;
+      border-top: 1px solid #222;
+    }
+
+    @media (max-width: 480px) {
+      #teams { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="suit-row">♠ ♥ ♦ ♣</div>
+  <h1>WSOP Fantasy 2026</h1>
+  <p>Gängets liga &mdash; Pick 8</p>
+</header>
+
+<main>
+  <div id="status-bar">
+    <span class="status-dot" id="status-dot"></span>
+    <span id="updated">Hämtar poäng...</span>
+  </div>
+
+  <div class="section-title">Ställning</div>
+  <div id="standings"></div>
+
+  <div class="section-title">Lag</div>
+  <div id="teams"></div>
+</main>
+
+<footer>Made by: David Hefner</footer>
+
+<script>
+  const TEAMS = [
+    {
+      owner: "Dawod",
+      players: [
+        "David Peters", "Josh Arieh", "Viktor Blom", "Ryutaro Suzuki",
+        "Matt Glantz", "Eli Elezra", "Mike Matusow", "Ben Lamb"
+      ]
+    },
+    {
+      owner: "Olle",
+      players: [
+        "Jason Koon", "Erik Seidel", "Isaac Haxton", "Ben Lamb",
+        "Adam Hendrix", "Phil Hellmuth", "Philip Sternheimer", "Andrew Lichtenberger"
+      ]
+    },
+    {
+      owner: "Ante",
+      players: [
+        "Isaac Haxton", "Sam Soverel", "Alex Foxen", "Jon Turner",
+        "Andrew Lichtenberger", "Jason Koon", "Chris Hunichen", "Stephen Chidwick"
+      ]
+    },
+    {
+      owner: "Majscht",
+      players: [
+        "Stephen Song", "John Riordan", "Joao Simao Peres", "Shaun Deeb",
+        "Kevin Yun Lam Choi", "Anson Tsang", "Jim Collopy", "Lawrence Brandt"
+      ]
+    },
+    {
+      owner: "Hasse",
+      players: [
+        "Viktor Blom", "Nick Guagenti", "Klemens Roiter", "Isaac Haxton",
+        "Andrew Ostapchenko", "Ben Lamb", "Brock Wilson", "Joey Weissman"
+      ]
+    }
+  ];
+
+  function teamTotal(team, scores) {
+    return team.players.reduce((sum, p) => sum + (scores[p] || 0), 0);
+  }
+
+  function renderStandings(teams, scores) {
+    const sorted = [...teams]
+      .map(t => ({ ...t, total: teamTotal(t, scores) }))
+      .sort((a, b) => b.total - a.total);
+
+    const el = document.getElementById('standings');
+    el.innerHTML = sorted.map((t, i) => `
+      <div class="standing-row rank-${i + 1}">
+        <div class="rank-badge">${i + 1}</div>
+        <div class="standing-name">${t.owner}</div>
+        <div class="standing-pts">${t.total}<span>pts</span></div>
+      </div>
+    `).join('');
+  }
+
+  function renderTeams(teams, scores) {
+    const el = document.getElementById('teams');
+    el.innerHTML = teams.map(team => {
+      const total = teamTotal(team, scores);
+      const rows = team.players.map(p => {
+        const pts = scores[p] || 0;
+        const cls = pts > 0 ? 'score-positive' : 'score-zero';
+        return `<li class="player-row">
+          <span class="player-name">${p}</span>
+          <span class="player-score ${cls}">${pts}</span>
+        </li>`;
+      }).join('');
+
+      return `<div class="team-card">
+        <div class="team-header">
+          <div class="team-owner">${team.owner}</div>
+          <div class="team-total">${total}<small> pts</small></div>
+        </div>
+        <ul class="player-list">${rows}</ul>
+      </div>`;
+    }).join('');
+  }
+
+  async function loadScores() {
+    try {
+      const res = await fetch('scores.json?v=' + Date.now());
+      const data = await res.json();
+      const scores = data.players || {};
+
+      renderStandings(TEAMS, scores);
+      renderTeams(TEAMS, scores);
+
+      const dot = document.getElementById('status-dot');
+      const upd = document.getElementById('updated');
+      dot.classList.add('live');
+      const d = new Date(data.updated);
+      upd.textContent = 'Uppdaterad: ' + d.toLocaleString('sv-SE');
+    } catch (e) {
+      document.getElementById('updated').textContent = 'Kunde inte hämta poäng';
+    }
+  }
+
+  loadScores();
+  // Uppdatera var 5:e minut om sidan är öppen
+  setInterval(loadScores, 5 * 60 * 1000);
+</script>
+
+</body>
+</html>
