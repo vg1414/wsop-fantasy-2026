@@ -56,6 +56,11 @@ def main():
     players_raw = fetch_my_stable(cookie_string)
     print(f"Got {len(players_raw)} players from PokerNews")
 
+    all_names = sorted([e.get("title", "") for e in players_raw])
+    print("All names from PokerNews:")
+    for n in all_names:
+        print(f"  {repr(n)}")
+
     results = []
     for entry in players_raw:
         name = entry.get("title", "")
