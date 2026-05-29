@@ -558,6 +558,31 @@
 
     .live-dot.last-seen { background: var(--muted); }
 
+    .live-playing-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 5px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+      margin-left: 6px;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    .live-salary {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-style: normal;
+      margin-left: 4px;
+    }
+
+    .player-salary {
+      font-size: 0.72rem;
+      font-style: normal;
+    }
+
     .live-event {
       flex: 1;
       padding: 12px 8px;
@@ -582,6 +607,30 @@
       text-align: right;
       min-width: 60px;
       white-space: nowrap;
+    }
+
+    .live-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 20px;
+      padding: 14px 20px;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      background: var(--card);
+    }
+    .live-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+    .live-legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
 
     .live-empty {
@@ -661,6 +710,7 @@
 
   <div id="tab-live" style="display:none">
     <div class="section-label">Live · Just nu</div>
+    <div id="live-legend" class="live-legend"></div>
     <div id="live-log"></div>
   </div>
 
@@ -669,6 +719,19 @@
 <footer>Made by: David Hefner</footer>
 
 <script type="module">
+  const SALARY = {
+    "David Peters": 3, "Josh Arieh": 55, "Viktor Blom": 69, "Ryutaro Suzuki": 24,
+    "Matt Glantz": 27, "Eli Elezra": 1, "Mike Matusow": 7, "Ben Lamb": 14,
+    "Jason Koon": 1, "Erik Seidel": 1, "Isaac Haxton": 19, "Adam Hendrix": 31,
+    "Phil Hellmuth": 66, "Philip Sternheimer": 65, "Andrew Lichtenberger": 3,
+    "Sam Soverel": 28, "Alex Foxen": 79, "Jon Turner": 1, "Chris Hunichen": 35,
+    "Stephen Chidwick": 32, "Stephen Song": 18, "John Riordan": 12,
+    "Joao Simao Peres": 20, "Shaun Deeb": 133, "Kevin Yun Lam Choi": 1,
+    "Anson Tsang": 1, "Jim Collopy": 14, "Lawrence Brandt": 1,
+    "Nick Guagenti": 37, "Klemens Roiter": 24, "Andrew Ostapchenko": 12,
+    "Brock Wilson": 20, "Joey Weissman": 5
+  };
+
   const TEAMS = [
     {
       owner: "Ante",
@@ -724,6 +787,19 @@
     return map;
   }
 
+  function renderLiveLegend(teams) {
+    const el = document.getElementById('live-legend');
+    if (!el) return;
+    el.innerHTML = teams.map((t, i) =>
+      `<div class="live-legend-item">
+        <span class="live-legend-dot" style="background:var(--team-${i})"></span>
+        <span>${t.owner}</span>
+      </div>`
+    ).join('');
+  }
+
+  renderLiveLegend(TEAMS);
+
   function playerDots(playerName, ownerMap) {
     const entries = ownerMap[playerName] || [];
     if (entries.length === 0) return '';
@@ -746,7 +822,7 @@
     ).join('');
   }
 
-  function renderTeams(teams, scores, ownerMap, playerUrls) {
+  function renderTeams(teams, scores, ownerMap, playerUrls, livePlayingSet = new Set()) {
     const el = document.getElementById('teams');
     const sorted = [...teams]
       .map((team, ti) => ({ ...team, ti }))
@@ -758,10 +834,14 @@
         const pts = scores[p] || 0;
         const cls = pts > 0 ? 'score-positive' : 'score-zero';
         const dots = playerDots(p, ownerMap);
+        const isLive = livePlayingSet.has(p.toLowerCase());
+        const liveDot = isLive ? `<span class="live-playing-dot"></span>` : '';
+        const salary = SALARY[p];
+        const salaryEl = salary != null ? ` <span class="player-salary">(${salary})</span>` : '';
         const url = playerUrls && playerUrls[p];
         const nameEl = url
-          ? `<a class="player-name player-link" href="${url}" target="_blank" rel="noopener">${p}${dots}</a>`
-          : `<span class="player-name">${p}${dots}</span>`;
+          ? `<a class="player-name player-link" href="${url}">${p}${salaryEl}${liveDot}${dots}</a>`
+          : `<span class="player-name">${p}${salaryEl}${liveDot}${dots}</span>`;
         return `<li class="player-row">
           ${nameEl}
           <span class="player-score ${cls}">${pts}</span>
@@ -807,12 +887,12 @@
 
         const playerUrl = (playerUrls && playerUrls[ev.player]) || ev.player_url || '';
         const playerEl = playerUrl
-          ? `<a class="player-link" href="${playerUrl}" target="_blank" rel="noopener">${ev.player}${dotWrap}</a>`
+          ? `<a class="player-link" href="${playerUrl}">${ev.player}${dotWrap}</a>`
           : `${ev.player}${dotWrap}`;
 
         const eventUrl = ev.event_url || '';
         const eventEl = eventUrl
-          ? `<a class="event-link" href="${eventUrl}" target="_blank" rel="noopener">${ev.event}</a>`
+          ? `<a class="event-link" href="${eventUrl}">${ev.event}</a>`
           : ev.event;
 
         const placementEl = ev.placement
@@ -844,13 +924,17 @@
   });
   const db = getFirestore(firebaseApp);
 
+  let currentScoresData = null;
+  let currentLivePlaying = new Set();
+
   function applyData(data) {
+    currentScoresData = data;
     const scores = data.players || {};
     const playerUrls = data.player_urls || {};
     const ownerMap = buildOwnerMap(TEAMS);
 
     renderStandings(TEAMS, scores);
-    renderTeams(TEAMS, scores, ownerMap, playerUrls);
+    renderTeams(TEAMS, scores, ownerMap, playerUrls, currentLivePlaying);
     renderEventLog(ownerMap, data.events || [], playerUrls);
 
     const dot = document.getElementById('status-dot');
@@ -886,6 +970,13 @@
     const playing = players.filter(p => p.status === 'currentlyPlaying');
     const lastSeen = players.filter(p => p.status !== 'currentlyPlaying');
 
+    currentLivePlaying = new Set(playing.map(p => p.name.toLowerCase()));
+    if (currentScoresData) {
+      const s = currentScoresData;
+      const ownerMap2 = buildOwnerMap(TEAMS);
+      renderTeams(TEAMS, s.players || {}, ownerMap2, s.player_urls || {}, currentLivePlaying);
+    }
+
     const updated = data.updated ? new Date(data.updated).toLocaleString('sv-SE') : '';
     const ownerMap = buildOwnerMap(TEAMS);
 
@@ -894,12 +985,14 @@
         const isPlaying = type === 'playing';
         const dotCls = isPlaying ? 'playing' : 'last-seen';
         const eventEl = p.event_url
-          ? `<a href="${p.event_url}" target="_blank" rel="noopener">${p.event}</a>`
+          ? `<a href="${p.event_url}">${p.event}</a>`
           : p.event || '—';
         const placeEl = p.place ? `Plats ${p.place}${p.total_players ? '/' + p.total_players : ''}` : '';
         const dots = playerDots(p.name, ownerMap);
+        const salary = SALARY[p.name];
+        const salaryEl = salary != null ? `<span class="live-salary">(${salary})</span>` : '';
         return `<div class="live-row">
-          <div class="live-player">${p.name}${dots}</div>
+          <div class="live-player">${p.name}${salaryEl}${dots}</div>
           <span class="live-dot ${dotCls}"></span>
           <div class="live-event">${eventEl}</div>
           <div class="live-place">${placeEl}</div>
