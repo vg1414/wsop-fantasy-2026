@@ -489,6 +489,112 @@
       border: 1px solid var(--border);
     }
 
+    /* ── LIVE STATUS ── */
+    .live-updated {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 3px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .live-group { margin-bottom: 24px; }
+
+    .live-group-header {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      padding: 8px 20px;
+      border: 1px solid var(--border);
+      border-bottom: none;
+    }
+
+    .live-group-header.playing {
+      color: var(--green);
+      background: #0a140a;
+    }
+
+    .live-group-header.last-seen {
+      color: var(--muted2);
+      background: #0f0f0f;
+    }
+
+    .live-row {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-top: none;
+      transition: background 0.1s;
+    }
+
+    .live-row:last-child { border-bottom: 1px solid var(--border); }
+    .live-row:hover { background: var(--card); }
+
+    .live-player {
+      min-width: 160px;
+      padding: 12px 12px 12px 20px;
+      font-size: 0.9rem;
+      font-weight: 300;
+      font-style: italic;
+      color: #bbb;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin: 0 10px 0 0;
+    }
+
+    .live-dot.playing {
+      background: var(--green);
+      box-shadow: 0 0 5px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .live-dot.last-seen { background: var(--muted); }
+
+    .live-event {
+      flex: 1;
+      padding: 12px 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 300;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+
+    .live-event a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .live-event a:hover { color: var(--gold-light); }
+
+    .live-place {
+      padding: 12px 20px 12px 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.72rem;
+      color: var(--muted2);
+      text-align: right;
+      min-width: 60px;
+      white-space: nowrap;
+    }
+
+    .live-empty {
+      padding: 24px 20px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      color: #333;
+      text-transform: uppercase;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
     /* ── MOBILE ── */
     @media (max-width: 640px) {
       #teams { grid-template-columns: 1fr; gap: 1px; }
@@ -535,6 +641,7 @@
 <nav class="tab-bar">
   <button class="tab active" data-tab="overview">Översikt</button>
   <button class="tab" data-tab="history">Poänghistorik</button>
+  <button class="tab" data-tab="live">Live</button>
 </nav>
 
 <main>
@@ -550,6 +657,11 @@
   <div id="tab-history" style="display:none">
     <div class="section-label">Poänghistorik</div>
     <div id="event-log"></div>
+  </div>
+
+  <div id="tab-live" style="display:none">
+    <div class="section-label">Live · Just nu</div>
+    <div id="live-log"></div>
   </div>
 
 </main>
@@ -758,6 +870,62 @@
     document.getElementById('updated').textContent = 'Kunde inte hämta poäng';
   });
 
+  // Live status
+  function renderLive(data) {
+    const el = document.getElementById('live-log');
+    const players = data.players || [];
+
+    if (players.length === 0) {
+      el.innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
+      return;
+    }
+
+    const playing = players.filter(p => p.status === 'currentlyPlaying');
+    const lastSeen = players.filter(p => p.status !== 'currentlyPlaying');
+
+    const updated = data.updated ? new Date(data.updated).toLocaleString('sv-SE') : '';
+
+    function renderRows(list, type) {
+      return list.map(p => {
+        const isPlaying = type === 'playing';
+        const dotCls = isPlaying ? 'playing' : 'last-seen';
+        const eventEl = p.event_url
+          ? `<a href="${p.event_url}" target="_blank" rel="noopener">${p.event}</a>`
+          : p.event || '—';
+        const placeEl = p.place ? `Plats ${p.place}${p.total_players ? '/' + p.total_players : ''}` : '';
+        return `<div class="live-row">
+          <div class="live-player">${p.name}</div>
+          <span class="live-dot ${dotCls}"></span>
+          <div class="live-event">${eventEl}</div>
+          <div class="live-place">${placeEl}</div>
+        </div>`;
+      }).join('');
+    }
+
+    let html = `<div class="live-updated">Uppdaterad · ${updated}</div>`;
+
+    if (playing.length > 0) {
+      html += `<div class="live-group">
+        <div class="live-group-header playing">● Spelar just nu (${playing.length})</div>
+        ${renderRows(playing, 'playing')}
+      </div>`;
+    }
+
+    if (lastSeen.length > 0) {
+      html += `<div class="live-group">
+        <div class="live-group-header last-seen">Senast sedd</div>
+        ${renderRows(lastSeen, 'last-seen')}
+      </div>`;
+    }
+
+    el.innerHTML = html;
+  }
+
+  onSnapshot(doc(db, "live_status", "latest"), (snap) => {
+    if (snap.exists()) renderLive(snap.data());
+    else document.getElementById('live-log').innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
+  });
+
   // Tab switching
   document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -766,6 +934,7 @@
       const tab = btn.dataset.tab;
       document.getElementById('tab-overview').style.display = tab === 'overview' ? '' : 'none';
       document.getElementById('tab-history').style.display = tab === 'history' ? '' : 'none';
+      document.getElementById('tab-live').style.display = tab === 'live' ? '' : 'none';
     });
   });
 </script>
