@@ -884,6 +884,7 @@
     const lastSeen = players.filter(p => p.status !== 'currentlyPlaying');
 
     const updated = data.updated ? new Date(data.updated).toLocaleString('sv-SE') : '';
+    const ownerMap = buildOwnerMap(TEAMS);
 
     function renderRows(list, type) {
       return list.map(p => {
@@ -893,8 +894,9 @@
           ? `<a href="${p.event_url}" target="_blank" rel="noopener">${p.event}</a>`
           : p.event || '—';
         const placeEl = p.place ? `Plats ${p.place}${p.total_players ? '/' + p.total_players : ''}` : '';
+        const dots = playerDots(p.name, ownerMap);
         return `<div class="live-row">
-          <div class="live-player">${p.name}</div>
+          <div class="live-player">${p.name}${dots}</div>
           <span class="live-dot ${dotCls}"></span>
           <div class="live-event">${eventEl}</div>
           <div class="live-place">${placeEl}</div>
