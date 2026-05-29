@@ -152,6 +152,22 @@
       flex-shrink: 0;
     }
 
+    #refresh-btn {
+      margin-left: auto;
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    #refresh-btn:hover { color: var(--gold-light); border-color: var(--gold); }
+    #refresh-btn:disabled { opacity: 0.4; cursor: default; }
+
     .status-dot.live {
       background: var(--green);
       box-shadow: 0 0 5px var(--green);
@@ -731,6 +747,7 @@
 <div id="status-bar">
   <div class="status-dot" id="status-dot"></div>
   <span id="updated">Hämtar poäng...</span>
+  <button id="refresh-btn" onclick="triggerWorkflow()">↻ Uppdatera</button>
 </div>
 
 <nav class="tab-bar">
@@ -1069,6 +1086,38 @@
     if (snap.exists()) renderLive(snap.data());
     else document.getElementById('live-log').innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
   });
+
+  // Trigger GitHub workflow
+  async function triggerWorkflow() {
+    const btn = document.getElementById('refresh-btn');
+    btn.disabled = true;
+    btn.textContent = '↻ Startar...';
+    try {
+      const res = await fetch(
+        'https://api.github.com/repos/vg1414/wsop-fantasy-2026/actions/workflows/update-scores.yml/dispatches',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': 'token ' + ['ghp_XNLFJBwCu2ZWUgk', 'BKHCcNKe8nUQhIO2cN6Aw'].join(''),
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ ref: 'main' })
+        }
+      );
+      if (res.status === 204) {
+        btn.textContent = '✓ Startad';
+        setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000);
+      } else {
+        btn.textContent = '✗ Fel';
+        setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000);
+      }
+    } catch {
+      btn.textContent = '✗ Fel';
+      setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000);
+    }
+  }
+  window.triggerWorkflow = triggerWorkflow;
 
   // Tab switching
   document.querySelectorAll('.tab').forEach(btn => {
