@@ -1,5 +1,5 @@
 {
-  "updated": "2026-05-29T08:43:46Z",
+  "updated": "2026-05-29T12:16:48Z",
   "players": {
     "David Peters": 0,
     "Josh Arieh": 0,
@@ -32,7 +32,15 @@
     "Nick Guagenti": 0,
     "Klemens Roiter": 0,
     "Andrew Ostapchenko": 0,
-    "Brock Wilson": 0,
+    "Brock Wilson": 2,
     "Joey Weissman": 0
-  }
+  },
+  "events": [
+    {
+      "date": "May 28, 2026",
+      "player": "Brock Wilson",
+      "event": "Event #2",
+      "points": 2
+    }
+  ]
 }
