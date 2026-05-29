@@ -93,26 +93,10 @@
       margin-top: 2px;
     }
 
-    .header-nav {
-      display: flex;
-      justify-content: center;
-      gap: 0;
-      border-top: 1px solid var(--border2);
+    .header-bottom-line {
+      height: 1px;
+      background: var(--border2);
     }
-
-    .nav-item {
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.72rem;
-      font-weight: 400;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 10px 20px;
-      border-right: 1px solid var(--border);
-    }
-
-    .nav-item:first-child { border-left: 1px solid var(--border); }
-    .nav-item.active { color: var(--gold); }
 
     /* ── STATUS ── */
     #status-bar {
@@ -254,11 +238,25 @@
     .team-card:hover { border-color: var(--border2); }
 
     .team-header {
+      position: relative;
       padding: 16px 18px;
       border-bottom: 2px solid var(--gold-dim);
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .team-header::before {
+      content: attr(data-suit);
+      position: absolute;
+      right: -10px;
+      bottom: -18px;
+      font-size: 7rem;
+      line-height: 1;
+      opacity: 0.04;
+      pointer-events: none;
+      color: var(--gold);
     }
 
     .team-owner {
@@ -339,17 +337,12 @@
       .logo-wsop { letter-spacing: 3px; }
       .logo-sub { letter-spacing: 5px; }
       .logo-suits { display: none; }
-      .header-nav { gap: 0; }
-      .nav-item { padding: 9px 12px; font-size: 0.62rem; letter-spacing: 2px; }
       .pts-col { font-size: 1.3rem; min-width: 64px; }
       main { padding: 24px 10px 60px; }
       .team-score-num { font-size: 1.8rem; }
       .team-owner { font-size: 1.1rem; }
     }
 
-    @media (max-width: 380px) {
-      .nav-item { padding: 8px 8px; font-size: 0.58rem; letter-spacing: 1px; }
-    }
   </style>
 </head>
 <body>
@@ -369,10 +362,7 @@
       <div class="logo-suits-row"><span>♠</span><span class="red">♥</span></div>
     </div>
   </div>
-  <div class="header-nav">
-    <div class="nav-item active">Ställning</div>
-    <div class="nav-item active">Lag</div>
-  </div>
+  <div class="header-bottom-line"></div>
 </header>
 
 <div id="status-bar">
@@ -450,9 +440,11 @@
     ).join('');
   }
 
+  const SUITS = ['♠', '♣', '♥', '♦', '♠'];
+
   function renderTeams(teams, scores) {
     const el = document.getElementById('teams');
-    el.innerHTML = teams.map(team => {
+    el.innerHTML = teams.map((team, ti) => {
       const total = teamTotal(team, scores);
       const rows = team.players.map(p => {
         const pts = scores[p] || 0;
@@ -464,7 +456,7 @@
       }).join('');
 
       return `<div class="team-card">
-        <div class="team-header">
+        <div class="team-header" data-suit="${SUITS[ti]}">
           <div class="team-owner">${team.owner}</div>
           <div class="team-score-wrap">
             <div class="team-score-num">${total}</div>
