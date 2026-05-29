@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-05-29 (spelarlista)
+- Lade till ny sektion "Spelare" – alla unika spelare sorterade efter poäng (högst först)
+- Varje spelare visar vilka lag de ingår i som små taggar (spelare kan delas mellan lag)
+
 ## 2026-05-29 (redesign)
 - Fullständig WSOP-inspirerad redesign: grön felt-bakgrund, guld-typografi, Cinzel-font, kortsymboler, bracelet-dekoration
 - Förbättrad mobilanpassning
