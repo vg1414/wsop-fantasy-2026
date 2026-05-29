@@ -6,594 +6,374 @@
   <title>WSOP Fantasy 2026</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --felt:        #0b2b1a;
-      --felt-mid:    #0f3520;
-      --felt-light:  #164a2c;
-      --gold:        #c8972a;
-      --gold-bright: #f0c040;
-      --gold-dim:    #7a5a18;
-      --cream:       #f5ead8;
-      --cream-dim:   #c4b89a;
-      --dark:        #060e08;
-      --card-bg:     #0d2417;
-      --border:      #1e4a2e;
-      --border-gold: #5a3e10;
-      --muted:       #5a7a62;
-      --green-bright:#3ddc78;
-      --red:         #d94f4f;
-      --chip-red:    #8b1a1a;
-      --chip-blue:   #1a3a6b;
+      --black:      #0a0a0a;
+      --dark:       #111111;
+      --card:       #181818;
+      --card2:      #1f1f1f;
+      --border:     #2a2a2a;
+      --border2:    #333;
+      --gold:       #c9982b;
+      --gold-light: #e8b84b;
+      --gold-dim:   #6b4f18;
+      --white:      #f0f0f0;
+      --muted:      #666;
+      --muted2:     #888;
+      --green:      #3cb371;
+      --red-wsop:   #c0392b;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html { scroll-behavior: smooth; }
-
     body {
-      background-color: var(--dark);
-      background-image:
-        radial-gradient(ellipse 80% 60% at 50% -10%, #0f3520 0%, transparent 70%),
-        repeating-linear-gradient(
-          45deg,
-          transparent,
-          transparent 40px,
-          rgba(255,255,255,0.008) 40px,
-          rgba(255,255,255,0.008) 41px
-        );
-      color: var(--cream);
-      font-family: 'Crimson Pro', Georgia, serif;
-      font-size: 17px;
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Source Serif 4', Georgia, serif;
       min-height: 100vh;
       overflow-x: hidden;
     }
 
-    /* ── NOISE OVERLAY ── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      background-size: 200px 200px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
     /* ── HEADER ── */
     header {
-      position: relative;
-      text-align: center;
-      padding: 56px 20px 48px;
-      overflow: hidden;
+      background: var(--dark);
+      border-bottom: 3px solid var(--gold);
+      padding: 0 0 0;
     }
 
-    header::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 100% 100% at 50% 0%, #1a5c33 0%, transparent 65%),
-        linear-gradient(180deg, #0b2b1a 0%, transparent 100%);
-      z-index: 0;
-    }
-
-    /* decorative card corners */
-    header::after {
-      content: '🂡';
-      position: absolute;
-      top: 12px;
-      left: 20px;
-      font-size: 3rem;
-      opacity: 0.06;
-      z-index: 0;
-      transform: rotate(-15deg);
-    }
-
-    .header-inner { position: relative; z-index: 1; }
-
-    .wsop-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .badge-line {
-      width: 48px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--gold));
-    }
-
-    .badge-line.right {
-      background: linear-gradient(90deg, var(--gold), transparent);
-    }
-
-    .badge-text {
-      font-family: 'Cinzel', serif;
-      font-size: 0.65rem;
-      letter-spacing: 5px;
-      color: var(--gold);
-      text-transform: uppercase;
-    }
-
-    .header-suits {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      margin-bottom: 14px;
-    }
-
-    .suit {
-      width: 36px;
-      height: 36px;
+    .header-top {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
-      border: 1px solid var(--border-gold);
-      border-radius: 4px;
-      background: rgba(200, 151, 42, 0.08);
-      animation: suitFade 4s ease-in-out infinite;
+      padding: 28px 20px 20px;
+      gap: 20px;
     }
 
-    .suit:nth-child(1) { animation-delay: 0s; color: var(--cream); }
-    .suit:nth-child(2) { animation-delay: 1s; color: #d94f4f; }
-    .suit:nth-child(3) { animation-delay: 2s; color: #d94f4f; }
-    .suit:nth-child(4) { animation-delay: 3s; color: var(--cream); }
-
-    @keyframes suitFade {
-      0%, 100% { opacity: 0.5; transform: translateY(0); }
-      50% { opacity: 1; transform: translateY(-2px); }
+    .logo-suits {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      opacity: 0.7;
     }
 
-    header h1 {
-      font-family: 'Cinzel', serif;
-      font-size: clamp(2rem, 7vw, 3.8rem);
-      font-weight: 900;
-      color: var(--gold-bright);
-      letter-spacing: 4px;
-      text-transform: uppercase;
+    .logo-suits-row {
+      display: flex;
+      gap: 4px;
+      font-size: 0.75rem;
+      color: var(--muted2);
+    }
+
+    .logo-suits-row .red { color: #a33; }
+
+    .logo-center { text-align: center; }
+
+    .logo-wsop {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(2.6rem, 8vw, 4.8rem);
+      font-weight: 700;
+      letter-spacing: 6px;
+      color: var(--gold-light);
       line-height: 1;
-      text-shadow:
-        0 0 40px rgba(240, 192, 64, 0.4),
-        0 2px 0 #5a3e10,
-        0 4px 12px rgba(0,0,0,0.8);
-      margin-bottom: 4px;
-    }
-
-    .header-year {
-      font-family: 'Cinzel', serif;
-      font-size: clamp(0.9rem, 3vw, 1.4rem);
-      font-weight: 400;
-      color: var(--gold-dim);
-      letter-spacing: 12px;
       text-transform: uppercase;
-      margin-bottom: 20px;
     }
 
-    .header-divider {
+    .logo-wsop span {
+      color: var(--red-wsop);
+    }
+
+    .logo-sub {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(0.65rem, 2vw, 0.8rem);
+      font-weight: 300;
+      letter-spacing: 8px;
+      color: var(--muted2);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .header-nav {
       display: flex;
-      align-items: center;
       justify-content: center;
-      gap: 12px;
-      margin-bottom: 0;
+      gap: 0;
+      border-top: 1px solid var(--border2);
     }
 
-    .divider-line {
-      flex: 1;
-      max-width: 120px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border-gold));
+    .nav-item {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 10px 20px;
+      border-right: 1px solid var(--border);
     }
 
-    .divider-line.r {
-      background: linear-gradient(90deg, var(--border-gold), transparent);
-    }
+    .nav-item:first-child { border-left: 1px solid var(--border); }
+    .nav-item.active { color: var(--gold); }
 
-    .divider-chip {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--gold);
-      box-shadow: 0 0 8px var(--gold);
-    }
-
-    /* ── STATUS BAR ── */
+    /* ── STATUS ── */
     #status-bar {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 10px 20px;
-      background: rgba(11, 43, 26, 0.8);
-      border-top: 1px solid var(--border);
+      padding: 8px 20px;
+      background: #0d0d0d;
       border-bottom: 1px solid var(--border);
-      font-size: 0.78rem;
-      letter-spacing: 1px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 300;
+      letter-spacing: 2px;
       color: var(--muted);
-      position: relative;
-      z-index: 1;
+      text-transform: uppercase;
     }
 
     .status-dot {
-      width: 7px;
-      height: 7px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
       background: var(--muted);
       flex-shrink: 0;
     }
 
     .status-dot.live {
-      background: var(--green-bright);
-      box-shadow: 0 0 6px var(--green-bright);
+      background: var(--green);
+      box-shadow: 0 0 5px var(--green);
       animation: pulse 2s ease-in-out infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--green-bright); }
-      50% { opacity: 0.4; box-shadow: 0 0 2px var(--green-bright); }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
     }
 
     /* ── MAIN ── */
     main {
-      position: relative;
-      z-index: 1;
       max-width: 960px;
       margin: 0 auto;
-      padding: 40px 16px 80px;
+      padding: 36px 16px 80px;
     }
 
-    /* ── SECTION HEADERS ── */
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 20px;
-      margin-top: 48px;
-    }
-
-    .section-header:first-of-type { margin-top: 0; }
-
-    .section-header h2 {
-      font-family: 'Cinzel', serif;
-      font-size: 0.65rem;
-      font-weight: 600;
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 400;
       letter-spacing: 5px;
       text-transform: uppercase;
       color: var(--gold);
-      white-space: nowrap;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
-    .section-rule {
+    .section-label::after {
+      content: '';
       flex: 1;
       height: 1px;
-      background: linear-gradient(90deg, var(--border-gold), transparent);
-    }
-
-    .section-chip {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      border: 1px solid var(--gold-dim);
-      flex-shrink: 0;
+      background: var(--border2);
     }
 
     /* ── STANDINGS ── */
     #standings {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-bottom: 8px;
+      margin-bottom: 48px;
     }
 
     .standing-row {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 14px 20px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--border);
-      border-radius: 4px;
-      transition: all 0.25s ease;
-      cursor: default;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
     }
 
-    .standing-row:hover {
-      background: var(--felt-mid);
-      border-color: var(--border-gold);
-      transform: translateX(3px);
-    }
+    .standing-row:first-child { border-top: 1px solid var(--border); }
+    .standing-row:hover { background: var(--card); }
 
-    .standing-row.rank-1 {
-      border-left-color: var(--gold-bright);
-      background: linear-gradient(90deg, rgba(200,151,42,0.12), var(--card-bg));
-    }
-
-    .standing-row.rank-2 {
-      border-left-color: #b0b8b0;
-    }
-
-    .standing-row.rank-3 {
-      border-left-color: #a07848;
-    }
-
-    .rank-num {
-      font-family: 'Cinzel', serif;
-      font-size: 1.1rem;
-      font-weight: 700;
-      width: 28px;
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    .rank-1 .rank-num { color: var(--gold-bright); }
-    .rank-2 .rank-num { color: #c0c8c0; }
-    .rank-3 .rank-num { color: #b08858; }
-    .rank-4 .rank-num, .rank-5 .rank-num { color: var(--muted); }
-
-    .standing-medal {
-      font-size: 1rem;
-      width: 20px;
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    .standing-name {
-      flex: 1;
-      font-size: 1.1rem;
+    .rank-col {
+      width: 52px;
+      padding: 16px 0 16px 20px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.2rem;
       font-weight: 600;
-      color: var(--cream);
-      letter-spacing: 0.5px;
-    }
-
-    .standing-chips {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      margin-right: 8px;
-    }
-
-    .chip-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .standing-pts {
-      font-family: 'Cinzel', serif;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--gold-bright);
-      min-width: 60px;
-      text-align: right;
-    }
-
-    .standing-pts em {
-      font-family: 'Crimson Pro', serif;
-      font-style: normal;
-      font-size: 0.65rem;
       color: var(--muted);
-      font-weight: 400;
-      margin-left: 3px;
-      letter-spacing: 1px;
+      flex-shrink: 0;
     }
+
+    .rank-1 .rank-col { color: var(--gold-light); }
+    .rank-2 .rank-col { color: #b8b8b8; }
+    .rank-3 .rank-col { color: #a07848; }
+
+    .name-col {
+      flex: 1;
+      padding: 16px 12px;
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--white);
+    }
+
+    .pts-col {
+      padding: 16px 20px 16px 0;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-align: right;
+      min-width: 80px;
+    }
+
+    .pts-col small {
+      font-size: 0.6rem;
+      font-weight: 300;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-left: 3px;
+    }
+
+    .rank-1 .pts-col { color: var(--gold-light); }
 
     /* ── TEAM CARDS ── */
     #teams {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 2px;
     }
 
     .team-card {
-      background: var(--card-bg);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color 0.2s;
     }
 
-    .team-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px var(--border-gold);
-    }
+    .team-card:hover { border-color: var(--border2); }
 
     .team-header {
-      position: relative;
-      padding: 16px 18px 14px;
-      background: linear-gradient(135deg, #0f3520 0%, #0b2b1a 100%);
-      border-bottom: 1px solid var(--border-gold);
-      overflow: hidden;
-    }
-
-    .team-header::before {
-      content: '♠';
-      position: absolute;
-      right: -8px;
-      top: -8px;
-      font-size: 5rem;
-      color: rgba(200, 151, 42, 0.05);
-      line-height: 1;
-      pointer-events: none;
+      padding: 16px 18px;
+      border-bottom: 2px solid var(--gold-dim);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
     }
 
     .team-owner {
-      font-family: 'Cinzel', serif;
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--gold-bright);
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--white);
       letter-spacing: 1px;
-      margin-bottom: 2px;
-    }
-
-    .team-label {
-      font-size: 0.72rem;
-      color: var(--muted);
-      letter-spacing: 2px;
       text-transform: uppercase;
     }
 
-    .team-total {
-      position: absolute;
-      right: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      text-align: right;
-    }
+    .team-score-wrap { text-align: right; }
 
-    .team-total-num {
-      font-family: 'Cinzel', serif;
-      font-size: 2rem;
-      font-weight: 900;
+    .team-score-num {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
       color: var(--gold);
       line-height: 1;
-      text-shadow: 0 0 20px rgba(200, 151, 42, 0.3);
     }
 
-    .team-total-label {
-      font-size: 0.6rem;
-      letter-spacing: 2px;
-      color: var(--gold-dim);
+    .team-score-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.55rem;
+      letter-spacing: 3px;
+      color: var(--muted);
       text-transform: uppercase;
       display: block;
-      text-align: right;
     }
 
-    .player-list {
-      list-style: none;
-    }
+    .player-list { list-style: none; }
 
     .player-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 9px 18px;
-      border-bottom: 1px solid rgba(30, 74, 46, 0.6);
-      transition: background 0.15s;
+      border-bottom: 1px solid #1e1e1e;
+      transition: background 0.1s;
     }
 
     .player-row:last-child { border-bottom: none; }
-
-    .player-row:hover { background: rgba(15, 53, 32, 0.6); }
-
-    .player-icon {
-      font-size: 0.6rem;
-      color: var(--muted);
-      margin-right: 8px;
-      opacity: 0.5;
-    }
+    .player-row:hover { background: var(--card2); }
 
     .player-name {
-      color: var(--cream-dim);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 300;
-      flex: 1;
+      color: #bbb;
+      font-style: italic;
     }
 
     .player-score {
-      font-family: 'Cinzel', serif;
+      font-family: 'Oswald', sans-serif;
       font-size: 0.9rem;
-      font-weight: 600;
-      min-width: 36px;
+      font-weight: 500;
+      min-width: 32px;
       text-align: right;
     }
 
-    .score-positive {
-      color: var(--green-bright);
-      text-shadow: 0 0 8px rgba(61, 220, 120, 0.4);
-    }
-
-    .score-zero { color: rgba(90, 122, 98, 0.5); }
-
-    /* ── BRACELET DECO ── */
-    .bracelet-bar {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      padding: 24px 0 8px;
-      opacity: 0.3;
-    }
-
-    .bracelet-bead {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--gold);
-    }
-
-    .bracelet-bead:nth-child(3n) { background: var(--chip-red); }
-    .bracelet-bead:nth-child(5n) { background: var(--chip-blue); }
+    .score-positive { color: var(--green); }
+    .score-zero { color: #333; }
 
     /* ── FOOTER ── */
     footer {
-      position: relative;
-      z-index: 1;
       text-align: center;
       padding: 24px 20px;
       border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 0.75rem;
-      letter-spacing: 1px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      color: #333;
+      text-transform: uppercase;
     }
 
-    footer span {
-      opacity: 0.5;
-    }
-
+    /* ── MOBILE ── */
     @media (max-width: 640px) {
-      #teams { grid-template-columns: 1fr; }
-      header { padding: 36px 16px 32px; }
-      header h1 { letter-spacing: 2px; }
-      .header-year { letter-spacing: 6px; }
-      .standing-chips { display: none; }
-      .standing-pts { font-size: 1.15rem; min-width: 48px; }
-      .standing-name { font-size: 1rem; }
-      .team-total-num { font-size: 1.6rem; }
-      .team-header { padding: 13px 14px 12px; }
-      .team-owner { font-size: 0.95rem; }
-      .player-row { padding: 8px 14px; }
-      .player-name { font-size: 0.88rem; }
-      .section-header { margin-top: 32px; }
-      main { padding: 28px 12px 60px; }
-      .wsop-badge { gap: 8px; }
-      .badge-line { width: 28px; }
+      #teams { grid-template-columns: 1fr; gap: 1px; }
+      .logo-wsop { letter-spacing: 3px; }
+      .logo-sub { letter-spacing: 5px; }
+      .logo-suits { display: none; }
+      .header-nav { gap: 0; }
+      .nav-item { padding: 9px 12px; font-size: 0.62rem; letter-spacing: 2px; }
+      .pts-col { font-size: 1.3rem; min-width: 64px; }
+      main { padding: 24px 10px 60px; }
+      .team-score-num { font-size: 1.8rem; }
+      .team-owner { font-size: 1.1rem; }
     }
 
     @media (max-width: 380px) {
-      .standing-medal { display: none; }
-      .rank-num { font-size: 0.9rem; }
+      .nav-item { padding: 8px 8px; font-size: 0.58rem; letter-spacing: 1px; }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="header-inner">
-    <div class="wsop-badge">
-      <div class="badge-line"></div>
-      <span class="badge-text">World Series of Poker</span>
-      <div class="badge-line right"></div>
+  <div class="header-top">
+    <div class="logo-suits">
+      <div class="logo-suits-row"><span>♠</span><span class="red">♥</span></div>
+      <div class="logo-suits-row"><span class="red">♦</span><span>♣</span></div>
     </div>
-
-    <div class="header-suits">
-      <div class="suit">♠</div>
-      <div class="suit">♥</div>
-      <div class="suit">♦</div>
-      <div class="suit">♣</div>
+    <div class="logo-center">
+      <div class="logo-wsop">WSOP</div>
+      <div class="logo-sub">Fantasy · 2026</div>
     </div>
-
-    <h1>Fantasy</h1>
-    <div class="header-year">2 0 2 6</div>
-
-    <div class="header-divider">
-      <div class="divider-line"></div>
-      <div class="divider-chip"></div>
-      <div class="divider-line r"></div>
+    <div class="logo-suits">
+      <div class="logo-suits-row"><span class="red">♦</span><span>♣</span></div>
+      <div class="logo-suits-row"><span>♠</span><span class="red">♥</span></div>
     </div>
+  </div>
+  <div class="header-nav">
+    <div class="nav-item active">Ställning</div>
+    <div class="nav-item active">Lag</div>
+    <div class="nav-item">Pick 8</div>
+    <div class="nav-item">Las Vegas 2026</div>
   </div>
 </header>
 
@@ -604,38 +384,15 @@
 
 <main>
 
-  <div class="section-header">
-    <div class="section-chip"></div>
-    <h2>Ställning</h2>
-    <div class="section-rule"></div>
-  </div>
-
+  <div class="section-label">Ställning</div>
   <div id="standings"></div>
 
-  <div class="bracelet-bar">
-    <div class="bracelet-bead"></div><div class="bracelet-bead"></div>
-    <div class="bracelet-bead"></div><div class="bracelet-bead"></div>
-    <div class="bracelet-bead"></div><div class="bracelet-bead"></div>
-    <div class="bracelet-bead"></div><div class="bracelet-bead"></div>
-    <div class="bracelet-bead"></div><div class="bracelet-bead"></div>
-    <div class="bracelet-bead"></div><div class="bracelet-bead"></div>
-    <div class="bracelet-bead"></div><div class="bracelet-bead"></div>
-    <div class="bracelet-bead"></div>
-  </div>
-
-  <div class="section-header">
-    <div class="section-chip"></div>
-    <h2>Lag</h2>
-    <div class="section-rule"></div>
-  </div>
-
+  <div class="section-label" style="margin-top:48px">Lag</div>
   <div id="teams"></div>
 
 </main>
 
-<footer>
-  <span>Made by: David Hefner</span>
-</footer>
+<footer>Made by: David Hefner</footer>
 
 <script>
   const TEAMS = [
@@ -676,9 +433,6 @@
     }
   ];
 
-  const MEDALS = ['🥇', '🥈', '🥉', '', ''];
-  const CHIP_COLORS = ['#c8972a', '#8b1a1a', '#1a3a6b', '#2a7a2a', '#6b1a6b'];
-
   function teamTotal(team, scores) {
     return team.players.reduce((sum, p) => sum + (scores[p] || 0), 0);
   }
@@ -689,56 +443,39 @@
       .sort((a, b) => b.total - a.total);
 
     const el = document.getElementById('standings');
-    el.innerHTML = sorted.map((t, i) => {
-      const chips = CHIP_COLORS.map(c =>
-        `<div class="chip-dot" style="background:${c}"></div>`
-      ).join('');
-      return `
-        <div class="standing-row rank-${i + 1}">
-          <div class="rank-num">${i + 1}</div>
-          <div class="standing-medal">${MEDALS[i]}</div>
-          <div class="standing-name">${t.owner}</div>
-          <div class="standing-chips">${chips}</div>
-          <div class="standing-pts">${t.total}<em>pts</em></div>
-        </div>`;
-    }).join('');
+    el.innerHTML = sorted.map((t, i) => `
+      <div class="standing-row rank-${i + 1}">
+        <div class="rank-col">${i + 1}</div>
+        <div class="name-col">${t.owner}</div>
+        <div class="pts-col">${t.total}<small>pts</small></div>
+      </div>`
+    ).join('');
   }
 
   function renderTeams(teams, scores) {
-    const suits = ['♠', '♥', '♦', '♣', '♠'];
     const el = document.getElementById('teams');
-    el.innerHTML = teams.map((team, ti) => {
+    el.innerHTML = teams.map(team => {
       const total = teamTotal(team, scores);
       const rows = team.players.map(p => {
         const pts = scores[p] || 0;
         const cls = pts > 0 ? 'score-positive' : 'score-zero';
         return `<li class="player-row">
-          <span class="player-icon">◆</span>
           <span class="player-name">${p}</span>
           <span class="player-score ${cls}">${pts}</span>
         </li>`;
       }).join('');
 
       return `<div class="team-card">
-        <div class="team-header" data-suit="${suits[ti % suits.length]}">
-          <div>
-            <div class="team-owner">${team.owner}</div>
-            <div class="team-label">Pick 8 · Las Vegas</div>
-          </div>
-          <div class="team-total">
-            <div class="team-total-num">${total}</div>
-            <span class="team-total-label">poäng</span>
+        <div class="team-header">
+          <div class="team-owner">${team.owner}</div>
+          <div class="team-score-wrap">
+            <div class="team-score-num">${total}</div>
+            <span class="team-score-label">poäng</span>
           </div>
         </div>
         <ul class="player-list">${rows}</ul>
       </div>`;
     }).join('');
-
-    // set unique suit per card
-    document.querySelectorAll('.team-header').forEach(h => {
-      h.style.setProperty('--suit-char', `'${h.dataset.suit}'`);
-      h.style.cssText += `--suit-char: '${h.dataset.suit}'`;
-    });
   }
 
   async function loadScores() {
