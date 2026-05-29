@@ -873,7 +873,10 @@
   // Live status
   function renderLive(data) {
     const el = document.getElementById('live-log');
-    const players = data.players || [];
+    const allPlayers = data.players || [];
+
+    const fantasyNames = new Set(TEAMS.flatMap(t => t.players.map(p => p.toLowerCase())));
+    const players = allPlayers.filter(p => fantasyNames.has(p.name.toLowerCase()));
 
     if (players.length === 0) {
       el.innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
