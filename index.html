@@ -574,7 +574,7 @@
 
     .live-row {
       display: grid;
-      grid-template-columns: 220px 24px 1fr auto;
+      grid-template-columns: minmax(180px, 280px) 24px 1fr auto;
       align-items: center;
       border: 1px solid var(--border);
       border-top: none;
@@ -593,6 +593,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      min-width: 0;
     }
 
     .live-dot {
@@ -728,7 +729,7 @@
 
       /* Tabs */
       .tab-bar { padding: 0 4px; }
-      .tab { padding: 12px 10px; font-size: 0.58rem; letter-spacing: 1.5px; }
+      .tab { padding: 14px 12px; font-size: 0.75rem; letter-spacing: 1px; }
 
       /* Event log */
       .ev-event { display: none; }

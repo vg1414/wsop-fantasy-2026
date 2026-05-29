@@ -3,6 +3,8 @@
 ## 2026-05-29
 - Mobilfixar: status-bar staplas vertikalt (text + knapp) istället för att klämmas i grid
 - Live-fliken: spelarnamn och turneringsnamn staplas nu i en rak kolumn på mobil
+- Live-fliken: spelarnamn klipps inte längre av på desktop (bredare namnkolumn)
+- Flik-knappar (Översikt, Poänghistorik, Live): större och tydligare text på mobil
 
 ## 2026-05-29 (Firebase-integration)
 - Bytte datakälla från scores.json (GitHub Actions commit) till Firestore realtidsdatabas
