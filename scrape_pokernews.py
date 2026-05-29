@@ -48,7 +48,7 @@ def init_firebase():
     return firestore.client()
 
 def main():
-    cookie_string = os.environ.get("POKERNEWS_COOKIES")
+    cookie_string = os.environ.get("POKERNEWS_COOKIES", "").strip()
     if not cookie_string:
         raise RuntimeError("POKERNEWS_COOKIES must be set")
 
