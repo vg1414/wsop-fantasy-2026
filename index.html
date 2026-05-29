@@ -336,6 +336,29 @@
     .score-positive { color: var(--green); }
     .score-zero { color: #333; }
 
+    .player-link {
+      color: inherit;
+      text-decoration: none;
+    }
+    .player-link:hover { color: var(--gold-light); }
+
+    .event-link {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .event-link:hover { color: var(--gold-light); }
+
+    .ev-placement {
+      padding: 11px 4px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 400;
+      letter-spacing: 1px;
+      color: var(--muted);
+      text-align: right;
+      min-width: 36px;
+    }
+
     .player-dots {
       display: flex;
       gap: 3px;
@@ -434,24 +457,6 @@
       font-style: italic;
     }
 
-    .ev-owners {
-      display: flex;
-      gap: 4px;
-      padding: 11px 8px;
-      flex-wrap: wrap;
-    }
-
-    .ev-owner-tag {
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.52rem;
-      font-weight: 400;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-      border: 1px solid var(--border2);
-      padding: 2px 5px;
-    }
-
     .ev-event {
       padding: 11px 12px;
       font-family: 'Oswald', sans-serif;
@@ -497,6 +502,7 @@
       .tab-bar { padding: 0 8px; }
       .tab { padding: 12px 14px; font-size: 0.62rem; letter-spacing: 2px; }
       .ev-event { display: none; }
+      .ev-placement { display: none; }
     }
 
   </style>
@@ -628,16 +634,21 @@
     ).join('');
   }
 
-  function renderTeams(teams, scores, ownerMap) {
+  function renderTeams(teams, scores, ownerMap, playerUrls) {
     const el = document.getElementById('teams');
     el.innerHTML = teams.map((team, ti) => {
       const total = teamTotal(team, scores);
-      const rows = team.players.map(p => {
+      const sortedPlayers = [...team.players].sort((a, b) => (scores[b] || 0) - (scores[a] || 0));
+      const rows = sortedPlayers.map(p => {
         const pts = scores[p] || 0;
         const cls = pts > 0 ? 'score-positive' : 'score-zero';
         const dots = playerDots(p, ownerMap);
+        const url = playerUrls && playerUrls[p];
+        const nameEl = url
+          ? `<a class="player-name player-link" href="${url}" target="_blank" rel="noopener">${p}${dots}</a>`
+          : `<span class="player-name">${p}${dots}</span>`;
         return `<li class="player-row">
-          <span class="player-name">${p}${dots}</span>
+          ${nameEl}
           <span class="player-score ${cls}">${pts}</span>
         </li>`;
       }).join('');
@@ -655,7 +666,7 @@
     }).join('');
   }
 
-  function renderEventLog(ownerMap, events) {
+  function renderEventLog(ownerMap, events, playerUrls) {
     const el = document.getElementById('event-log');
 
     if (!events || events.length === 0) {
@@ -678,9 +689,25 @@
         const entries = ownerMap[ev.player] || [];
         const dots = entries.map(e => `<span class="team-dot" data-team="${e.index}" title="${e.owner}"></span>`).join('');
         const dotWrap = dots ? `<span class="player-dots">${dots}</span>` : '';
+
+        const playerUrl = (playerUrls && playerUrls[ev.player]) || ev.player_url || '';
+        const playerEl = playerUrl
+          ? `<a class="player-link" href="${playerUrl}" target="_blank" rel="noopener">${ev.player}${dotWrap}</a>`
+          : `${ev.player}${dotWrap}`;
+
+        const eventUrl = ev.event_url || '';
+        const eventEl = eventUrl
+          ? `<a class="event-link" href="${eventUrl}" target="_blank" rel="noopener">${ev.event}</a>`
+          : ev.event;
+
+        const placementEl = ev.placement
+          ? `<span class="ev-placement">${ev.placement}</span>`
+          : '';
+
         return `<div class="event-row">
-          <div class="ev-player">${ev.player}${dotWrap}</div>
-          <div class="ev-event">${ev.event}</div>
+          <div class="ev-player">${playerEl}</div>
+          <div class="ev-event">${eventEl}</div>
+          ${placementEl}
           <div class="ev-pts">+${ev.points}</div>
         </div>`;
       }).join('');
@@ -704,11 +731,12 @@
 
   function applyData(data) {
     const scores = data.players || {};
+    const playerUrls = data.player_urls || {};
     const ownerMap = buildOwnerMap(TEAMS);
 
     renderStandings(TEAMS, scores);
-    renderTeams(TEAMS, scores, ownerMap);
-    renderEventLog(ownerMap, data.events || []);
+    renderTeams(TEAMS, scores, ownerMap, playerUrls);
+    renderEventLog(ownerMap, data.events || [], playerUrls);
 
     const dot = document.getElementById('status-dot');
     const upd = document.getElementById('updated');
