@@ -671,18 +671,41 @@
 
     /* ── MOBILE ── */
     @media (max-width: 640px) {
+      /* Layout */
+      main { padding: 20px 8px 60px; }
       #teams { grid-template-columns: 1fr; gap: 1px; }
+
+      /* Header */
       .logo-wsop { letter-spacing: 3px; }
-      .logo-sub { letter-spacing: 5px; }
-      .logo-suits { display: none; }
+      .logo-sub { letter-spacing: 4px; }
+      .logo-suits-row { font-size: 2rem; gap: 6px; }
+      .header-top { padding: 18px 12px 14px; gap: 12px; }
+
+      /* Standings */
       .pts-col { font-size: 1.3rem; min-width: 64px; }
-      main { padding: 24px 10px 60px; }
+
+      /* Team cards */
       .team-score-num { font-size: 1.8rem; }
       .team-owner { font-size: 1.1rem; }
-      .tab-bar { padding: 0 8px; }
-      .tab { padding: 12px 14px; font-size: 0.62rem; letter-spacing: 2px; }
+      .player-row { padding: 8px 12px; }
+
+      /* Tabs */
+      .tab-bar { padding: 0 4px; }
+      .tab { padding: 12px 10px; font-size: 0.58rem; letter-spacing: 1.5px; }
+
+      /* Event log */
       .ev-event { display: none; }
       .ev-placement { display: none; }
+
+      /* Live */
+      .live-row { grid-template-columns: 1fr 20px auto; }
+      .live-place { display: none; }
+      .live-player { padding: 10px 6px 10px 12px; font-size: 0.82rem; }
+      .live-event { padding: 10px 12px 10px 6px; font-size: 0.68rem; }
+      .live-group-header { padding: 8px 12px; }
+      .live-legend { padding: 12px; gap: 8px 14px; }
+      .live-legend-item { font-size: 0.7rem; }
+      .live-updated { padding: 8px 12px; font-size: 0.65rem; }
     }
 
   </style>
