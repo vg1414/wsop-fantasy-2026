@@ -707,6 +707,17 @@
       .logo-suits-row { font-size: 2rem; gap: 6px; }
       .header-top { padding: 18px 12px 14px; gap: 12px; }
 
+      /* Status bar — stack vertically on mobile */
+      #status-bar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+      }
+      #status-center { justify-content: center; }
+      #status-right { justify-content: center; }
+
       /* Standings */
       .pts-col { font-size: 1.3rem; min-width: 64px; }
 
@@ -723,11 +734,36 @@
       .ev-event { display: none; }
       .ev-placement { display: none; }
 
-      /* Live */
-      .live-row { grid-template-columns: 1fr 20px auto; }
+      /* Live — single column layout, name + event stacked */
+      .live-row {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        padding: 0;
+        position: relative;
+      }
+      .live-player {
+        padding: 10px 12px 2px 12px;
+        font-size: 0.85rem;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .live-dot {
+        position: absolute;
+        top: 14px;
+        right: 12px;
+      }
+      .live-event {
+        padding: 2px 36px 10px 12px;
+        font-size: 0.68rem;
+        width: 100%;
+        box-sizing: border-box;
+      }
       .live-place { display: none; }
-      .live-player { padding: 10px 6px 10px 12px; font-size: 0.82rem; }
-      .live-event { padding: 10px 12px 10px 6px; font-size: 0.68rem; }
       .live-group-header { padding: 8px 12px; }
       .live-legend { padding: 12px; gap: 8px 14px; }
       .live-legend-item { font-size: 0.7rem; }

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-05-29
+- Mobilfixar: status-bar staplas vertikalt (text + knapp) istället för att klämmas i grid
+- Live-fliken: spelarnamn och turneringsnamn staplas nu i en rak kolumn på mobil
+
 ## 2026-05-29 (Firebase-integration)
 - Bytte datakälla från scores.json (GitHub Actions commit) till Firestore realtidsdatabas
 - scrape_scores.py skriver nu direkt till Firestore istället för lokal fil
