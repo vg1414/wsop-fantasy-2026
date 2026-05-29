@@ -5,6 +5,7 @@
 - Live-fliken: spelarnamn och turneringsnamn staplas nu i en rak kolumn på mobil
 - Live-fliken: spelarnamn klipps inte längre av på desktop (bredare namnkolumn)
 - Flik-knappar (Översikt, Poänghistorik, Live): större och tydligare text på mobil
+- Mobilläsbarhet: höjt font-size på alla element som var för små (status-bar, section-labels, live-event, live-legend, mm)
 
 ## 2026-05-29 (Firebase-integration)
 - Bytte datakälla från scores.json (GitHub Actions commit) till Firestore realtidsdatabas
