@@ -271,12 +271,16 @@
       overflow: hidden;
     }
 
-    .team-suit {
+    .team-header::before {
+      content: attr(data-suit);
+      position: absolute;
+      right: -10px;
+      bottom: -18px;
       font-size: 7rem;
-      opacity: 0.04;
-      color: var(--gold);
       line-height: 1;
+      opacity: 0.04;
       pointer-events: none;
+      color: var(--gold);
     }
 
     .team-owner {
@@ -844,9 +848,8 @@
       }).join('');
 
       return `<div class="team-card" data-team="${ti}">
-        <div class="team-header">
+        <div class="team-header" data-suit="${SUITS[ti]}">
           <div class="team-owner">${team.owner}</div>
-          <div class="team-suit">${SUITS[ti]}</div>
           <div class="team-score-wrap">
             <div class="team-score-num">${total}</div>
             <span class="team-score-label">poäng</span>
