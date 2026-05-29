@@ -18,6 +18,7 @@ FANTASY_PLAYERS = [
 ]
 
 FANTASY_PLAYERS_LOWER = {p.lower(): p for p in FANTASY_PLAYERS}
+FANTASY_PLAYERS_LOWER["kevin choi"] = "Kevin Yun Lam Choi"
 
 API_URL = "https://www.pokernews.com/api/my-stable"
 
@@ -55,11 +56,6 @@ def main():
     print("Fetching PokerNews my-stable...")
     players_raw = fetch_my_stable(cookie_string)
     print(f"Got {len(players_raw)} players from PokerNews")
-
-    all_names = sorted([e.get("title", "") for e in players_raw])
-    print("All names from PokerNews:")
-    for n in all_names:
-        print(f"  {repr(n)}")
 
     results = []
     for entry in players_raw:
