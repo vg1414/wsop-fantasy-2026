@@ -331,6 +331,74 @@
       text-transform: uppercase;
     }
 
+    /* ── PLAYER SCORES LIST ── */
+    #player-scores {
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid var(--border);
+    }
+
+    .player-score-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    .player-score-row:hover { background: var(--card); }
+
+    .ps-rank {
+      width: 44px;
+      padding: 12px 0 12px 20px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .ps-name {
+      flex: 1;
+      padding: 12px 10px;
+      font-size: 0.9rem;
+      font-weight: 300;
+      color: #bbb;
+      font-style: italic;
+    }
+
+    .ps-owners {
+      display: flex;
+      gap: 4px;
+      padding: 12px 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .ps-owner-tag {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 400;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--border2);
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    .ps-pts {
+      padding: 12px 20px 12px 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--gold);
+      text-align: right;
+      min-width: 56px;
+    }
+
+    .ps-pts.zero { color: #333; font-size: 0.9rem; }
+
     /* ── MOBILE ── */
     @media (max-width: 640px) {
       #teams { grid-template-columns: 1fr; gap: 1px; }
@@ -377,6 +445,9 @@
 
   <div class="section-label" style="margin-top:48px">Lag</div>
   <div id="teams"></div>
+
+  <div class="section-label" style="margin-top:48px">Spelare</div>
+  <div id="player-scores"></div>
 
 </main>
 
@@ -468,6 +539,36 @@
     }).join('');
   }
 
+  function renderPlayerScores(teams, scores) {
+    // Build a map: playerName -> [ownerNames]
+    const ownerMap = {};
+    for (const team of teams) {
+      for (const p of team.players) {
+        if (!ownerMap[p]) ownerMap[p] = [];
+        ownerMap[p].push(team.owner);
+      }
+    }
+
+    // Collect unique players across all teams
+    const allPlayers = [...new Set(teams.flatMap(t => t.players))];
+
+    // Sort by score descending, then name
+    const sorted = allPlayers
+      .map(p => ({ name: p, pts: scores[p] || 0, owners: ownerMap[p] }))
+      .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+
+    const el = document.getElementById('player-scores');
+    el.innerHTML = sorted.map((p, i) => {
+      const tags = p.owners.map(o => `<span class="ps-owner-tag">${o}</span>`).join('');
+      return `<div class="player-score-row">
+        <div class="ps-rank">${i + 1}</div>
+        <div class="ps-name">${p.name}</div>
+        <div class="ps-owners">${tags}</div>
+        <div class="ps-pts${p.pts === 0 ? ' zero' : ''}">${p.pts}</div>
+      </div>`;
+    }).join('');
+  }
+
   async function loadScores() {
     try {
       const res = await fetch('scores.json?v=' + Date.now());
@@ -476,6 +577,7 @@
 
       renderStandings(TEAMS, scores);
       renderTeams(TEAMS, scores);
+      renderPlayerScores(TEAMS, scores);
 
       const dot = document.getElementById('status-dot');
       const upd = document.getElementById('updated');
