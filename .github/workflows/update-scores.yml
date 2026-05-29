@@ -29,6 +29,5 @@ jobs:
       - name: Fetch PokerNews live status
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          POKERNEWS_XPID: ${{ secrets.POKERNEWS_XPID }}
-          POKERNEWS_XPKEY: ${{ secrets.POKERNEWS_XPKEY }}
+          POKERNEWS_COOKIES: ${{ secrets.POKERNEWS_COOKIES }}
         run: python scrape_pokernews.py

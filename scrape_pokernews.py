@@ -21,20 +21,19 @@ FANTASY_PLAYERS_LOWER = {p.lower(): p for p in FANTASY_PLAYERS}
 
 API_URL = "https://www.pokernews.com/api/my-stable"
 
-def fetch_my_stable(xpid, xpkey):
-    cookies = {
-        "_xpid": xpid,
-        "_xpkey": xpkey,
-    }
+def fetch_my_stable(cookie_string):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
         "Accept": "*/*",
+        "Accept-Language": "sv-SE,sv;q=0.9,en-US;q=0.8,en;q=0.7",
         "Referer": "https://www.pokernews.com/myplayers/settings/",
+        "Cookie": cookie_string,
         "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "same-origin",
+        "DNT": "1",
     }
-    resp = requests.get(API_URL, cookies=cookies, headers=headers, timeout=15)
+    resp = requests.get(API_URL, headers=headers, timeout=15)
     resp.raise_for_status()
     return resp.json()
 
@@ -49,13 +48,12 @@ def init_firebase():
     return firestore.client()
 
 def main():
-    xpid = os.environ.get("POKERNEWS_XPID")
-    xpkey = os.environ.get("POKERNEWS_XPKEY")
-    if not xpid or not xpkey:
-        raise RuntimeError("POKERNEWS_XPID and POKERNEWS_XPKEY must be set")
+    cookie_string = os.environ.get("POKERNEWS_COOKIES")
+    if not cookie_string:
+        raise RuntimeError("POKERNEWS_COOKIES must be set")
 
     print("Fetching PokerNews my-stable...")
-    players_raw = fetch_my_stable(xpid, xpkey)
+    players_raw = fetch_my_stable(cookie_string)
     print(f"Got {len(players_raw)} players from PokerNews")
 
     results = []
