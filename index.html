@@ -331,73 +331,92 @@
       text-transform: uppercase;
     }
 
-    /* ── PLAYER SCORES LIST ── */
-    #player-scores {
-      display: flex;
-      flex-direction: column;
-      border-top: 1px solid var(--border);
+    /* ── EVENT LOG ── */
+    .event-date-group { margin-bottom: 2px; }
+
+    .event-date-header {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--muted2);
+      background: #0f0f0f;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      padding: 8px 20px;
     }
 
-    .player-score-row {
+    .event-row {
       display: flex;
       align-items: center;
-      gap: 0;
-      border-bottom: 1px solid var(--border);
-      transition: background 0.15s;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-bottom: none;
+      transition: background 0.1s;
     }
 
-    .player-score-row:hover { background: var(--card); }
+    .event-row:last-child { border-bottom: 1px solid var(--border); }
+    .event-row:hover { background: var(--card); }
 
-    .ps-rank {
-      width: 44px;
-      padding: 12px 0 12px 20px;
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.8rem;
-      font-weight: 400;
-      color: var(--muted);
-      flex-shrink: 0;
-    }
-
-    .ps-name {
+    .ev-player {
       flex: 1;
-      padding: 12px 10px;
+      padding: 11px 12px 11px 20px;
       font-size: 0.9rem;
       font-weight: 300;
       color: #bbb;
       font-style: italic;
     }
 
-    .ps-owners {
+    .ev-owners {
       display: flex;
       gap: 4px;
-      padding: 12px 10px;
+      padding: 11px 8px;
       flex-wrap: wrap;
-      justify-content: flex-end;
     }
 
-    .ps-owner-tag {
+    .ev-owner-tag {
       font-family: 'Oswald', sans-serif;
-      font-size: 0.55rem;
+      font-size: 0.52rem;
       font-weight: 400;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       color: var(--muted);
       border: 1px solid var(--border2);
-      padding: 2px 6px;
-      border-radius: 2px;
+      padding: 2px 5px;
     }
 
-    .ps-pts {
-      padding: 12px 20px 12px 8px;
+    .ev-event {
+      padding: 11px 12px;
       font-family: 'Oswald', sans-serif;
-      font-size: 1.2rem;
+      font-size: 0.72rem;
+      font-weight: 300;
+      letter-spacing: 1px;
+      color: var(--muted);
+      text-align: right;
+      min-width: 80px;
+    }
+
+    .ev-pts {
+      padding: 11px 20px 11px 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
       font-weight: 600;
       color: var(--gold);
       text-align: right;
-      min-width: 56px;
+      min-width: 52px;
     }
 
-    .ps-pts.zero { color: #333; font-size: 0.9rem; }
+    .ev-empty {
+      padding: 24px 20px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      color: #333;
+      text-transform: uppercase;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
 
     /* ── MOBILE ── */
     @media (max-width: 640px) {
@@ -446,8 +465,8 @@
   <div class="section-label" style="margin-top:48px">Lag</div>
   <div id="teams"></div>
 
-  <div class="section-label" style="margin-top:48px">Spelare</div>
-  <div id="player-scores"></div>
+  <div class="section-label" style="margin-top:48px">Poänghistorik</div>
+  <div id="event-log"></div>
 
 </main>
 
@@ -539,8 +558,15 @@
     }).join('');
   }
 
-  function renderPlayerScores(teams, scores) {
-    // Build a map: playerName -> [ownerNames]
+  function renderEventLog(teams, events) {
+    const el = document.getElementById('event-log');
+
+    if (!events || events.length === 0) {
+      el.innerHTML = '<div class="ev-empty">Inga poäng registrerade ännu</div>';
+      return;
+    }
+
+    // Build ownerMap: playerName -> [owners]
     const ownerMap = {};
     for (const team of teams) {
       for (const p of team.players) {
@@ -549,22 +575,32 @@
       }
     }
 
-    // Collect unique players across all teams
-    const allPlayers = [...new Set(teams.flatMap(t => t.players))];
+    // Group events by date (order preserved from JSON = newest first)
+    const byDate = {};
+    const dateOrder = [];
+    for (const ev of events) {
+      if (!byDate[ev.date]) {
+        byDate[ev.date] = [];
+        dateOrder.push(ev.date);
+      }
+      byDate[ev.date].push(ev);
+    }
 
-    // Sort by score descending, then name
-    const sorted = allPlayers
-      .map(p => ({ name: p, pts: scores[p] || 0, owners: ownerMap[p] }))
-      .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+    el.innerHTML = dateOrder.map(date => {
+      const rows = byDate[date].map(ev => {
+        const owners = ownerMap[ev.player] || [];
+        const tags = owners.map(o => `<span class="ev-owner-tag">${o}</span>`).join('');
+        return `<div class="event-row">
+          <div class="ev-player">${ev.player}</div>
+          <div class="ev-owners">${tags}</div>
+          <div class="ev-event">${ev.event}</div>
+          <div class="ev-pts">+${ev.points}</div>
+        </div>`;
+      }).join('');
 
-    const el = document.getElementById('player-scores');
-    el.innerHTML = sorted.map((p, i) => {
-      const tags = p.owners.map(o => `<span class="ps-owner-tag">${o}</span>`).join('');
-      return `<div class="player-score-row">
-        <div class="ps-rank">${i + 1}</div>
-        <div class="ps-name">${p.name}</div>
-        <div class="ps-owners">${tags}</div>
-        <div class="ps-pts${p.pts === 0 ? ' zero' : ''}">${p.pts}</div>
+      return `<div class="event-date-group">
+        <div class="event-date-header">${date}</div>
+        ${rows}
       </div>`;
     }).join('');
   }
@@ -577,7 +613,7 @@
 
       renderStandings(TEAMS, scores);
       renderTeams(TEAMS, scores);
-      renderPlayerScores(TEAMS, scores);
+      renderEventLog(TEAMS, data.events || []);
 
       const dot = document.getElementById('status-dot');
       const upd = document.getElementById('updated');
