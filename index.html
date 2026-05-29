@@ -622,10 +622,10 @@
 
     const el = document.getElementById('standings');
     el.innerHTML = sorted.map((t, i) => `
-      <div class="standing-row rank-${i + 1}" style="border-left: 3px solid var(--team-${t.index})">
+      <div class="standing-row rank-${i + 1}">
         <div class="rank-col">${i + 1}</div>
         <div class="name-col">${t.owner}</div>
-        <div class="pts-col" style="color:var(--team-${t.index})">${t.total}<small>pts</small></div>
+        <div class="pts-col">${t.total}<small>pts</small></div>
       </div>`
     ).join('');
   }
