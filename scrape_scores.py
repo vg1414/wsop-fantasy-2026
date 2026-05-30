@@ -96,13 +96,6 @@ def scrape_events(player_lookup):
                 except (ValueError, IndexError):
                     continue
 
-                # Try to find placement (e.g. "1st", "2nd", "6th") — store as plain int
-                placement = 0
-                full_text = td.get_text(" ", strip=True)
-                place_match = re.search(r'\b(\d+)(?:st|nd|rd|th)\b', full_text)
-                if place_match:
-                    placement = int(place_match.group(1))
-
                 name_norm = normalize(player_name)
                 if name_norm in player_lookup:
                     canonical_name = player_lookup[name_norm]
@@ -116,7 +109,7 @@ def scrape_events(player_lookup):
                         "event": event_name,
                         "event_url": event_url,
                         "points": pts,
-                        "placement": placement
+                        "placement": 0
                     })
 
     except Exception as e:
@@ -124,8 +117,9 @@ def scrape_events(player_lookup):
 
     return events
 
-def scrape_entrants_cache(event_urls):
-    """Fetch entrants count for each unique event URL. Returns dict {url: entrants}."""
+def scrape_event_details(event_urls):
+    """For each unique event URL, fetch entrants and per-player placement.
+    Returns dict {url: {"entrants": int, "placements": {player_name: int}}}"""
     cache = {}
     for url in set(event_urls):
         if not url:
@@ -133,13 +127,30 @@ def scrape_entrants_cache(event_urls):
         try:
             res = requests.get(url, headers=HEADERS, timeout=15, verify=False)
             soup = BeautifulSoup(res.text, "html.parser")
+
             inp = soup.find("input", {"id": "event-entrants"})
             entrants = int(inp["value"]) if inp and inp.get("value") else 0
-            cache[url] = entrants
-            print(f"  {url} -> {entrants} entrants")
+
+            placements = {}
+            for table in soup.find_all("table"):
+                headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
+                if "place" in headers and "player" in headers:
+                    place_i = headers.index("place")
+                    player_i = headers.index("player")
+                    for row in table.find_all("tr"):
+                        cells = row.find_all("td")
+                        if len(cells) > max(place_i, player_i):
+                            place = cells[place_i].get_text(strip=True)
+                            player = cells[player_i].get_text(strip=True)
+                            if place.isdigit():
+                                placements[normalize(player)] = int(place)
+                    break
+
+            cache[url] = {"entrants": entrants, "placements": placements}
+            print(f"  {url} -> {entrants} entrants, {len(placements)} placements")
         except Exception as e:
-            print(f"  Could not fetch entrants for {url}: {e}")
-            cache[url] = 0
+            print(f"  Could not fetch event details for {url}: {e}")
+            cache[url] = {"entrants": 0, "placements": {}}
     return cache
 
 def build_player_urls(player_lookup):
@@ -170,11 +181,13 @@ def main():
     events = scrape_events(player_lookup)
     player_urls = build_player_urls(player_lookup)
 
-    # Fetch entrants count per unique event URL
-    print("Fetching entrants per event...")
-    entrants_cache = scrape_entrants_cache([e["event_url"] for e in events])
+    # Fetch entrants + placements per unique event URL
+    print("Fetching entrants and placements per event...")
+    event_details = scrape_event_details([e["event_url"] for e in events])
     for ev in events:
-        ev["entrants"] = entrants_cache.get(ev["event_url"], 0)
+        details = event_details.get(ev["event_url"], {})
+        ev["entrants"] = details.get("entrants", 0)
+        ev["placement"] = details.get("placements", {}).get(normalize(ev["player"]), 0)
 
     # Fallback: if totals page missed someone, sum from events
     for entry in events:
