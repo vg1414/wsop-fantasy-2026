@@ -3,9 +3,20 @@ from bs4 import BeautifulSoup
 import json
 import os
 import re
+import sys
 from datetime import datetime, timezone
+import certifi
+
+# Fix SSL for both requests and gRPC (Firebase) on Windows
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
+os.environ.setdefault("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", certifi.where())
+
 import firebase_admin
 from firebase_admin import credentials, firestore
+
+# Fix Windows terminal encoding for special characters
+sys.stdout.reconfigure(encoding="utf-8")
 
 PLAYERS = [
     "David Peters", "Josh Arieh", "Viktor Blom", "Ryutaro Suzuki",
@@ -34,7 +45,7 @@ def player_slug(name):
 def scrape_totals(player_lookup):
     scores = {p: 0 for p in PLAYERS}
     try:
-        res = requests.get(f"{BASE_URL}/players/", headers=HEADERS, timeout=15)
+        res = requests.get(f"{BASE_URL}/players/", headers=HEADERS, timeout=15, verify=False)
         soup = BeautifulSoup(res.text, "html.parser")
         for row in soup.find_all("tr"):
             cells = row.find_all("td")
@@ -52,7 +63,7 @@ def scrape_totals(player_lookup):
 def scrape_events(player_lookup):
     events = []
     try:
-        res = requests.get(f"{BASE_URL}/all-scores/", headers=HEADERS, timeout=15)
+        res = requests.get(f"{BASE_URL}/all-scores/", headers=HEADERS, timeout=15, verify=False)
         soup = BeautifulSoup(res.text, "html.parser")
 
         for table in soup.find_all("table"):
@@ -85,12 +96,12 @@ def scrape_events(player_lookup):
                 except (ValueError, IndexError):
                     continue
 
-                # Try to find placement (e.g. "1st", "2nd", "3rd", "4th")
-                placement = ""
+                # Try to find placement (e.g. "1st", "2nd", "6th") — store as plain int
+                placement = 0
                 full_text = td.get_text(" ", strip=True)
-                place_match = re.search(r'\b(\d+(?:st|nd|rd|th))\b', full_text)
+                place_match = re.search(r'\b(\d+)(?:st|nd|rd|th)\b', full_text)
                 if place_match:
-                    placement = place_match.group(1)
+                    placement = int(place_match.group(1))
 
                 name_norm = normalize(player_name)
                 if name_norm in player_lookup:
@@ -113,6 +124,24 @@ def scrape_events(player_lookup):
 
     return events
 
+def scrape_entrants_cache(event_urls):
+    """Fetch entrants count for each unique event URL. Returns dict {url: entrants}."""
+    cache = {}
+    for url in set(event_urls):
+        if not url:
+            continue
+        try:
+            res = requests.get(url, headers=HEADERS, timeout=15, verify=False)
+            soup = BeautifulSoup(res.text, "html.parser")
+            inp = soup.find("input", {"id": "event-entrants"})
+            entrants = int(inp["value"]) if inp and inp.get("value") else 0
+            cache[url] = entrants
+            print(f"  {url} -> {entrants} entrants")
+        except Exception as e:
+            print(f"  Could not fetch entrants for {url}: {e}")
+            cache[url] = 0
+    return cache
+
 def build_player_urls(player_lookup):
     """Build profile URLs for all players based on slug pattern."""
     urls = {}
@@ -123,10 +152,14 @@ def build_player_urls(player_lookup):
 
 def init_firebase():
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
-    if not sa_json:
-        raise RuntimeError("FIREBASE_SERVICE_ACCOUNT environment variable is not set")
-    sa_dict = json.loads(sa_json)
-    cred = credentials.Certificate(sa_dict)
+    if sa_json:
+        sa_dict = json.loads(sa_json)
+        cred = credentials.Certificate(sa_dict)
+    else:
+        key_path = r"C:\Users\David\.firebase-keys\wsop-54e15-firebase-adminsdk.json"
+        if not os.path.exists(key_path):
+            raise RuntimeError("Ingen Firebase-nyckel hittades (varken env-variabel eller lokal fil)")
+        cred = credentials.Certificate(key_path)
     firebase_admin.initialize_app(cred)
     return firestore.client()
 
@@ -136,6 +169,12 @@ def main():
     scores = scrape_totals(player_lookup)
     events = scrape_events(player_lookup)
     player_urls = build_player_urls(player_lookup)
+
+    # Fetch entrants count per unique event URL
+    print("Fetching entrants per event...")
+    entrants_cache = scrape_entrants_cache([e["event_url"] for e in events])
+    for ev in events:
+        ev["entrants"] = entrants_cache.get(ev["event_url"], 0)
 
     # Fallback: if totals page missed someone, sum from events
     for entry in events:

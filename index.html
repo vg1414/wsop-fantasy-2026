@@ -399,14 +399,15 @@
     .event-link:hover { color: var(--gold-light); }
 
     .ev-placement {
-      padding: 11px 4px;
+      padding: 11px 8px;
       font-family: 'Oswald', sans-serif;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       font-weight: 400;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       color: var(--muted);
       text-align: right;
-      min-width: 36px;
+      white-space: nowrap;
+      min-width: 70px;
     }
 
     .player-dots {
@@ -743,7 +744,7 @@
 
       /* Event log */
       .ev-event { display: none; }
-      .ev-placement { display: none; }
+      .ev-placement { font-size: 0.63rem; min-width: 56px; }
 
       /* Live — single column layout, name + event stacked */
       .live-row {
@@ -830,6 +831,7 @@
 
   <div id="tab-history" style="display:none">
     <div class="section-label">Poänghistorik</div>
+    <div id="history-legend" class="live-legend"></div>
     <div id="event-log"></div>
   </div>
 
@@ -912,8 +914,8 @@
     return map;
   }
 
-  function renderLiveLegend(teams) {
-    const el = document.getElementById('live-legend');
+  function renderLegend(elementId, teams) {
+    const el = document.getElementById(elementId);
     if (!el) return;
     el.innerHTML = teams.map((t, i) =>
       `<div class="live-legend-item">
@@ -923,7 +925,8 @@
     ).join('');
   }
 
-  renderLiveLegend(TEAMS);
+  renderLegend('live-legend', TEAMS);
+  renderLegend('history-legend', TEAMS);
 
   function playerDots(playerName, ownerMap) {
     const entries = ownerMap[playerName] || [];
@@ -1020,8 +1023,8 @@
           ? `<a class="event-link" href="${eventUrl}">${ev.event}</a>`
           : ev.event;
 
-        const placementEl = ev.placement
-          ? `<span class="ev-placement">${ev.placement}</span>`
+        const placementEl = (ev.placement || ev.entrants)
+          ? `<span class="ev-placement">${[ev.placement || '', ev.entrants || ''].filter(Boolean).join(' / ')}</span>`
           : '';
 
         return `<div class="event-row">
