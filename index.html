@@ -1360,7 +1360,15 @@
     const topPts = [...withPts].sort((a, b) => b.pts - a.pts).filter(p => p.pts > 0).slice(0, 3);
     const topValue = [...withPts].filter(p => p.pts > 0 && p.salary > 0)
       .sort((a, b) => (b.pts / b.salary) - (a.pts / a.salary)).slice(0, 3);
-    const topSalary = [...withPts].sort((a, b) => b.salary - a.salary).slice(0, 3);
+    // Flest ITM: count events with points per player
+    const itmCount = {};
+    if (currentScoresData && currentScoresData.events) {
+      for (const ev of currentScoresData.events) {
+        if (ev.points > 0) itmCount[ev.player] = (itmCount[ev.player] || 0) + 1;
+      }
+    }
+    const topItm = allPlayers.map(p => ({ name: p, itm: itmCount[p] || 0, salary: SALARY[p] || 0 }))
+      .filter(p => p.itm > 0).sort((a, b) => b.itm - a.itm).slice(0, 3);
 
     const statRow = (p, extra) => {
       const url = playerUrls && playerUrls[p.name];
@@ -1382,6 +1390,10 @@
       <div class="stats-section">
         <div class="stats-label">Bäst värde för pengarna</div>
         <ul class="stats-list">${topValue.map(p => statRow(p, (p.pts/p.salary).toFixed(1) + 'p/$')).join('')}</ul>
+      </div>
+      <div class="stats-section">
+        <div class="stats-label">Flest ITM</div>
+        <ul class="stats-list">${topItm.map(p => statRow(p, p.itm + 'x')).join('')}</ul>
       </div>
     </div>`;
   }
