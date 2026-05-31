@@ -230,7 +230,7 @@ def main():
 
     # Fetch event statuses (completed / live / upcoming)
     print("Fetching event statuses...")
-    event_statuses = scrape_event_statuses()
+    event_statuses = {str(k): v for k, v in scrape_event_statuses().items()}
 
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
