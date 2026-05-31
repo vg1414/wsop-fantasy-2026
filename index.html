@@ -1463,8 +1463,12 @@
         const dots = playerDots(p.name, ownerMap);
         const salary = SALARY[p.name];
         const salaryEl = salary != null ? `<span class="live-salary">(${salary})</span>` : '';
+        const livePlayerUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[p.name];
+        const liveNameEl = livePlayerUrl
+          ? `<a class="player-link" href="${livePlayerUrl}">${p.name}${salaryEl}</a>${dots}`
+          : `${p.name}${salaryEl}${dots}`;
         return `<div class="live-row">
-          <div class="live-player">${p.name}${salaryEl}${dots}</div>
+          <div class="live-player">${liveNameEl}</div>
           <span class="live-dot ${dotCls}"></span>
           <div class="live-event">${eventEl}</div>
           <div class="live-place">${placeEl}</div>
@@ -1635,9 +1639,13 @@
           `<span class="sch-team-dot" data-team="${e.index}" title="${e.owner}"></span>`
         ).join('');
         const salaryLive = SALARY[lp.name] != null ? ` <span class="sch-salary">(${SALARY[lp.name]})</span>` : '';
+        const schLiveUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[lp.name];
+        const schLiveNameEl = schLiveUrl
+          ? `<a class="player-link" href="${schLiveUrl}">${lp.name}${salaryLive}</a>`
+          : `${lp.name}${salaryLive}`;
         bodyHtml += `<div class="sch-player-row live-now">
           <span class="sch-live-dot"></span>
-          <span class="sch-player-name">${lp.name}${salaryLive}</span>
+          <span class="sch-player-name">${schLiveNameEl}</span>
           <span style="display:flex;gap:3px;margin-left:6px">${dots}</span>
           <span class="sch-player-spacer"></span>
           <span class="sch-player-place">${lp.place ? 'Plats ' + lp.place + (lp.total_players ? '/' + lp.total_players : '') : ''}</span>
@@ -1653,8 +1661,12 @@
           ? (row.placement ? row.placement + (row.entrants ? '/' + row.entrants : '') : '')
           : '';
         const salaryCashed = SALARY[row.player] != null ? ` <span class="sch-salary">(${SALARY[row.player]})</span>` : '';
+        const schCashedUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[row.player];
+        const schCashedNameEl = schCashedUrl
+          ? `<a class="player-link" href="${schCashedUrl}">${row.player}${salaryCashed}</a>`
+          : `${row.player}${salaryCashed}`;
         bodyHtml += `<div class="sch-player-row">
-          <span class="sch-player-name">${row.player}${salaryCashed}</span>
+          <span class="sch-player-name">${schCashedNameEl}</span>
           <span style="display:flex;gap:3px;margin-left:6px">${dots}</span>
           <span class="sch-player-spacer"></span>
           <span class="sch-player-place">${placement}</span>
@@ -1667,7 +1679,7 @@
         ? `${new Date(ev.start+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'long'})} – ${new Date(ev.end+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'long'})}`
         : new Date(ev.start+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'long'});
 
-      const infoRow = `<a class="sch-info-row" href="${eventUrl(ev)}" target="_blank" rel="noopener">
+      const infoRow = `<a class="sch-info-row" href="${eventUrl(ev)}">
         <span class="sch-info-status ${finished ? 'finished' : ongoing ? 'ongoing' : 'upcoming'}">${statusLabel}</span>
         <span class="sch-info-dates">${endLabel}</span>
         <span class="sch-info-buyin">${ev.buyin}</span>
