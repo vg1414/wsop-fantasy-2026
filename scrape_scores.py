@@ -153,6 +153,39 @@ def scrape_event_details(event_urls):
             cache[url] = {"entrants": 0, "placements": {}}
     return cache
 
+def scrape_event_statuses():
+    """Fetch event statuses from 25kfantasy.com/events.
+    Returns dict {event_num: status} where status is one of:
+    'completed', 'live', 'upcoming'
+    """
+    statuses = {}
+    try:
+        res = requests.get(f"{BASE_URL}/events", headers=HEADERS, timeout=15, verify=False)
+        soup = BeautifulSoup(res.text, "html.parser")
+        for row in soup.find_all("tr"):
+            cells = row.find_all("td")
+            if len(cells) < 2:
+                continue
+            row_text = row.get_text(" ", strip=True)
+            m = re.search(r'Event\s*#(\d+)', row_text, re.IGNORECASE)
+            if not m:
+                continue
+            num = int(m.group(1))
+            # Status is in the last cell
+            status_text = cells[-1].get_text(strip=True).lower()
+            if "event completed" in status_text:
+                statuses[num] = "completed"
+            elif "tracking live" in status_text:
+                statuses[num] = "live"
+            elif "not yet tracking" in status_text:
+                statuses[num] = "upcoming"
+        print(f"Event statuses: {len(statuses)} found, "
+              f"{sum(1 for s in statuses.values() if s == 'completed')} completed, "
+              f"{sum(1 for s in statuses.values() if s == 'live')} live")
+    except Exception as e:
+        print(f"Error scraping event statuses: {e}")
+    return statuses
+
 def build_player_urls(player_lookup):
     """Build profile URLs for all players based on slug pattern."""
     urls = {}
@@ -195,6 +228,10 @@ def main():
         if scores.get(p, 0) == 0 and entry["points"] > 0:
             scores[p] = scores.get(p, 0) + entry["points"]
 
+    # Fetch event statuses (completed / live / upcoming)
+    print("Fetching event statuses...")
+    event_statuses = scrape_event_statuses()
+
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     db = init_firebase()
@@ -203,7 +240,8 @@ def main():
         "updated": updated,
         "players": scores,
         "player_urls": player_urls,
-        "events": events
+        "events": events,
+        "event_statuses": event_statuses,
     })
 
     print(f"Wrote to Firestore. Updated: {updated}")
