@@ -843,6 +843,7 @@
     .sch-player-row:last-child { border-bottom: none; }
 
     .sch-player-name { color: var(--muted2); }
+    .sch-salary { font-style: italic; font-size: 0.75em; color: var(--muted); }
     .sch-player-spacer { flex: 1; }
     .sch-player-pts {
       font-family: 'Oswald', sans-serif;
@@ -1634,9 +1635,10 @@
         const dots = entries.map(e =>
           `<span class="sch-team-dot" data-team="${e.index}" title="${e.owner}"></span>`
         ).join('');
+        const salaryLive = SALARY[lp.name] != null ? ` <span class="sch-salary">(${SALARY[lp.name]})</span>` : '';
         bodyHtml += `<div class="sch-player-row live-now">
           <span class="sch-live-dot"></span>
-          <span class="sch-player-name">${lp.name}</span>
+          <span class="sch-player-name">${lp.name}${salaryLive}</span>
           <span style="display:flex;gap:3px;margin-left:6px">${dots}</span>
           <span class="sch-player-spacer"></span>
           <span class="sch-player-place">${lp.place ? 'Plats ' + lp.place + (lp.total_players ? '/' + lp.total_players : '') : ''}</span>
@@ -1651,8 +1653,9 @@
         const placement = (row.placement || row.entrants)
           ? (row.placement ? row.placement + (row.entrants ? '/' + row.entrants : '') : '')
           : '';
+        const salaryCashed = SALARY[row.player] != null ? ` <span class="sch-salary">(${SALARY[row.player]})</span>` : '';
         bodyHtml += `<div class="sch-player-row">
-          <span class="sch-player-name">${row.player}</span>
+          <span class="sch-player-name">${row.player}${salaryCashed}</span>
           <span style="display:flex;gap:3px;margin-left:6px">${dots}</span>
           <span class="sch-player-spacer"></span>
           <span class="sch-player-place">${placement}</span>
