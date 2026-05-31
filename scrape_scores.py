@@ -47,13 +47,21 @@ def scrape_totals(player_lookup):
     try:
         res = requests.get(f"{BASE_URL}/players/", headers=HEADERS, timeout=15, verify=False)
         soup = BeautifulSoup(res.text, "html.parser")
-        for row in soup.find_all("tr"):
-            cells = row.find_all("td")
-            if len(cells) >= 2:
-                name_norm = normalize(cells[0].get_text(strip=True))
+        # Find the table and detect column indices from headers
+        for table in soup.find_all("table"):
+            headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
+            if "player" not in headers or "score" not in headers:
+                continue
+            player_i = headers.index("player")
+            score_i = headers.index("score")
+            for row in table.find_all("tr"):
+                cells = row.find_all("td")
+                if len(cells) <= max(player_i, score_i):
+                    continue
+                name_norm = normalize(cells[player_i].get_text(strip=True))
                 if name_norm in player_lookup:
                     try:
-                        scores[player_lookup[name_norm]] = int(cells[1].get_text(strip=True))
+                        scores[player_lookup[name_norm]] = int(cells[score_i].get_text(strip=True))
                     except ValueError:
                         pass
     except Exception as e:
