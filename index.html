@@ -697,6 +697,238 @@
       border: 1px solid var(--border);
     }
 
+    /* ── SCHEMA ── */
+    .schedule-event {
+      border: 1px solid var(--border);
+      border-bottom: none;
+      overflow: hidden;
+    }
+    .schedule-event:last-child { border-bottom: 1px solid var(--border); }
+
+    .schedule-event-header {
+      display: grid;
+      grid-template-columns: 16px 72px 1fr 76px 90px auto 16px;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 16px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.1s;
+      position: relative;
+    }
+    @media (max-width: 640px) {
+      .schedule-event-header {
+        grid-template-columns: 16px 60px 1fr 64px auto 14px;
+      }
+      .sch-dates { display: none; }
+    }
+    .schedule-event-header:hover { background: rgba(255,255,255,0.03); }
+
+    .schedule-event.active > .schedule-event-header {
+      background: rgba(201,152,43,0.08);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .schedule-event.finished > .schedule-event-header {
+      opacity: 0.52;
+    }
+    .schedule-event.finished.active > .schedule-event-header {
+      opacity: 0.75;
+    }
+
+    .sch-live-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+    }
+
+    .sch-num {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 400;
+      letter-spacing: 2px;
+      color: var(--white);
+      white-space: nowrap;
+    }
+
+    .sch-name {
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 0.88rem;
+      font-weight: 300;
+      color: var(--white);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+    .schedule-event.finished .sch-name { color: var(--muted2); }
+    .schedule-event.finished .sch-num  { color: var(--muted2); }
+
+    .sch-buyin {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 1px;
+      color: var(--muted);
+      text-align: right;
+      justify-self: end;
+    }
+
+    .sch-dates {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 1px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .sch-indicators {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* green blinking dot for live events */
+    .sch-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+      animation: sch-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes sch-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.7); }
+    }
+
+    /* team dots in schedule */
+    .sch-team-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .sch-team-dot[data-team="0"] { background: var(--team-0); }
+    .sch-team-dot[data-team="1"] { background: var(--team-1); }
+    .sch-team-dot[data-team="2"] { background: var(--team-2); }
+    .sch-team-dot[data-team="3"] { background: var(--team-3); }
+    .sch-team-dot[data-team="4"] { background: var(--team-4); }
+
+    /* chevron */
+    .sch-chevron {
+      font-size: 0.6rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      transition: transform 0.2s;
+      margin-left: 4px;
+    }
+    .schedule-event.active .sch-chevron { transform: rotate(180deg); }
+
+    /* expanded body */
+    .schedule-event-body {
+      display: none;
+      background: #0d0d0d;
+    }
+    .schedule-event.active .schedule-event-body { display: block; }
+
+    .sch-player-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px 8px 60px;
+      border-bottom: 1px solid #1a1a1a;
+      font-size: 0.82rem;
+    }
+    .sch-player-row:last-child { border-bottom: none; }
+
+    .sch-player-name { color: var(--muted2); }
+    .sch-player-spacer { flex: 1; }
+    .sch-player-pts {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.78rem;
+      color: var(--gold);
+      min-width: 40px;
+      text-align: right;
+    }
+    .sch-player-place {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.72rem;
+      color: var(--muted);
+      min-width: 60px;
+      text-align: right;
+    }
+
+    /* currently-playing row highlight */
+    .sch-player-row.live-now .sch-player-name { color: var(--white); }
+    .sch-player-row.live-now .sch-live-dot { margin-left: auto; flex-shrink: 0; }
+
+    /* gold glow for ongoing events */
+    .schedule-event.ongoing > .schedule-event-header .sch-name {
+      color: var(--gold-light);
+    }
+    .schedule-event.ongoing > .schedule-event-header .sch-num {
+      color: var(--gold-dim);
+    }
+
+    .sch-empty {
+      padding: 10px 16px 10px 60px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .sch-info-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 9px 16px;
+      background: #131313;
+      border-bottom: 1px solid #1e1e1e;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .sch-info-row:hover { background: #1a1a1a; }
+
+    .sch-info-status {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .sch-info-status.ongoing  { background: rgba(201,152,43,0.18); color: var(--gold-light); }
+    .sch-info-status.finished { background: rgba(255,255,255,0.05); color: var(--muted); }
+    .sch-info-status.upcoming { background: rgba(255,255,255,0.05); color: var(--muted2); }
+
+    .sch-info-dates {
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: var(--muted2);
+      flex: 1;
+    }
+
+    .sch-info-buyin {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+
+    .sch-info-link {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 2px;
+      color: var(--gold-dim);
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .sch-info-row:hover .sch-info-link { color: var(--gold); }
+
     /* ── MOBILE ── */
     @media (max-width: 640px) {
       /* Layout */
@@ -815,6 +1047,7 @@
 
 <nav class="tab-bar">
   <button class="tab active" data-tab="overview">Översikt</button>
+  <button class="tab" data-tab="schedule">Schema</button>
   <button class="tab" data-tab="history">Poänghistorik</button>
   <button class="tab" data-tab="live">Live</button>
 </nav>
@@ -839,6 +1072,12 @@
     <div class="section-label">Live · Just nu</div>
     <div id="live-legend" class="live-legend"></div>
     <div id="live-log"></div>
+  </div>
+
+  <div id="tab-schedule" style="display:none">
+    <div class="section-label">Schema · 100 Events</div>
+    <div id="schedule-legend" class="live-legend"></div>
+    <div id="schedule-log"></div>
   </div>
 
 </main>
@@ -897,6 +1136,109 @@
     }
   ];
 
+  const WSOP_EVENTS = [
+    {n:1,  name:"Mini Mystery Millions",                               buyin:"$550",     start:"2026-05-26", end:"2026-05-30"},
+    {n:2,  name:"8-Handed No-Limit Hold'em",                          buyin:"$5,000",   start:"2026-05-26", end:"2026-05-29"},
+    {n:3,  name:"Industry Employees No-Limit Hold'em",                buyin:"$500",     start:"2026-05-27", end:"2026-05-28"},
+    {n:4,  name:"Omaha Hi-Lo 8 or Better",                            buyin:"$1,500",   start:"2026-05-27", end:"2026-05-29"},
+    {n:5,  name:"Pot-Limit Omaha",                                    buyin:"$5,000",   start:"2026-05-28", end:"2026-05-30"},
+    {n:6,  name:"Seven Card Stud",                                     buyin:"$1,500",   start:"2026-05-28", end:"2026-05-30"},
+    {n:7,  name:"Heads Up No-Limit Hold'em Championship",             buyin:"$25,000",  start:"2026-05-29", end:"2026-05-30"},
+    {n:8,  name:"Badugi",                                              buyin:"$1,500",   start:"2026-05-29", end:"2026-05-31"},
+    {n:9,  name:"Omaha Hi-Lo 8 or Better Championship",               buyin:"$10,000",  start:"2026-05-30", end:"2026-06-01"},
+    {n:10, name:"Deepstack No-Limit Hold'em",                         buyin:"$600",     start:"2026-05-31", end:"2026-06-02"},
+    {n:11, name:"GGMillion$ High Roller No-Limit Hold'em",            buyin:"$10,000",  start:"2026-05-31", end:"2026-06-01"},
+    {n:12, name:"No-Limit 2-7 Lowball Draw",                          buyin:"$1,500",   start:"2026-05-31", end:"2026-06-02"},
+    {n:13, name:"6-Handed No-Limit Hold'em",                          buyin:"$1,500",   start:"2026-06-01", end:"2026-06-03"},
+    {n:14, name:"Mixed: PLO Hi-Lo / Omaha Hi-Lo / Big O",             buyin:"$1,500",   start:"2026-06-01", end:"2026-06-03"},
+    {n:15, name:"Deepstack Pot-Limit Omaha",                          buyin:"$600",     start:"2026-06-02", end:"2026-06-03"},
+    {n:16, name:"U.S. Circuit Championship No-Limit Hold'em",         buyin:"$1,700",   start:"2026-06-02", end:"2026-06-04"},
+    {n:17, name:"No-Limit 2-7 Lowball Draw Championship",             buyin:"$10,000",  start:"2026-06-02", end:"2026-06-04"},
+    {n:18, name:"Monster Stack No-Limit Hold'em",                     buyin:"$1,500",   start:"2026-06-03", end:"2026-06-10"},
+    {n:19, name:"High Roller No-Limit Hold'em",                       buyin:"$25,000",  start:"2026-06-03", end:"2026-06-07"},
+    {n:20, name:"Dealers Choice",                                      buyin:"$1,500",   start:"2026-06-03", end:"2026-06-05"},
+    {n:21, name:"Pot-Limit Omaha Hi-Lo 8 or Better",                  buyin:"$1,500",   start:"2026-06-04", end:"2026-06-06"},
+    {n:22, name:"Big O",                                               buyin:"$1,500",   start:"2026-06-05", end:"2026-06-08"},
+    {n:23, name:"Seven Card Stud Championship",                        buyin:"$10,000",  start:"2026-06-05", end:"2026-06-07"},
+    {n:24, name:"High Roller Six-Handed No-Limit Hold'em",            buyin:"$25,000",  start:"2026-06-06", end:"2026-06-08"},
+    {n:25, name:"Freezeout No-Limit Hold'em",                         buyin:"$500",     start:"2026-06-07", end:"2026-06-08"},
+    {n:26, name:"No-Limit Hold'em",                                   buyin:"$2,000",   start:"2026-06-07", end:"2026-06-09"},
+    {n:27, name:"Dealers Choice Championship",                         buyin:"$10,000",  start:"2026-06-07", end:"2026-06-09"},
+    {n:28, name:"Deepstack Mixed NLH/PLO",                            buyin:"$600",     start:"2026-06-08", end:"2026-06-09"},
+    {n:29, name:"High Roller No-Limit Hold'em",                       buyin:"$50,000",  start:"2026-06-08", end:"2026-06-10"},
+    {n:30, name:"Limit Hold'em 7-Handed",                             buyin:"$1,500",   start:"2026-06-08", end:"2026-06-10"},
+    {n:31, name:"Super Turbo Bounty No-Limit Hold'em",                buyin:"$1,500",   start:"2026-06-09", end:"2026-06-09"},
+    {n:32, name:"No-Limit Hold'em",                                   buyin:"$3,000",   start:"2026-06-09", end:"2026-06-12"},
+    {n:33, name:"Pot-Limit Omaha Hi-Lo 8 or Better Championship",     buyin:"$10,000",  start:"2026-06-09", end:"2026-06-12"},
+    {n:34, name:"COLOSSUS",                                            buyin:"$500",     start:"2026-06-10", end:"2026-06-16"},
+    {n:35, name:"Pot-Limit Omaha",                                    buyin:"$1,500",   start:"2026-06-10", end:"2026-06-13"},
+    {n:36, name:"High Roller No-Limit Hold'em",                       buyin:"$100,000", start:"2026-06-10", end:"2026-06-12"},
+    {n:37, name:"H.O.R.S.E.",                                         buyin:"$1,500",   start:"2026-06-10", end:"2026-06-12"},
+    {n:38, name:"Limit Hold'em Championship 7-Handed",                buyin:"$10,000",  start:"2026-06-11", end:"2026-06-13"},
+    {n:39, name:"Seniors High Roller No-Limit Hold'em",               buyin:"$5,000",   start:"2026-06-12", end:"2026-06-15"},
+    {n:40, name:"Razz",                                                buyin:"$1,500",   start:"2026-06-12", end:"2026-06-14"},
+    {n:41, name:"Super High Roller No-Limit Hold'em",                 buyin:"$250,000", start:"2026-06-13", end:"2026-06-15"},
+    {n:42, name:"Big O Championship",                                  buyin:"$10,000",  start:"2026-06-13", end:"2026-06-16"},
+    {n:43, name:"8-Handed Deepstack No-Limit Hold'em",                buyin:"$800",     start:"2026-06-14", end:"2026-06-15"},
+    {n:44, name:"Super Turbo Bounty No-Limit Hold'em",                buyin:"$10,000",  start:"2026-06-14", end:"2026-06-14"},
+    {n:45, name:"Mixed Omaha Hi-Lo / Seven Card Stud Hi-Lo",          buyin:"$2,500",   start:"2026-06-14", end:"2026-06-16"},
+    {n:46, name:"Seniors No-Limit Hold'em Championship",              buyin:"$1,000",   start:"2026-06-15", end:"2026-06-20"},
+    {n:47, name:"High Roller Pot-Limit Omaha",                        buyin:"$25,000",  start:"2026-06-15", end:"2026-06-19"},
+    {n:48, name:"Razz Championship",                                   buyin:"$10,000",  start:"2026-06-15", end:"2026-06-17"},
+    {n:49, name:"Freezeout No-Limit Hold'em",                         buyin:"$2,500",   start:"2026-06-16", end:"2026-06-18"},
+    {n:50, name:"Millionaire Maker",                                   buyin:"$1,500",   start:"2026-06-17", end:"2026-06-24"},
+    {n:51, name:"Mystery Bounty No-Limit Hold'em",                    buyin:"$10,000",  start:"2026-06-17", end:"2026-06-19"},
+    {n:52, name:"Nine Game Mix",                                       buyin:"$3,000",   start:"2026-06-17", end:"2026-06-19"},
+    {n:53, name:"Five Card Pot-Limit Omaha",                          buyin:"$1,500",   start:"2026-06-18", end:"2026-06-20"},
+    {n:54, name:"H.O.R.S.E. Championship",                            buyin:"$10,000",  start:"2026-06-18", end:"2026-06-21"},
+    {n:55, name:"High Roller Pot-Limit Omaha",                        buyin:"$50,000",  start:"2026-06-19", end:"2026-06-21"},
+    {n:56, name:"6-Handed No-Limit Hold'em",                          buyin:"$3,000",   start:"2026-06-19", end:"2026-06-20"},
+    {n:57, name:"Pot-Limit Omaha",                                    buyin:"$1,000",   start:"2026-06-20", end:"2026-06-24"},
+    {n:58, name:"Limit 2-7 Lowball Triple Draw",                      buyin:"$1,500",   start:"2026-06-20", end:"2026-06-22"},
+    {n:59, name:"Salute to Warriors",                                  buyin:"$500",     start:"2026-06-21", end:"2026-06-23"},
+    {n:60, name:"Poker Players Championship",                          buyin:"$50,000",  start:"2026-06-21", end:"2026-06-25"},
+    {n:61, name:"Super Seniors",                                       buyin:"$1,000",   start:"2026-06-22", end:"2026-06-25"},
+    {n:62, name:"No-Limit Hold'em",                                   buyin:"$2,500",   start:"2026-06-22", end:"2026-06-24"},
+    {n:63, name:"Mystery Millions No-Limit Hold'em",                  buyin:"$1,000",   start:"2026-06-23", end:"2026-06-29"},
+    {n:64, name:"High Roller PLO/NLH Mixed",                          buyin:"$25,000",  start:"2026-06-23", end:"2026-06-25"},
+    {n:65, name:"Freezeout No-Limit Hold'em",                         buyin:"$1,500",   start:"2026-06-23", end:"2026-06-25"},
+    {n:66, name:"Tag Team No-Limit Hold'em",                          buyin:"$1,000",   start:"2026-06-24", end:"2026-06-26"},
+    {n:67, name:"Limit 2-7 Championship",                             buyin:"$10,000",  start:"2026-06-24", end:"2026-06-26"},
+    {n:68, name:"Ladies No-Limit Hold'em Championship",               buyin:"$1,000",   start:"2026-06-25", end:"2026-06-28"},
+    {n:69, name:"Seven Card Stud Hi-Lo 8 or Better",                  buyin:"$1,500",   start:"2026-06-25", end:"2026-06-27"},
+    {n:70, name:"Pot-Limit Omaha Championship",                       buyin:"$10,000",  start:"2026-06-26", end:"2026-06-29"},
+    {n:71, name:"Mixed Big Bet Event",                                 buyin:"$2,500",   start:"2026-06-27", end:"2026-06-29"},
+    {n:72, name:"Mini Main Event",                                     buyin:"$1,000",   start:"2026-06-28", end:"2026-07-02"},
+    {n:73, name:"6-Handed No-Limit Hold'em",                          buyin:"$5,000",   start:"2026-06-28", end:"2026-07-01"},
+    {n:74, name:"8-Game Mixed",                                        buyin:"$1,500",   start:"2026-06-28", end:"2026-06-30"},
+    {n:75, name:"Seven Card Stud Hi-Lo 8 or Better Championship",     buyin:"$10,000",  start:"2026-06-29", end:"2026-07-01"},
+    {n:76, name:"High Roller Pot-Limit Omaha",                        buyin:"$100,000", start:"2026-06-30", end:"2026-07-02"},
+    {n:77, name:"Mixed Triple Draw Lowball",                           buyin:"$2,500",   start:"2026-06-30", end:"2026-07-02"},
+    {n:78, name:"Deepstack Championship No-Limit Hold'em",            buyin:"$600",     start:"2026-07-01", end:"2026-07-04"},
+    {n:79, name:"Freezeout No-Limit Hold'em",                         buyin:"$3,000",   start:"2026-07-01", end:"2026-07-03"},
+    {n:80, name:"8-Game Mixed Championship",                           buyin:"$10,000",  start:"2026-07-01", end:"2026-07-03"},
+    {n:81, name:"Summer Celebration",                                  buyin:"$800",     start:"2026-07-02", end:"2026-07-04"},
+    {n:82, name:"WSOP Main Event — NLH World Championship",           buyin:"$10,000",  start:"2026-07-02", end:"2026-08-05"},
+    {n:83, name:"Double Board Bomb Pot Pot-Limit Omaha",              buyin:"$1,500",   start:"2026-07-02", end:"2026-07-04"},
+    {n:84, name:"Super Turbo Bounty No-Limit Hold'em",                buyin:"$5,000",   start:"2026-07-03", end:"2026-07-03"},
+    {n:85, name:"No-Limit Hold'em",                                   buyin:"$1,000",   start:"2026-07-04", end:"2026-07-05"},
+    {n:86, name:"Ultra Stack No-Limit Hold'em",                       buyin:"$600",     start:"2026-07-05", end:"2026-07-09"},
+    {n:87, name:"Mystery Bounty Pot-Limit Omaha",                     buyin:"$1,000",   start:"2026-07-07", end:"2026-07-09"},
+    {n:88, name:"Gladiators of Poker",                                 buyin:"$300",     start:"2026-07-08", end:"2026-07-13"},
+    {n:89, name:"Mid-Stakes Championship No-Limit Hold'em",           buyin:"$3,000",   start:"2026-07-08", end:"2026-07-13"},
+    {n:90, name:"High Roller No-Limit Hold'em",                       buyin:"$50,000",  start:"2026-07-09", end:"2026-07-11"},
+    {n:91, name:"Pick Your PLO",                                       buyin:"$1,500",   start:"2026-07-09", end:"2026-07-11"},
+    {n:92, name:"T.O.R.S.E.",                                         buyin:"$3,000",   start:"2026-07-10", end:"2026-07-12"},
+    {n:93, name:"The Closer No-Limit Hold'em",                        buyin:"$1,500",   start:"2026-07-11", end:"2026-07-13"},
+    {n:94, name:"6-Handed No-Limit Hold'em Championship",             buyin:"$10,000",  start:"2026-07-11", end:"2026-07-13"},
+    {n:95, name:"Summer Saver No-Limit Hold'em",                      buyin:"$500",     start:"2026-07-12", end:"2026-07-14"},
+    {n:96, name:"6-Handed Pot-Limit Omaha",                           buyin:"$3,000",   start:"2026-07-12", end:"2026-07-14"},
+    {n:97, name:"High Roller H.O.R.S.E.",                             buyin:"$25,000",  start:"2026-07-13", end:"2026-07-15"},
+    {n:98, name:"Deepstack No-Limit Hold'em",                         buyin:"$800",     start:"2026-07-14", end:"2026-07-15"},
+    {n:99, name:"8-Handed No-Limit Hold'em",                          buyin:"$5,000",   start:"2026-07-14", end:"2026-07-15"},
+    {n:100,name:"Super Turbo No-Limit Hold'em",                       buyin:"$1,000",   start:"2026-07-15", end:"2026-07-15"},
+  ];
+
   function teamTotal(team, scores) {
     return team.players.reduce((sum, p) => sum + (scores[p] || 0), 0);
   }
@@ -927,6 +1269,7 @@
 
   renderLegend('live-legend', TEAMS);
   renderLegend('history-legend', TEAMS);
+  renderLegend('schedule-legend', TEAMS);
 
   function playerDots(playerName, ownerMap) {
     const entries = ownerMap[playerName] || [];
@@ -1064,6 +1407,7 @@
     renderStandings(TEAMS, scores);
     renderTeams(TEAMS, scores, ownerMap, playerUrls, currentLivePlaying);
     renderEventLog(ownerMap, data.events || [], playerUrls);
+    renderSchedule();
 
     const dot = document.getElementById('status-dot');
     const upd = document.getElementById('updated');
@@ -1099,11 +1443,13 @@
     const lastSeen = players.filter(p => p.status !== 'currentlyPlaying');
 
     currentLivePlaying = new Set(playing.map(p => p.name.toLowerCase()));
+    window._liveStatusPlayers = allPlayers;
     if (currentScoresData) {
       const s = currentScoresData;
       const ownerMap2 = buildOwnerMap(TEAMS);
       renderTeams(TEAMS, s.players || {}, ownerMap2, s.player_urls || {}, currentLivePlaying);
     }
+    renderSchedule();
 
     const updated = data.updated ? new Date(data.updated).toLocaleString('sv-SE') : '';
     const ownerMap = buildOwnerMap(TEAMS);
@@ -1152,6 +1498,205 @@
     else document.getElementById('live-log').innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
   });
 
+  // ── SCHEMA ──
+  const KNOWN_SLUGS = {
+    1: 'event-1-mini-mystery-millions',
+    7: 'event-7-heads-up-championship',
+    8: 'event-8-badugi',
+    9: 'event-9-omaha-hi-lo-8-or-better-championship',
+    11: 'event-11-ggmillion-high-roller',
+    12: 'event-12-no-limit-2-7-lowball-draw',
+  };
+
+  function eventUrl(ev) {
+    const slug = KNOWN_SLUGS[ev.n] ||
+      'event-' + ev.n + '-' + ev.name.toLowerCase()
+        .replace(/['']/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+    return `https://www.pokernews.com/tours/wsop/2026-wsop/${slug}/`;
+  }
+
+  function renderSchedule() {
+    const el = document.getElementById('schedule-log');
+    if (!el) return;
+
+    const eventStatuses = (currentScoresData && currentScoresData.event_statuses) || {};
+    const today = new Date().toISOString().slice(0, 10);
+    const ownerMap = buildOwnerMap(TEAMS);
+
+    // Build a map: event number → list of {player, points, placement, entrants} from scores
+    const eventDataMap = {};
+    if (currentScoresData && currentScoresData.events) {
+      for (const ev of currentScoresData.events) {
+        // match by event string like "Event #5"
+        const m = ev.event && ev.event.match(/Event #(\d+)/i);
+        if (!m) continue;
+        const num = parseInt(m[1]);
+        if (!eventDataMap[num]) eventDataMap[num] = [];
+        eventDataMap[num].push(ev);
+      }
+    }
+
+    // For each live player, find which event number they are currently in.
+    // Use event_url slug (".../event-8-...") as primary source, fall back to
+    // their most recently scored event in scores data.
+    const liveEventNums = new Set();
+    for (const nameLower of currentLivePlaying) {
+      const lp = (window._liveStatusPlayers || []).find(p => p.name.toLowerCase() === nameLower);
+      let found = false;
+      if (lp && lp.event_url) {
+        const m = lp.event_url.match(/[/-]event-(\d+)[/-]/i);
+        if (m) { liveEventNums.add(parseInt(m[1])); found = true; }
+      }
+      if (!found && currentScoresData && currentScoresData.events) {
+        const rows = currentScoresData.events.filter(e => e.player && e.player.toLowerCase() === nameLower);
+        if (rows.length) {
+          const newest = rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+          const m = newest.event && newest.event.match(/Event\s*#(\d+)/i);
+          if (m) liveEventNums.add(parseInt(m[1]));
+        }
+      }
+    }
+
+    const html = WSOP_EVENTS.map(ev => {
+      // Use scraped status from 25kfantasy if available, fall back to date comparison
+      const scrapedStatus = eventStatuses[ev.n] || eventStatuses[String(ev.n)];
+      const finished = scrapedStatus ? scrapedStatus === 'completed'
+                                     : today > ev.end;
+      const ongoing  = scrapedStatus ? scrapedStatus === 'live'
+                                     : (!finished && today >= ev.start);
+
+      // Find players who cashed in this event
+      const cashedRows = eventDataMap[ev.n] || [];
+      // Deduplicate by player (keep highest points per player in this event)
+      const playerBest = {};
+      for (const row of cashedRows) {
+        const key = row.player.toLowerCase();
+        if (!playerBest[key] || row.points > playerBest[key].points) {
+          playerBest[key] = row;
+        }
+      }
+      const cashed = Object.values(playerBest);
+
+      // Live players in this event — use the pre-built liveEventNums set
+      const hasLive = liveEventNums.has(ev.n);
+
+      // Live player objects for expanded body
+      const liveHere = hasLive
+        ? [...currentLivePlaying]
+            .filter(nameLower => {
+              const lp = (window._liveStatusPlayers || []).find(p => p.name.toLowerCase() === nameLower);
+              if (lp && lp.event_url) {
+                const m = lp.event_url.match(/[/-]event-(\d+)[/-]/i);
+                if (m) return parseInt(m[1]) === ev.n;
+              }
+              const rows = (currentScoresData && currentScoresData.events || [])
+                .filter(e => e.player && e.player.toLowerCase() === nameLower);
+              if (!rows.length) return false;
+              const newest = rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+              const m2 = newest.event && newest.event.match(/Event\s*#(\d+)/i);
+              return m2 && parseInt(m2[1]) === ev.n;
+            })
+            .map(nameLower => (window._liveStatusPlayers || []).find(p => p.name.toLowerCase() === nameLower)
+              || { name: nameLower, place: null, total_players: null })
+        : [];
+
+      // Collect team indices that have a player cashed or live here
+      const teamIndices = new Set();
+      for (const row of cashed) {
+        const entries = ownerMap[row.player] || [];
+        entries.forEach(e => teamIndices.add(e.index));
+      }
+      for (const lp of liveHere) {
+        const entries = ownerMap[lp.name] || [];
+        entries.forEach(e => teamIndices.add(e.index));
+      }
+
+      // Build indicator dots
+      const liveDotHtml = hasLive ? `<span class="sch-live-dot"></span>` : '';
+      const teamDotsHtml = [...teamIndices].sort().map(i =>
+        `<span class="sch-team-dot" data-team="${i}" title="${TEAMS[i].owner}"></span>`
+      ).join('');
+
+      // Format dates
+      const startFmt = new Date(ev.start + 'T12:00:00').toLocaleDateString('sv-SE', {month:'short', day:'numeric'});
+      const endFmt   = ev.end !== ev.start
+        ? new Date(ev.end + 'T12:00:00').toLocaleDateString('sv-SE', {month:'short', day:'numeric'})
+        : null;
+      const dateStr  = endFmt ? `${startFmt}–${endFmt}` : startFmt;
+
+      // Build expanded body: show live players first, then cashed
+      let bodyHtml = '';
+
+      for (const lp of liveHere) {
+        const entries = ownerMap[lp.name] || [];
+        const dots = entries.map(e =>
+          `<span class="sch-team-dot" data-team="${e.index}" title="${e.owner}"></span>`
+        ).join('');
+        bodyHtml += `<div class="sch-player-row live-now">
+          <span class="sch-live-dot"></span>
+          <span class="sch-player-name">${lp.name}</span>
+          <span style="display:flex;gap:3px;margin-left:6px">${dots}</span>
+          <span class="sch-player-spacer"></span>
+          <span class="sch-player-place">${lp.place ? 'Plats ' + lp.place + (lp.total_players ? '/' + lp.total_players : '') : ''}</span>
+        </div>`;
+      }
+
+      for (const row of cashed.sort((a,b) => b.points - a.points)) {
+        const entries = ownerMap[row.player] || [];
+        const dots = entries.map(e =>
+          `<span class="sch-team-dot" data-team="${e.index}" title="${e.owner}"></span>`
+        ).join('');
+        const placement = (row.placement || row.entrants)
+          ? (row.placement ? row.placement + (row.entrants ? '/' + row.entrants : '') : '')
+          : '';
+        bodyHtml += `<div class="sch-player-row">
+          <span class="sch-player-name">${row.player}</span>
+          <span style="display:flex;gap:3px;margin-left:6px">${dots}</span>
+          <span class="sch-player-spacer"></span>
+          <span class="sch-player-place">${placement}</span>
+          <span class="sch-player-pts">+${row.points}p</span>
+        </div>`;
+      }
+
+      const statusLabel = finished ? 'Avslutad' : ongoing ? 'Pågår just nu' : 'Kommande';
+      const endLabel = ev.end !== ev.start
+        ? `${new Date(ev.start+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'long'})} – ${new Date(ev.end+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'long'})}`
+        : new Date(ev.start+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'long'});
+
+      const infoRow = `<a class="sch-info-row" href="${eventUrl(ev)}" target="_blank" rel="noopener">
+        <span class="sch-info-status ${finished ? 'finished' : ongoing ? 'ongoing' : 'upcoming'}">${statusLabel}</span>
+        <span class="sch-info-dates">${endLabel}</span>
+        <span class="sch-info-buyin">${ev.buyin}</span>
+        <span class="sch-info-link">PokerNews ↗</span>
+      </a>`;
+
+      bodyHtml = infoRow + bodyHtml;
+
+      if (cashed.length === 0 && liveHere.length === 0) {
+        bodyHtml += `<div class="sch-empty">Ingen av våra spelare deltog</div>`;
+      }
+
+      const stateClass = finished ? 'finished' : ongoing ? 'ongoing' : '';
+
+      return `<div class="schedule-event ${stateClass}" data-event="${ev.n}">
+        <div class="schedule-event-header" onclick="this.parentElement.classList.toggle('active')">
+          <span class="sch-live-cell">${liveDotHtml}</span>
+          <span class="sch-num">Event #${ev.n}</span>
+          <span class="sch-name">${ev.name}</span>
+          <span class="sch-buyin">${ev.buyin}</span>
+          <span class="sch-dates">${dateStr}</span>
+          <span class="sch-indicators">${teamDotsHtml}</span>
+          <span class="sch-chevron">▾</span>
+        </div>
+        <div class="schedule-event-body">${bodyHtml}</div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = html;
+  }
+
   // Trigger GitHub workflow
   async function triggerWorkflow() {
     const btn = document.getElementById('refresh-btn');
@@ -1193,6 +1738,7 @@
       document.getElementById('tab-overview').style.display = tab === 'overview' ? '' : 'none';
       document.getElementById('tab-history').style.display = tab === 'history' ? '' : 'none';
       document.getElementById('tab-live').style.display = tab === 'live' ? '' : 'none';
+      document.getElementById('tab-schedule').style.display = tab === 'schedule' ? '' : 'none';
     });
   });
 </script>

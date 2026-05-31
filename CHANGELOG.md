@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-05-31 (uppdatering 2)
+- Schema: "Event #N" har nu samma färg som turneringsnamnet (vit/guld/dämpad beroende på status)
+- Schema: buy-in kolumn är nu riktigt högerkantsanpassad i grid
+- Schema: teamfärgprickar visas direkt efter spelarnamnet i expanderade events
+- Schema: event-statuser (avslutad/pågår/kommande) hämtas nu från 25kfantasy.com/events via scraper
+
+## 2026-05-31
+- Ny flik "Schema" med alla 100 WSOP 2026 bracelet events (datum och buy-in)
+- Events som pågår visas i guld, avslutade dämpas med lägre opacity
+- Klicka på ett event för att expandera och se vilka av våra spelare som cashat
+- Grön blinkande prick på events där en spelare är live just nu
+- Färgprickar per lag på varje event (samma färger som övriga flikar)
+- Legend med lagfärger på Schema-fliken
+
 ## 2026-05-29
 - Mobilfixar: status-bar staplas vertikalt (text + knapp) istället för att klämmas i grid
 - Live-fliken: spelarnamn och turneringsnamn staplas nu i en rak kolumn på mobil
