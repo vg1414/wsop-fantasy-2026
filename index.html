@@ -1558,13 +1558,14 @@
     }
 
     const html = WSOP_EVENTS.map(ev => {
-      // Always trust 25kfantasy statuses. Date fallback only if no statuses at all.
+      // Trust 25kfantasy for completed/live. For "upcoming": override with start date.
       const scrapedStatus = eventStatuses[ev.n] || eventStatuses[String(ev.n)];
       const hasAnyStatuses = Object.keys(eventStatuses).length > 0;
-      const finished = scrapedStatus ? scrapedStatus === 'completed'
-                                     : (!hasAnyStatuses && today > ev.end);
-      const ongoing  = scrapedStatus ? scrapedStatus === 'live'
-                                     : (!hasAnyStatuses && !finished && today >= ev.start);
+      const finished = scrapedStatus === 'completed'
+                       || (!hasAnyStatuses && today > ev.end);
+      const ongoing  = !finished && (scrapedStatus === 'live'
+                       || (!hasAnyStatuses && today >= ev.start)
+                       || (scrapedStatus === 'upcoming' && today >= ev.start));
 
       // Find players who cashed in this event
       const cashedRows = eventDataMap[ev.n] || [];
