@@ -19,6 +19,9 @@ FANTASY_PLAYERS = [
 
 FANTASY_PLAYERS_LOWER = {p.lower(): p for p in FANTASY_PLAYERS}
 FANTASY_PLAYERS_LOWER["kevin choi"] = "Kevin Yun Lam Choi"
+FANTASY_PLAYERS_LOWER["joao simao"] = "Joao Simao Peres"
+FANTASY_PLAYERS_LOWER["joão simão"] = "Joao Simao Peres"
+FANTASY_PLAYERS_LOWER["joão simão peres"] = "Joao Simao Peres"
 
 API_URL = "https://www.pokernews.com/api/my-stable"
 
