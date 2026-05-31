@@ -1355,9 +1355,10 @@
         const dotWrap = dots ? `<span class="player-dots">${dots}</span>` : '';
 
         const playerUrl = (playerUrls && playerUrls[ev.player]) || ev.player_url || '';
+        const salaryLog = SALARY[ev.player] != null ? ` <span class="player-salary">(${SALARY[ev.player]})</span>` : '';
         const playerEl = playerUrl
-          ? `<a class="player-link" href="${playerUrl}">${ev.player}${dotWrap}</a>`
-          : `${ev.player}${dotWrap}`;
+          ? `<a class="player-link" href="${playerUrl}">${ev.player}${salaryLog}${dotWrap}</a>`
+          : `${ev.player}${salaryLog}${dotWrap}`;
 
         const eventUrl = ev.event_url || '';
         const eventEl = eventUrl
