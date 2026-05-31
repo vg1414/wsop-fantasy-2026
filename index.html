@@ -707,7 +707,7 @@
 
     .schedule-event-header {
       display: grid;
-      grid-template-columns: 16px 72px 1fr 76px 90px auto 16px;
+      grid-template-columns: 16px 72px 1fr 88px 90px auto 16px;
       align-items: center;
       gap: 8px;
       padding: 11px 16px;
@@ -718,9 +718,9 @@
     }
     @media (max-width: 640px) {
       .schedule-event-header {
-        grid-template-columns: 16px 60px 1fr 64px auto 14px;
+        grid-template-columns: 16px 60px 1fr 72px 0 auto 14px;
       }
-      .sch-dates { display: none; }
+      .sch-dates { display: none; overflow: hidden; width: 0; padding: 0; margin: 0; }
     }
     .schedule-event-header:hover { background: rgba(255,255,255,0.03); }
 
@@ -1143,7 +1143,7 @@
     {n:4,  name:"Omaha Hi-Lo 8 or Better",                            buyin:"$1,500",   start:"2026-05-27", end:"2026-05-29"},
     {n:5,  name:"Pot-Limit Omaha",                                    buyin:"$5,000",   start:"2026-05-28", end:"2026-05-30"},
     {n:6,  name:"Seven Card Stud",                                     buyin:"$1,500",   start:"2026-05-28", end:"2026-05-30"},
-    {n:7,  name:"Heads Up No-Limit Hold'em Championship",             buyin:"$25,000",  start:"2026-05-29", end:"2026-05-30"},
+    {n:7,  name:"Heads Up No-Limit Hold'em Championship",             buyin:"$25,000",  start:"2026-05-29", end:"2026-06-02"},
     {n:8,  name:"Badugi",                                              buyin:"$1,500",   start:"2026-05-29", end:"2026-05-31"},
     {n:9,  name:"Omaha Hi-Lo 8 or Better Championship",               buyin:"$10,000",  start:"2026-05-30", end:"2026-06-01"},
     {n:10, name:"Deepstack No-Limit Hold'em",                         buyin:"$600",     start:"2026-05-31", end:"2026-06-02"},
