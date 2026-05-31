@@ -280,7 +280,7 @@
     /* ── TEAM CARDS ── */
     #teams {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 2px;
     }
 
@@ -288,6 +288,31 @@
       background: var(--card);
       border: 1px solid var(--border);
       transition: border-color 0.2s;
+    }
+    .stats-card { border-color: var(--border2); }
+    .stats-section { padding: 10px 16px 4px; border-bottom: 1px solid #1a1a1a; }
+    .stats-section:last-child { border-bottom: none; }
+    .stats-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .stats-list { list-style: none; padding: 0; margin: 0; }
+    .stats-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 0.82rem;
+      color: var(--muted2);
+    }
+    .stats-val {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.78rem;
+      color: var(--gold);
     }
 
     .team-card:hover { border-color: var(--border2); }
@@ -1328,6 +1353,38 @@
         <ul class="player-list">${rows}</ul>
       </div>`;
     }).join('');
+
+    // Stats card — all players across all teams
+    const allPlayers = [...new Set(teams.flatMap(t => t.players))];
+    const withPts = allPlayers.map(p => ({ name: p, pts: scores[p] || 0, salary: SALARY[p] || 0 }));
+    const topPts = [...withPts].sort((a, b) => b.pts - a.pts).filter(p => p.pts > 0).slice(0, 3);
+    const topValue = [...withPts].filter(p => p.pts > 0 && p.salary > 0)
+      .sort((a, b) => (b.pts / b.salary) - (a.pts / a.salary)).slice(0, 3);
+    const topSalary = [...withPts].sort((a, b) => b.salary - a.salary).slice(0, 3);
+
+    const statRow = (p, extra) => {
+      const url = playerUrls && playerUrls[p.name];
+      const nameEl = url ? `<a class="player-link" href="${url}">${p.name}</a>` : p.name;
+      return `<li class="stats-row">${nameEl}<span class="stats-val">${extra}</span></li>`;
+    };
+
+    el.innerHTML += `<div class="team-card stats-card">
+      <div class="team-header" data-suit="★">
+        <div class="team-owner">Stats</div>
+      </div>
+      <div class="stats-section">
+        <div class="stats-label">Flest poäng</div>
+        <ul class="stats-list">${topPts.map(p => statRow(p, p.pts + 'p')).join('')}</ul>
+      </div>
+      <div class="stats-section">
+        <div class="stats-label">Bäst värde för pengarna</div>
+        <ul class="stats-list">${topValue.map(p => statRow(p, (p.pts/p.salary).toFixed(1) + 'p/$')).join('')}</ul>
+      </div>
+      <div class="stats-section">
+        <div class="stats-label">Högst värde</div>
+        <ul class="stats-list">${topSalary.map(p => statRow(p, '$' + p.salary)).join('')}</ul>
+      </div>
+    </div>`;
   }
 
   function renderEventLog(ownerMap, events, playerUrls) {
