@@ -748,7 +748,6 @@
       font-size: 0.62rem;
       font-weight: 400;
       letter-spacing: 2px;
-      color: var(--white);
       white-space: nowrap;
     }
 
@@ -762,7 +761,8 @@
       text-overflow: ellipsis;
       min-width: 0;
     }
-    .schedule-event.finished .sch-name { color: var(--muted2); }
+    .sch-num { color: var(--white); }
+    .schedule-event.finished .sch-name,
     .schedule-event.finished .sch-num  { color: var(--muted2); }
 
     .sch-buyin {
@@ -843,7 +843,7 @@
     .sch-player-row:last-child { border-bottom: none; }
 
     .sch-player-name { color: var(--muted2); }
-    .sch-salary { font-style: italic; font-size: 0.75em; color: var(--muted); }
+    .sch-salary { font-style: italic; font-size: 0.75em; }
     .sch-player-spacer { flex: 1; }
     .sch-player-pts {
       font-family: 'Oswald', sans-serif;
@@ -865,11 +865,9 @@
     .sch-player-row.live-now .sch-live-dot { margin-left: auto; flex-shrink: 0; }
 
     /* gold glow for ongoing events */
-    .schedule-event.ongoing > .schedule-event-header .sch-name {
-      color: var(--gold-light);
-    }
+    .schedule-event.ongoing > .schedule-event-header .sch-name,
     .schedule-event.ongoing > .schedule-event-header .sch-num {
-      color: var(--gold-dim);
+      color: var(--gold-light);
     }
 
     .sch-empty {
