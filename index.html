@@ -1365,7 +1365,8 @@
     const statRow = (p, extra) => {
       const url = playerUrls && playerUrls[p.name];
       const nameEl = url ? `<a class="player-link" href="${url}">${p.name}</a>` : p.name;
-      return `<li class="stats-row">${nameEl}<span class="stats-val">${extra}</span></li>`;
+      const dots = playerDots(p.name, ownerMap);
+      return `<li class="stats-row">${nameEl}${dots}<span class="stats-val">${extra}</span></li>`;
     };
 
     el.innerHTML += `<div class="team-card stats-card">
@@ -1379,10 +1380,6 @@
       <div class="stats-section">
         <div class="stats-label">Bäst värde för pengarna</div>
         <ul class="stats-list">${topValue.map(p => statRow(p, (p.pts/p.salary).toFixed(1) + 'p/$')).join('')}</ul>
-      </div>
-      <div class="stats-section">
-        <div class="stats-label">Högst värde</div>
-        <ul class="stats-list">${topSalary.map(p => statRow(p, '$' + p.salary)).join('')}</ul>
       </div>
     </div>`;
   }
