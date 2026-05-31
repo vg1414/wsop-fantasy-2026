@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-05-31 (uppdatering 3)
+- Ställning: 🥇 visas efter ägarnamnet för varje bracelet-vinst (placement = 1) i laget
+
 ## 2026-05-31 (uppdatering 2)
 - Schema: "Event #N" har nu samma färg som turneringsnamnet (vit/guld/dämpad beroende på status)
 - Schema: buy-in kolumn är nu riktigt högerkantsanpassad i grid
