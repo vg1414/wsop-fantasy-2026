@@ -1376,7 +1376,7 @@
       const isLive = livePlayingSet.has(p.name.toLowerCase());
       const liveDot = isLive ? `<span class="live-playing-dot"></span>` : '';
       const salary = SALARY[p.name] != null ? ` <span class="player-salary">(${SALARY[p.name]})</span>` : '';
-      const inner = `${p.name}${salary}${dots}${liveDot}`;
+      const inner = `${p.name}${salary}${liveDot}${dots}`;
       const nameEl = url ? `<a class="player-link" href="${url}">${inner}</a>` : `<span>${inner}</span>`;
       return `<li class="stats-row">${nameEl}<span class="stats-val">${extra}</span></li>`;
     };
