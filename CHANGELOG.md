@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-01
+- GitHub Actions triggas automatiskt vid sidladdning (inte bara via knapp)
+
 ## 2026-05-31 (uppdatering 3)
 - Ställning: 🥇 visas efter ägarnamnet för varje bracelet-vinst (placement = 1) i laget
 
