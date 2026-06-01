@@ -90,10 +90,18 @@ def main():
             "latest_action": latest_action,
         }
 
-        # Deduplicera: behåll posten med mest data (event_url eller status)
+        # Deduplicera: currentlyPlaying vinner alltid; annars senast latest_action
         existing = best_by_name.get(canonical)
-        if not existing or (event_url and not existing["event_url"]):
+        if not existing:
             best_by_name[canonical] = record
+        else:
+            new_playing = widget_type == "currentlyPlaying"
+            old_playing = existing["status"] == "currentlyPlaying"
+            if new_playing and not old_playing:
+                best_by_name[canonical] = record
+            elif not old_playing and not new_playing:
+                if (latest_action or "") > (existing["latest_action"] or ""):
+                    best_by_name[canonical] = record
 
     results = list(best_by_name.values())
 
