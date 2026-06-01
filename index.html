@@ -1514,7 +1514,14 @@
     const allPlayers = data.players || [];
 
     const fantasyNames = new Set(TEAMS.flatMap(t => t.players.map(p => p.toLowerCase())));
-    const players = allPlayers.filter(p => fantasyNames.has(p.name.toLowerCase()));
+    // Deduplicera på namn — behåll posten med event_url (mest data) per spelare
+    const bestByName = {};
+    for (const p of allPlayers) {
+      const key = p.name.toLowerCase();
+      if (!fantasyNames.has(key)) continue;
+      if (!bestByName[key] || p.event_url) bestByName[key] = p;
+    }
+    const players = Object.values(bestByName);
 
     if (players.length === 0) {
       el.innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
@@ -1522,7 +1529,7 @@
     }
 
     const playing = players.filter(p => p.status === 'currentlyPlaying');
-    const lastSeen = players.filter(p => p.status !== 'currentlyPlaying');
+    const lastSeen = players.filter(p => p.status !== 'currentlyPlaying' && p.status !== '');
 
     currentLivePlaying = new Set(playing.map(p => p.name.toLowerCase()));
     window._liveStatusPlayers = allPlayers;
