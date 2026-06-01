@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## 2026-06-01
+- Schema: fix för spelare med dubbla Firebase-poster (t.ex. Joao Simao Peres) – väljer nu posten med event_url istället för alltid första träffen
+
+
 - GitHub Actions triggas automatiskt vid sidladdning (inte bara via knapp)
 
 ## 2026-05-31 (uppdatering 3)

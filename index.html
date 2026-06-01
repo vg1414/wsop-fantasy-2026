@@ -1629,7 +1629,8 @@
     // their most recently scored event in scores data.
     const liveEventNums = new Set();
     for (const nameLower of currentLivePlaying) {
-      const lp = (window._liveStatusPlayers || []).find(p => p.name.toLowerCase() === nameLower);
+      const allLp = (window._liveStatusPlayers || []).filter(p => p.name.toLowerCase() === nameLower);
+      const lp = allLp.find(p => p.event_url) || allLp[0];
       let found = false;
       if (lp && lp.event_url) {
         const m = lp.event_url.match(/[/-]event-(\d+)[/-]/i);
@@ -1674,7 +1675,8 @@
       const liveHere = hasLive
         ? [...currentLivePlaying]
             .filter(nameLower => {
-              const lp = (window._liveStatusPlayers || []).find(p => p.name.toLowerCase() === nameLower);
+              const allLp = (window._liveStatusPlayers || []).filter(p => p.name.toLowerCase() === nameLower);
+              const lp = allLp.find(p => p.event_url) || allLp[0];
               if (lp && lp.event_url) {
                 const m = lp.event_url.match(/[/-]event-(\d+)[/-]/i);
                 if (m) return parseInt(m[1]) === ev.n;
@@ -1686,8 +1688,10 @@
               const m2 = newest.event && newest.event.match(/Event\s*#(\d+)/i);
               return m2 && parseInt(m2[1]) === ev.n;
             })
-            .map(nameLower => (window._liveStatusPlayers || []).find(p => p.name.toLowerCase() === nameLower)
-              || { name: nameLower, place: null, total_players: null })
+            .map(nameLower => {
+              const allLp = (window._liveStatusPlayers || []).filter(p => p.name.toLowerCase() === nameLower);
+              return allLp.find(p => p.event_url) || allLp[0] || { name: nameLower, place: null, total_players: null };
+            })
         : [];
 
       // Collect team indices that have a player cashed or live here
