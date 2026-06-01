@@ -1827,8 +1827,12 @@
   }
   window.triggerWorkflow = triggerWorkflow;
 
-  // Auto-trigger workflow on page load
+  // Auto-trigger workflow on page load, lock button for 30s
   triggerWorkflow();
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  btn.textContent = '↻ Väntar...';
+  setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 30000);
 
   // Tab switching
   document.querySelectorAll('.tab').forEach(btn => {
