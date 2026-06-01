@@ -1800,6 +1800,7 @@
   }
 
   // Trigger GitHub workflow
+  let btnLockedUntil = 0;
   async function triggerWorkflow() {
     const btn = document.getElementById('refresh-btn');
     btn.disabled = true;
@@ -1818,20 +1819,18 @@
         }
       );
       if (res.status === 204) {
-        btn.textContent = '✓ Startad';
-        setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000);
+        if (Date.now() >= btnLockedUntil) { btn.textContent = '✓ Startad'; setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000); }
       } else {
-        btn.textContent = '✗ Fel';
-        setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000);
+        if (Date.now() >= btnLockedUntil) { btn.textContent = '✗ Fel'; setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000); }
       }
     } catch {
-      btn.textContent = '✗ Fel';
-      setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000);
+      if (Date.now() >= btnLockedUntil) { btn.textContent = '✗ Fel'; setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000); }
     }
   }
   window.triggerWorkflow = triggerWorkflow;
 
   // Auto-trigger workflow on page load, lock button for 30s
+  btnLockedUntil = Date.now() + 30000;
   triggerWorkflow();
   const btn = document.getElementById('refresh-btn');
   btn.disabled = true;
