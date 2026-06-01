@@ -1373,15 +1373,15 @@
     const topPts = [...withPts].sort((a, b) => b.pts - a.pts).filter(p => p.pts > 0).slice(0, 3);
     const topValue = [...withPts].filter(p => p.pts > 0 && p.salary > 0)
       .sort((a, b) => (b.pts / b.salary) - (a.pts / a.salary)).slice(0, 3);
-    // Flest ITM: count events with points per player
-    const itmCount = {};
+    // Högsta enskilda score: max points in a single event per player
+    const bestSingle = {};
     if (currentScoresData && currentScoresData.events) {
       for (const ev of currentScoresData.events) {
-        if (ev.points > 0) itmCount[ev.player] = (itmCount[ev.player] || 0) + 1;
+        if (ev.points > 0) bestSingle[ev.player] = Math.max(bestSingle[ev.player] || 0, ev.points);
       }
     }
-    const topItm = allPlayers.map(p => ({ name: p, itm: itmCount[p] || 0, salary: SALARY[p] || 0 }))
-      .filter(p => p.itm > 0).sort((a, b) => b.itm - a.itm).slice(0, 3);
+    const topSingle = allPlayers.map(p => ({ name: p, best: bestSingle[p] || 0, salary: SALARY[p] || 0 }))
+      .filter(p => p.best > 0).sort((a, b) => b.best - a.best).slice(0, 3);
 
     const statRow = (p, extra) => {
       const url = playerUrls && playerUrls[p.name];
@@ -1407,8 +1407,8 @@
         <ul class="stats-list">${topValue.map(p => statRow(p, (p.pts/p.salary).toFixed(1) + 'p/<span style="font-family:Georgia,serif">\$</span>')).join('')}</ul>
       </div>
       <div class="stats-section">
-        <div class="stats-label">Flest ITM</div>
-        <ul class="stats-list">${topItm.map(p => statRow(p, p.itm + 'x')).join('')}</ul>
+        <div class="stats-label">Högsta score</div>
+        <ul class="stats-list">${topSingle.map(p => statRow(p, p.best + 'p')).join('')}</ul>
       </div>
     </div>`;
   }
