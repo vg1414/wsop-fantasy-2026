@@ -60,7 +60,7 @@ def main():
     players_raw = fetch_my_stable(cookie_string)
     print(f"Got {len(players_raw)} players from PokerNews")
 
-    results = []
+    best_by_name = {}
     for entry in players_raw:
         name = entry.get("title", "")
         canonical = FANTASY_PLAYERS_LOWER.get(name.lower())
@@ -79,7 +79,7 @@ def main():
         if event_url and not event_url.startswith("http"):
             event_url = "https://www.pokernews.com" + event_url
 
-        results.append({
+        record = {
             "name": canonical,
             "status": widget_type,
             "tournament": tournament_title,
@@ -88,7 +88,14 @@ def main():
             "place": place,
             "total_players": total_players,
             "latest_action": latest_action,
-        })
+        }
+
+        # Deduplicera: behåll posten med mest data (event_url eller status)
+        existing = best_by_name.get(canonical)
+        if not existing or (event_url and not existing["event_url"]):
+            best_by_name[canonical] = record
+
+    results = list(best_by_name.values())
 
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
