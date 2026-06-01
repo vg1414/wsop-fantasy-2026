@@ -1639,7 +1639,12 @@
       const allLp = (window._liveStatusPlayers || []).filter(p => p.name.toLowerCase() === nameLower);
       const lp = allLp.find(p => p.event_url) || allLp[0];
       let found = false;
-      if (lp && lp.event_url) {
+      // Prioritera event-titeln ("Event #10") framför URL:en — PokerNews URL kan ha fel nummer
+      if (lp && lp.event) {
+        const mt = lp.event.match(/Event\s*#(\d+)/i);
+        if (mt) { liveEventNums.add(parseInt(mt[1])); found = true; }
+      }
+      if (!found && lp && lp.event_url) {
         const m = lp.event_url.match(/[/-]event-(\d+)[/-]/i);
         if (m) { liveEventNums.add(parseInt(m[1])); found = true; }
       }
@@ -1684,6 +1689,11 @@
             .filter(nameLower => {
               const allLp = (window._liveStatusPlayers || []).filter(p => p.name.toLowerCase() === nameLower);
               const lp = allLp.find(p => p.event_url) || allLp[0];
+              // Prioritera event-titeln framför URL:en
+              if (lp && lp.event) {
+                const mt = lp.event.match(/Event\s*#(\d+)/i);
+                if (mt) return parseInt(mt[1]) === ev.n;
+              }
               if (lp && lp.event_url) {
                 const m = lp.event_url.match(/[/-]event-(\d+)[/-]/i);
                 if (m) return parseInt(m[1]) === ev.n;
