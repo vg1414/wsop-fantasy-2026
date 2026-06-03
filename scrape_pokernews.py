@@ -85,13 +85,8 @@ def fetch_chip_counts_data(event_url):
                         rank += 1
                         found_any = True
 
-            # Kolla om det finns fler sidor
-            next_page_num = page + 1
-            next_link = soup.find("a", href=re.compile(r"\?page=" + str(next_page_num)))
-            if not next_link:
-                break
-
-            page = next_page_num
+            # PokerNews chip-counts visar alltid samma 18 spelare oavsett sida
+            break
 
         except Exception as e:
             print(f"  Fel vid hämtning av sida {page} från {url}: {e}")
