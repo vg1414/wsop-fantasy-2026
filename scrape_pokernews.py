@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+import re
 from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -40,6 +41,24 @@ def fetch_my_stable(cookie_string):
     resp = requests.get(API_URL, headers=headers, timeout=15)
     resp.raise_for_status()
     return resp.json()
+
+def fetch_players_left(event_url):
+    """Hämtar antal spelare kvar från PokerNews chip counts-sida."""
+    chip_url = event_url.rstrip("/") + "/chip-counts/"
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        }
+        resp = requests.get(chip_url, headers=headers, timeout=10)
+        if resp.status_code != 200:
+            return None
+        # Leta efter "Players Left" följt av ett tal
+        match = re.search(r'Players Left[^0-9]*(\d[\d,]*)', resp.text)
+        if match:
+            return int(match.group(1).replace(",", ""))
+    except Exception as e:
+        print(f"  Kunde inte hämta players_left från {chip_url}: {e}")
+    return None
 
 def init_firebase():
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
@@ -105,6 +124,21 @@ def main():
 
     results = list(best_by_name.values())
 
+    # Hämta players_left per unik event_url för currentlyPlaying-spelare
+    playing_urls = set(
+        p["event_url"] for p in results
+        if p["status"] == "currentlyPlaying" and p["event_url"]
+    )
+    players_left_by_url = {}
+    for url in playing_urls:
+        print(f"Hämtar players_left från {url}...")
+        count = fetch_players_left(url)
+        players_left_by_url[url] = count
+        print(f"  -> {count} spelare kvar")
+
+    for p in results:
+        p["players_left"] = players_left_by_url.get(p["event_url"])
+
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     db = init_firebase()
@@ -116,6 +150,9 @@ def main():
     currently_playing = [p for p in results if p["status"] == "currentlyPlaying"]
     print(f"Wrote {len(results)} fantasy players to Firestore")
     print(f"Currently playing: {[p['name'] for p in currently_playing]}")
+    for p in currently_playing:
+        if p.get("players_left") is not None:
+            print(f"  {p['name']}: {p['players_left']} spelare kvar")
 
 if __name__ == "__main__":
     main()

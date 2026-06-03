@@ -656,10 +656,43 @@
       font-style: italic;
       margin-left: 2px;
     }
+    .live-rank {
+      font-size: 0.9rem;
+      font-weight: 300;
+      margin-left: 8px;
+    }
 
     .player-salary {
       font-size: 0.72rem;
       font-style: normal;
+    }
+
+    .ft-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #1a1200;
+      background: linear-gradient(135deg, var(--gold) 0%, #f5d170 50%, var(--gold) 100%);
+      border-radius: 3px;
+      padding: 2px 5px;
+      margin-left: 7px;
+      vertical-align: middle;
+      position: relative;
+      top: -1px;
+      box-shadow: 0 0 6px 1px color-mix(in srgb, var(--gold) 60%, transparent),
+                  0 0 14px 2px color-mix(in srgb, var(--gold) 25%, transparent);
+      animation: ft-pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes ft-pulse {
+      0%, 100% { box-shadow: 0 0 6px 1px color-mix(in srgb, var(--gold) 60%, transparent),
+                              0 0 14px 2px color-mix(in srgb, var(--gold) 25%, transparent); }
+      50%       { box-shadow: 0 0 10px 3px color-mix(in srgb, var(--gold) 80%, transparent),
+                              0 0 22px 5px color-mix(in srgb, var(--gold) 35%, transparent); }
     }
 
     .live-event {
@@ -1301,7 +1334,7 @@
     return `<span class="player-dots">${dots}</span>`;
   }
 
-  function renderStandings(teams, scores, events) {
+  function renderStandings(teams, scores, events, finalTableSet = new Set()) {
     const sorted = [...teams]
       .map((t, i) => ({ ...t, index: i, total: teamTotal(t, scores) }))
       .sort((a, b) => b.total - a.total);
@@ -1320,16 +1353,18 @@
     el.innerHTML = sorted.map((t, i) => {
       const bracelets = t.players.reduce((sum, p) => sum + (braceletsByPlayer[p] || 0), 0);
       const braceletStr = bracelets > 0 ? ' ' + '🥇'.repeat(bracelets) : '';
+      const hasFT = t.players.some(p => finalTableSet.has(p.toLowerCase()));
+      const ftBadgeStanding = hasFT ? `<span class="ft-badge">FT</span>` : '';
       return `
       <div class="standing-row rank-${i + 1}">
         <div class="rank-col">${i + 1}</div>
-        <div class="name-col">${t.owner}${braceletStr}</div>
+        <div class="name-col">${t.owner}${braceletStr}${ftBadgeStanding}</div>
         <div class="pts-col">${t.total}<small>pts</small></div>
       </div>`;
     }).join('');
   }
 
-  function renderTeams(teams, scores, ownerMap, playerUrls, livePlayingSet = new Set()) {
+  function renderTeams(teams, scores, ownerMap, playerUrls, livePlayingSet = new Set(), finalTableSet = new Set()) {
     const el = document.getElementById('teams');
     const sorted = [...teams]
       .map((team, ti) => ({ ...team, ti }))
@@ -1343,12 +1378,13 @@
         const dots = playerDots(p, ownerMap);
         const isLive = livePlayingSet.has(p.toLowerCase());
         const liveDot = isLive ? `<span class="live-playing-dot"></span>` : '';
+        const ftBadgeOv = finalTableSet.has(p.toLowerCase()) ? `<span class="ft-badge">FT</span>` : '';
         const salary = SALARY[p];
         const salaryEl = salary != null ? ` <span class="player-salary">(${salary})</span>` : '';
         const url = playerUrls && playerUrls[p];
         const nameEl = url
-          ? `<a class="player-name player-link" href="${url}">${p}${salaryEl}${liveDot}${dots}</a>`
-          : `<span class="player-name">${p}${salaryEl}${liveDot}${dots}</span>`;
+          ? `<a class="player-name player-link" href="${url}">${p}${salaryEl}${ftBadgeOv}${liveDot}${dots}</a>`
+          : `<span class="player-name">${p}${salaryEl}${ftBadgeOv}${liveDot}${dots}</span>`;
         return `<li class="player-row">
           ${nameEl}
           <span class="player-score ${cls}">${pts}</span>
@@ -1479,6 +1515,7 @@
 
   let currentScoresData = null;
   let currentLivePlaying = new Set();
+  let currentFinalTable = new Set();
 
   function applyData(data) {
     currentScoresData = data;
@@ -1486,8 +1523,8 @@
     const playerUrls = data.player_urls || {};
     const ownerMap = buildOwnerMap(TEAMS);
 
-    renderStandings(TEAMS, scores, data.events || []);
-    renderTeams(TEAMS, scores, ownerMap, playerUrls, currentLivePlaying);
+    renderStandings(TEAMS, scores, data.events || [], currentFinalTable);
+    renderTeams(TEAMS, scores, ownerMap, playerUrls, currentLivePlaying, currentFinalTable);
     renderEventLog(ownerMap, data.events || [], playerUrls);
     renderSchedule();
 
@@ -1532,11 +1569,16 @@
     const lastSeen = players.filter(p => p.status !== 'currentlyPlaying' && p.status !== '');
 
     currentLivePlaying = new Set(playing.map(p => p.name.toLowerCase()));
+    currentFinalTable = new Set(
+      playing.filter(p => p.players_left != null && p.players_left < 10)
+             .map(p => p.name.toLowerCase())
+    );
     window._liveStatusPlayers = allPlayers;
     if (currentScoresData) {
       const s = currentScoresData;
       const ownerMap2 = buildOwnerMap(TEAMS);
-      renderTeams(TEAMS, s.players || {}, ownerMap2, s.player_urls || {}, currentLivePlaying);
+      renderStandings(TEAMS, s.players || {}, s.events || [], currentFinalTable);
+      renderTeams(TEAMS, s.players || {}, ownerMap2, s.player_urls || {}, currentLivePlaying, currentFinalTable);
     }
     renderSchedule();
 
@@ -1551,13 +1593,18 @@
           ? `<a href="${p.event_url}">${p.event}</a>`
           : p.event || '—';
         const placeEl = p.place ? `Plats ${p.place}${p.total_players ? '/' + p.total_players : ''}` : '';
+        const rankEl = (isPlaying && p.place && p.total_players)
+          ? `<span class="live-rank">${p.place}/${p.total_players}</span>`
+          : '';
+        const isFinalTable = isPlaying && p.players_left != null && p.players_left < 10;
+        const ftBadge = isFinalTable ? `<span class="ft-badge">FT</span>` : '';
         const dots = playerDots(p.name, ownerMap);
         const salary = SALARY[p.name];
         const salaryEl = salary != null ? `<span class="live-salary">(${salary})</span>` : '';
         const livePlayerUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[p.name];
         const liveNameEl = livePlayerUrl
-          ? `<a class="player-link" href="${livePlayerUrl}">${p.name}${salaryEl}</a>${dots}`
-          : `${p.name}${salaryEl}${dots}`;
+          ? `<a class="player-link" href="${livePlayerUrl}">${p.name}${salaryEl}</a>${ftBadge}${rankEl}${dots}`
+          : `${p.name}${salaryEl}${ftBadge}${rankEl}${dots}`;
         return `<div class="live-row">
           <div class="live-player">${liveNameEl}</div>
           <span class="live-dot ${dotCls}"></span>

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-03
+- Live: FT-badge (guldglödande) visas efter spelarnamn och lagnamn i ställningen när en spelare är på finalbord (<10 spelare kvar)
+- Scraper: hämtar nu "players_left" från PokerNews chip counts-sida per aktiv turnering
+
 ## 2026-06-01
 - Schema: fix för spelare med dubbla Firebase-poster (t.ex. Joao Simao Peres) – väljer nu posten med event_url istället för alltid första träffen
 
