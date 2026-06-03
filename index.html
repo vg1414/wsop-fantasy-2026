@@ -2241,7 +2241,7 @@
     }
 
     function fieldBonus(entrants) {
-      return Math.floor(entrants / 1000) * 9;
+      return Math.min(Math.floor(entrants / 100), 100);
     }
 
     function formatMultiplier(m) {
@@ -2303,7 +2303,7 @@
       const base = basePoints(place);
       const brac = place === 1 ? 25 : 0;
       const f = place <= 18 ? field : 0;
-      return { pts: Math.round((base + f) * m + brac), base, brac, field: f };
+      return { pts: Math.round(base * m + f + brac), base, brac, field: f };
     }
 
     function renderRefTable(m, field) {
