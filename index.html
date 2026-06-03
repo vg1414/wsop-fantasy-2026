@@ -1310,7 +1310,7 @@
 <nav class="tab-bar">
   <button class="tab active" data-tab="overview">Översikt</button>
   <button class="tab" data-tab="schedule">Schema</button>
-  <button class="tab" data-tab="history">Poänghistorik</button>
+  <button class="tab" data-tab="history">Historik</button>
   <button class="tab" data-tab="calculator">Poängberäknare</button>
   <button class="tab" data-tab="live">Live</button>
 </nav>
@@ -1326,7 +1326,7 @@
   </div>
 
   <div id="tab-history" style="display:none">
-    <div class="section-label">Poänghistorik</div>
+    <div class="section-label">Historik</div>
     <div id="history-legend" class="live-legend"></div>
     <div id="event-log"></div>
   </div>
@@ -2240,11 +2240,8 @@
       return 1; // cash
     }
 
-    function fieldBonus(entrants, buyin) {
-      const raw = buyin.replace(/[^0-9]/g, '');
-      const buyinN = parseInt(raw) || 0;
-      const bonus = Math.floor(entrants / 100);
-      return Math.min(bonus, 100);
+    function fieldBonus(entrants) {
+      return Math.floor(entrants / 1000) * 9;
     }
 
     function formatMultiplier(m) {
@@ -2305,7 +2302,8 @@
     function calcPoints(place, m, field) {
       const base = basePoints(place);
       const brac = place === 1 ? 25 : 0;
-      return { pts: Math.round((base + field) * m + brac), base, brac };
+      const f = place <= 18 ? field : 0;
+      return { pts: Math.round((base + f) * m + brac), base, brac, field: f };
     }
 
     function renderRefTable(m, field) {
@@ -2349,7 +2347,7 @@
       const bdEl  = document.getElementById('calc-result-breakdown');
 
       const m = ev ? getMultiplierForEvent(evN, ev.buyin) : 1;
-      const field = ev && !isNaN(entrants) && entrants > 0 ? fieldBonus(entrants, ev.buyin) : 0;
+      const field = ev && !isNaN(entrants) && entrants > 0 ? fieldBonus(entrants) : 0;
 
       // Always update table when event + entrants are known
       if (ev) renderRefTable(m, field);
@@ -2361,7 +2359,7 @@
         return;
       }
 
-      const { pts, base, brac } = calcPoints(place, m, field);
+      const { pts, base, brac, field: appliedField } = calcPoints(place, m, field);
 
       // Trigger pop animation
       numEl.classList.remove('pop');
@@ -2371,7 +2369,7 @@
 
       // Breakdown text
       let breakdown = `(${base} bas`;
-      if (field > 0) breakdown += ` + ${field} fältbonus`;
+      if (appliedField > 0) breakdown += ` + ${appliedField} fältbonus`;
       breakdown += `) × ${formatMultiplier(m)}`;
       if (brac > 0) breakdown += ` + ${brac} bracelet`;
       bdEl.textContent = breakdown;
