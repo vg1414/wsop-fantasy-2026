@@ -5,6 +5,7 @@ import re
 from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
+from bs4 import BeautifulSoup
 
 FANTASY_PLAYERS = [
     "David Peters", "Josh Arieh", "Viktor Blom", "Ryutaro Suzuki",
@@ -42,23 +43,44 @@ def fetch_my_stable(cookie_string):
     resp.raise_for_status()
     return resp.json()
 
-def fetch_players_left(event_url):
-    """Hämtar antal spelare kvar från PokerNews chip counts-sida."""
+def fetch_chip_counts_data(event_url):
+    """Hämtar players_left, spelarranker och eliminerade från PokerNews chip counts-sida.
+
+    Returnerar dict med:
+      players_left: int eller None
+      ranks: {spelarnamnlower: rank_int}
+      eliminated_names: set med spelarnamnlower som inte finns i tabellen
+    """
     chip_url = event_url.rstrip("/") + "/chip-counts/"
+    result = {"players_left": None, "ranks": {}, "all_names": set()}
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
         }
         resp = requests.get(chip_url, headers=headers, timeout=10)
         if resp.status_code != 200:
-            return None
-        # Leta efter "Players Left" följt av ett tal
+            return result
+
+        # Players Left
         match = re.search(r'Players Left[^0-9]*(\d[\d,]*)', resp.text)
         if match:
-            return int(match.group(1).replace(",", ""))
+            result["players_left"] = int(match.group(1).replace(",", ""))
+
+        # Skrapa spelarranker från tabellen
+        soup = BeautifulSoup(resp.text, "html.parser")
+        rank = 1
+        for a in soup.find_all("a", href=True):
+            href = a["href"]
+            if "/poker-players/" in href:
+                name = a.get_text(strip=True).lower()
+                if name:
+                    result["ranks"][name] = rank
+                    result["all_names"].add(name)
+                    rank += 1
+
     except Exception as e:
-        print(f"  Kunde inte hämta players_left från {chip_url}: {e}")
-    return None
+        print(f"  Kunde inte hämta chip counts från {chip_url}: {e}")
+    return result
 
 def init_firebase():
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
@@ -128,20 +150,46 @@ def main():
 
     results = list(best_by_name.values())
 
-    # Hämta players_left per unik event_url för currentlyPlaying-spelare
+    # Hämta chip counts-data per unik event_url för currentlyPlaying-spelare
     playing_urls = set(
         p["event_url"] for p in results
         if p["status"] == "currentlyPlaying" and p["event_url"]
     )
-    players_left_by_url = {}
+    chip_data_by_url = {}
     for url in playing_urls:
-        print(f"Hämtar players_left från {url}...")
-        count = fetch_players_left(url)
-        players_left_by_url[url] = count
-        print(f"  -> {count} spelare kvar")
+        print(f"Hämtar chip counts från {url}...")
+        data = fetch_chip_counts_data(url)
+        chip_data_by_url[url] = data
+        print(f"  -> {data['players_left']} spelare kvar, {len(data['ranks'])} spelare i tabellen")
 
     for p in results:
-        p["players_left"] = players_left_by_url.get(p["event_url"])
+        if p["status"] != "currentlyPlaying" or not p["event_url"]:
+            p["players_left"] = None
+            continue
+        data = chip_data_by_url.get(p["event_url"], {})
+        p["players_left"] = data.get("players_left")
+
+        # Kolla om spelaren finns i chip counts-tabellen
+        name_lower = p["name"].lower()
+        ranks = data.get("ranks", {})
+        all_names = data.get("all_names", set())
+
+        if all_names:
+            # Hitta rank — försök exakt match, annars partiell
+            player_rank = ranks.get(name_lower)
+            if player_rank is None:
+                for tbl_name, r in ranks.items():
+                    if name_lower in tbl_name or tbl_name in name_lower:
+                        player_rank = r
+                        break
+
+            if player_rank is not None:
+                p["place"] = player_rank
+                print(f"  {p['name']}: rank {player_rank}")
+            else:
+                # Spelaren finns inte i tabellen → eliminerad
+                print(f"  {p['name']}: EJ i chip counts → markeras eliminerad")
+                p["status"] = "eliminated"
 
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
