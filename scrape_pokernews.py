@@ -44,42 +44,62 @@ def fetch_my_stable(cookie_string):
     return resp.json()
 
 def fetch_chip_counts_data(event_url):
-    """Hämtar players_left, spelarranker och eliminerade från PokerNews chip counts-sida.
+    """Hämtar players_left och spelarranker från PokerNews chip counts-sida (alla sidor).
 
     Returnerar dict med:
       players_left: int eller None
       ranks: {spelarnamnlower: rank_int}
-      eliminated_names: set med spelarnamnlower som inte finns i tabellen
+      all_names: set med alla spelarnamnlower i tabellen
     """
-    chip_url = event_url.rstrip("/") + "/chip-counts/"
+    base_url = event_url.rstrip("/") + "/chip-counts/"
     result = {"players_left": None, "ranks": {}, "all_names": set()}
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-        }
-        resp = requests.get(chip_url, headers=headers, timeout=10)
-        if resp.status_code != 200:
-            return result
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+    }
+    rank = 1
+    page = 1
 
-        # Players Left
-        match = re.search(r'Players Left[^0-9]*(\d[\d,]*)', resp.text)
-        if match:
-            result["players_left"] = int(match.group(1).replace(",", ""))
+    while True:
+        url = base_url if page == 1 else f"{base_url}?page={page}"
+        try:
+            resp = requests.get(url, headers=headers, timeout=10)
+            if resp.status_code != 200:
+                break
 
-        # Skrapa spelarranker från tabellen
-        soup = BeautifulSoup(resp.text, "html.parser")
-        rank = 1
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-            if "/poker-players/" in href:
-                name = a.get_text(strip=True).lower()
-                if name:
-                    result["ranks"][name] = rank
-                    result["all_names"].add(name)
-                    rank += 1
+            # Players Left — bara från sida 1
+            if page == 1:
+                match = re.search(r'Players Left[^0-9]*(\d[\d,]*)', resp.text)
+                if match:
+                    result["players_left"] = int(match.group(1).replace(",", ""))
 
-    except Exception as e:
-        print(f"  Kunde inte hämta chip counts från {chip_url}: {e}")
+            soup = BeautifulSoup(resp.text, "html.parser")
+
+            # Hitta spelarnamn på denna sida
+            names_this_page = []
+            for a in soup.find_all("a", href=True):
+                if "/poker-players/" in a["href"]:
+                    name = a.get_text(strip=True).lower()
+                    if name and name not in result["all_names"]:
+                        result["ranks"][name] = rank
+                        result["all_names"].add(name)
+                        names_this_page.append(name)
+                        rank += 1
+
+            if not names_this_page:
+                break
+
+            # Kolla om det finns fler sidor
+            next_link = soup.find("a", href=re.compile(r"\?page=" + str(page + 1)))
+            if not next_link:
+                break
+
+            page += 1
+
+        except Exception as e:
+            print(f"  Fel vid hämtning av sida {page} från {url}: {e}")
+            break
+
+    print(f"  -> {result['players_left']} spelare kvar, {len(result['all_names'])} spelare i tabellen ({page} sidor)")
     return result
 
 def init_firebase():
@@ -160,7 +180,6 @@ def main():
         print(f"Hämtar chip counts från {url}...")
         data = fetch_chip_counts_data(url)
         chip_data_by_url[url] = data
-        print(f"  -> {data['players_left']} spelare kvar, {len(data['ranks'])} spelare i tabellen")
 
     for p in results:
         if p["status"] != "currentlyPlaying" or not p["event_url"]:
