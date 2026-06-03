@@ -2299,14 +2299,15 @@
       calculate();
     }
 
-    function calcPoints(place, m, field) {
+    function calcPoints(place, m, field, entrants) {
       const base = basePoints(place);
       const brac = place === 1 ? 25 : 0;
-      const f = place <= 18 ? field : 0;
+      const fieldCutoff = 18 + Math.floor(entrants / 1000) * 9;
+      const f = place <= fieldCutoff ? field : 0;
       return { pts: Math.round(base * m + f + brac), base, brac, field: f };
     }
 
-    function renderRefTable(m, field) {
+    function renderRefTable(m, field, entrants) {
       const tbodyL = document.getElementById('calc-ref-tbody-left');
       const tbodyR = document.getElementById('calc-ref-tbody-right');
       if (!tbodyL || !tbodyR) return;
@@ -2328,7 +2329,7 @@
 
       const half = Math.ceil(rows.length / 2);
       const toRow = r => {
-        const pts = r.place != null ? calcPoints(r.place, m, field).pts : 0;
+        const pts = r.place != null ? calcPoints(r.place, m, field, entrants).pts : 0;
         const gold = r.place === 1 ? ' class="calc-ref-gold"' : '';
         return `<tr><td>${r.label}</td><td${gold}>${pts}</td></tr>`;
       };
@@ -2350,7 +2351,7 @@
       const field = ev && !isNaN(entrants) && entrants > 0 ? fieldBonus(entrants) : 0;
 
       // Always update table when event + entrants are known
-      if (ev) renderRefTable(m, field);
+      if (ev) renderRefTable(m, field, entrants);
 
       if (!ev || isNaN(place) || place < 1) {
         numEl.textContent = '—';
@@ -2359,7 +2360,7 @@
         return;
       }
 
-      const { pts, base, brac, field: appliedField } = calcPoints(place, m, field);
+      const { pts, base, brac, field: appliedField } = calcPoints(place, m, field, entrants);
 
       // Trigger pop animation
       numEl.classList.remove('pop');
@@ -2380,7 +2381,7 @@
     document.getElementById('calc-place').addEventListener('input', calculate);
 
     // Render default table on load (no event selected yet)
-    renderRefTable(1, 0);
+    renderRefTable(1, 0, 0);
 
     // Expose function to fill in known entrants from Firestore data
     window._calcSetEntrants = function(map) {
