@@ -1567,7 +1567,8 @@
       return;
     }
 
-    const playing = players.filter(p => p.status === 'currentlyPlaying');
+    const playing = players.filter(p => p.status === 'currentlyPlaying')
+      .sort((a, b) => (a.players_left ?? Infinity) - (b.players_left ?? Infinity));
     const lastSeen = players.filter(p => p.status !== 'currentlyPlaying' && p.status !== '');
 
     currentLivePlaying = new Set(playing.map(p => p.name.toLowerCase()));
