@@ -75,25 +75,23 @@ def fetch_chip_counts_data(event_url):
             soup = BeautifulSoup(resp.text, "html.parser")
 
             # Hitta spelarnamn på denna sida
-            names_this_page = []
+            found_any = False
             for a in soup.find_all("a", href=True):
                 if "/poker-players/" in a["href"]:
                     name = a.get_text(strip=True).lower()
                     if name and name not in result["all_names"]:
                         result["ranks"][name] = rank
                         result["all_names"].add(name)
-                        names_this_page.append(name)
                         rank += 1
-
-            if not names_this_page:
-                break
+                        found_any = True
 
             # Kolla om det finns fler sidor
-            next_link = soup.find("a", href=re.compile(r"\?page=" + str(page + 1)))
+            next_page_num = page + 1
+            next_link = soup.find("a", href=re.compile(r"\?page=" + str(next_page_num)))
             if not next_link:
                 break
 
-            page += 1
+            page = next_page_num
 
         except Exception as e:
             print(f"  Fel vid hämtning av sida {page} från {url}: {e}")
@@ -193,22 +191,17 @@ def main():
         ranks = data.get("ranks", {})
         all_names = data.get("all_names", set())
 
-        if all_names:
-            # Hitta rank — försök exakt match, annars partiell
-            player_rank = ranks.get(name_lower)
-            if player_rank is None:
-                for tbl_name, r in ranks.items():
-                    if name_lower in tbl_name or tbl_name in name_lower:
-                        player_rank = r
-                        break
+        # Hitta rank — försök exakt match, annars partiell
+        player_rank = ranks.get(name_lower)
+        if player_rank is None:
+            for tbl_name, r in ranks.items():
+                if name_lower in tbl_name or tbl_name in name_lower:
+                    player_rank = r
+                    break
 
-            if player_rank is not None:
-                p["place"] = player_rank
-                print(f"  {p['name']}: rank {player_rank}")
-            else:
-                # Spelaren finns inte i tabellen → eliminerad
-                print(f"  {p['name']}: EJ i chip counts → markeras eliminerad")
-                p["status"] = "eliminated"
+        if player_rank is not None:
+            p["place"] = player_rank
+            print(f"  {p['name']}: rank {player_rank}")
 
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
