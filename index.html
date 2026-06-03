@@ -1595,7 +1595,7 @@
         const eventEl = p.event_url
           ? `<a href="${p.event_url}">${p.event}</a>`
           : p.event || '—';
-        const placeEl = p.place ? `Plats ${p.place}${p.total_players ? '/' + p.total_players : ''}` : '';
+        const placeEl = '';
         const rankEl = (isPlaying && p.place && p.players_left != null)
           ? `<span class="live-rank ${p.players_left < 30 ? 'rank-red' : p.players_left < 100 ? 'rank-yellow' : ''}">${p.place}/${p.players_left}</span>`
           : (isPlaying && p.players_left != null)
