@@ -661,6 +661,8 @@
       font-weight: 300;
       margin-left: 8px;
     }
+    .live-rank.rank-yellow { color: var(--gold); }
+    .live-rank.rank-red { color: #e05555; }
 
     .player-salary {
       font-size: 0.72rem;
@@ -1595,6 +1597,8 @@
         const placeEl = p.place ? `Plats ${p.place}${p.total_players ? '/' + p.total_players : ''}` : '';
         const rankEl = (isPlaying && p.place && p.total_players)
           ? `<span class="live-rank">${p.place}/${p.total_players}</span>`
+          : (isPlaying && p.players_left != null)
+          ? `<span class="live-rank ${p.players_left < 30 ? 'rank-red' : p.players_left < 100 ? 'rank-yellow' : ''}">${p.players_left}${p.total_players ? ' av ' + p.total_players : ''} kvar</span>`
           : '';
         const isFinalTable = isPlaying && p.players_left != null && p.players_left < 10;
         const ftBadge = isFinalTable ? `<span class="ft-badge">FT</span>` : '';

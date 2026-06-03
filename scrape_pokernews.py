@@ -109,7 +109,7 @@ def main():
             "latest_action": latest_action,
         }
 
-        # Deduplicera: currentlyPlaying vinner alltid; annars senast latest_action
+        # Deduplicera: currentlyPlaying vinner om den är nyare; annars senast latest_action
         existing = best_by_name.get(canonical)
         if not existing:
             best_by_name[canonical] = record
@@ -118,7 +118,11 @@ def main():
             old_playing = existing["status"] == "currentlyPlaying"
             if new_playing and not old_playing:
                 best_by_name[canonical] = record
-            elif not old_playing and not new_playing:
+            elif old_playing and not new_playing:
+                # Ny post är inte playing — byt om den är nyare (spelaren har åkt ut)
+                if (latest_action or "") > (existing["latest_action"] or ""):
+                    best_by_name[canonical] = record
+            else:
                 if (latest_action or "") > (existing["latest_action"] or ""):
                     best_by_name[canonical] = record
 
