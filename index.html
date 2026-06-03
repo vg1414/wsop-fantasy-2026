@@ -988,6 +988,209 @@
     }
     .sch-info-row:hover .sch-info-link { color: var(--gold); }
 
+    /* ── CALCULATOR ── */
+    .calc-shell {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 28px 24px;
+      margin-bottom: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .calc-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .calc-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .calc-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .calc-select-wrap {
+      position: relative;
+    }
+
+    .calc-select {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--card2);
+      border: 1px solid var(--border2);
+      color: var(--white);
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 0.9rem;
+      padding: 11px 36px 11px 14px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .calc-select:focus { border-color: var(--gold); }
+    .calc-select option { background: #1a1a1a; }
+
+    .calc-select-arrow {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted2);
+      pointer-events: none;
+      font-size: 0.8rem;
+    }
+
+    .calc-readout {
+      background: #0d0d0d;
+      border: 1px solid var(--border);
+      padding: 11px 14px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--gold);
+      letter-spacing: 1px;
+      min-height: 42px;
+    }
+
+    .calc-input {
+      background: var(--card2);
+      border: 1px solid var(--border2);
+      color: var(--white);
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 400;
+      letter-spacing: 1px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+    .calc-input:focus { border-color: var(--gold); }
+    .calc-input::placeholder { color: #444; font-size: 0.85rem; letter-spacing: 0; }
+    /* hide number input arrows */
+    .calc-input::-webkit-inner-spin-button,
+    .calc-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .calc-input[type=number] { -moz-appearance: textfield; }
+
+.calc-result-wrap {
+      border-top: 1px solid var(--border);
+      padding-top: 22px;
+      text-align: center;
+    }
+
+    .calc-result-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .calc-result-num {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(3rem, 10vw, 5rem);
+      font-weight: 700;
+      color: var(--muted);
+      line-height: 1;
+      transition: color 0.3s, transform 0.2s;
+    }
+
+    .calc-result-num.has-result {
+      color: var(--gold-light);
+      text-shadow: 0 0 40px color-mix(in srgb, var(--gold) 35%, transparent);
+    }
+
+    @keyframes pop-in {
+      0%   { transform: scale(0.88); opacity: 0.4; }
+      60%  { transform: scale(1.04); }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+    .calc-result-num.pop { animation: pop-in 0.28s ease; }
+
+    .calc-result-breakdown {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-top: 10px;
+      min-height: 18px;
+      transition: opacity 0.2s;
+    }
+
+    /* REFERENCE TABLE */
+    .calc-ref-body {
+      border: 1px solid var(--border);
+      border-top: none;
+      background: #0d0d0d;
+      padding: 20px;
+    }
+
+    .calc-ref-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .calc-ref-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.78rem;
+      margin-bottom: 16px;
+    }
+
+    .calc-ref-table th {
+      font-size: 0.6rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .calc-ref-table td {
+      padding: 6px 12px;
+      color: var(--muted2);
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .calc-ref-table td:last-child {
+      text-align: right;
+      color: var(--muted2);
+    }
+
+    .calc-ref-table tbody tr:last-child td { border-bottom: none; }
+
+    .calc-ref-gold { color: var(--gold) !important; }
+
+    .calc-ref-notes {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .calc-ref-note {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      color: var(--muted);
+      padding-left: 10px;
+      border-left: 2px solid var(--border2);
+    }
+
     /* ── MOBILE ── */
     @media (max-width: 640px) {
       /* Layout */
@@ -1108,6 +1311,7 @@
   <button class="tab active" data-tab="overview">Översikt</button>
   <button class="tab" data-tab="schedule">Schema</button>
   <button class="tab" data-tab="history">Poänghistorik</button>
+  <button class="tab" data-tab="calculator">Poängberäknare</button>
   <button class="tab" data-tab="live">Live</button>
 </nav>
 
@@ -1137,6 +1341,78 @@
     <div class="section-label">Schema · 99 Events</div>
     <div id="schedule-legend" class="live-legend"></div>
     <div id="schedule-log"></div>
+  </div>
+
+  <div id="tab-calculator" style="display:none">
+    <div class="section-label">Poängberäknare</div>
+
+    <div class="calc-shell">
+
+      <!-- EVENT SELECTOR -->
+      <div class="calc-block">
+        <label class="calc-label" for="calc-event">Event</label>
+        <div class="calc-select-wrap">
+          <select id="calc-event" class="calc-select">
+            <option value="">— Välj event —</option>
+          </select>
+          <span class="calc-select-arrow">▾</span>
+        </div>
+      </div>
+
+      <!-- ROW: BUY-IN + MULTIPLIER (read-only, auto-filled) -->
+      <div class="calc-row-2">
+        <div class="calc-block">
+          <label class="calc-label">Buy-in</label>
+          <div class="calc-readout" id="calc-buyin">—</div>
+        </div>
+        <div class="calc-block">
+          <label class="calc-label">Multiplier</label>
+          <div class="calc-readout" id="calc-multiplier">—</div>
+        </div>
+      </div>
+
+      <!-- ROW: ENTRANTS + PLACERING -->
+      <div class="calc-row-2">
+        <div class="calc-block">
+          <label class="calc-label" for="calc-entrants">Antal entrants</label>
+          <input id="calc-entrants" class="calc-input" type="number" min="1" placeholder="t.ex. 2148" />
+        </div>
+        <div class="calc-block">
+          <label class="calc-label" for="calc-place">Placering</label>
+          <input id="calc-place" class="calc-input" type="number" min="1" placeholder="t.ex. 3" />
+        </div>
+      </div>
+
+
+      <!-- RESULT -->
+      <div class="calc-result-wrap" id="calc-result-wrap">
+        <div class="calc-result-label">Beräknade poäng</div>
+        <div class="calc-result-num" id="calc-result-num">—</div>
+        <div class="calc-result-breakdown" id="calc-result-breakdown"></div>
+      </div>
+
+    </div>
+
+    <!-- SCORING REFERENCE -->
+    <div class="calc-ref-body" id="calc-ref-body">
+      <div class="calc-ref-2col">
+        <table class="calc-ref-table" id="calc-ref-table-left">
+          <thead><tr><th>Placering</th><th>Poäng</th></tr></thead>
+          <tbody id="calc-ref-tbody-left"></tbody>
+        </table>
+        <table class="calc-ref-table" id="calc-ref-table-right">
+          <thead><tr><th>Placering</th><th>Poäng</th></tr></thead>
+          <tbody id="calc-ref-tbody-right"></tbody>
+        </table>
+      </div>
+      <div class="calc-ref-notes">
+        <div class="calc-ref-note">1:a plats inkluderar alltid bracelet win: +25 pts</div>
+        <div class="calc-ref-note">Field bonus: entrants ÷ 100 (avrundat ned, max 100 pts) · ges till topp 18 + fler vid stora fält</div>
+        <div class="calc-ref-note">Multipliers: &lt;$1k = 0.5x · $5k = 1.5x · $10k+ = 2x · Main Event / $50k PC = 3x</div>
+        <div class="calc-ref-note">Formel: (baspoäng + fältbonus) × multiplier + bracelet</div>
+      </div>
+    </div>
+
   </div>
 
 </main>
@@ -1530,6 +1806,20 @@
     renderEventLog(ownerMap, data.events || [], playerUrls);
     renderSchedule();
 
+    // Feed entrants data to calculator
+    if (data.events && window._calcSetEntrants) {
+      const entrantsMap = {};
+      for (const ev of data.events) {
+        const m = ev.event && ev.event.match(/Event #(\d+)/i);
+        if (m && ev.entrants) {
+          const num = parseInt(m[1]);
+          const n = parseInt(String(ev.entrants).replace(/[^0-9]/g, ''));
+          if (!isNaN(n) && n > 0) entrantsMap[num] = n;
+        }
+      }
+      window._calcSetEntrants(entrantsMap);
+    }
+
     const dot = document.getElementById('status-dot');
     const upd = document.getElementById('updated');
     dot.classList.add('live');
@@ -1914,8 +2204,195 @@
       document.getElementById('tab-history').style.display = tab === 'history' ? '' : 'none';
       document.getElementById('tab-live').style.display = tab === 'live' ? '' : 'none';
       document.getElementById('tab-schedule').style.display = tab === 'schedule' ? '' : 'none';
+      document.getElementById('tab-calculator').style.display = tab === 'calculator' ? '' : 'none';
     });
   });
+
+  // ── CALCULATOR ──
+  (function() {
+    // Entrants hämtade från Firestore-data (fylls i när data laddas)
+    const knownEntrants = {};
+
+    // Multiplier baserat på buy-in
+    function getMultiplier(buyin) {
+      const raw = buyin.replace(/[^0-9]/g, '');
+      const n = parseInt(raw);
+      if (isNaN(n)) return 1;
+      // Main Event (#82) och $50k Players Championship (#60)
+      if (n >= 50000) return 3;
+      if (n >= 10000) return 2;
+      if (n >= 5000) return 1.5;
+      if (n < 1000) return 0.5;
+      return 1;
+    }
+
+    function basePoints(place) {
+      if (place === 1)  return 50;
+      if (place === 2)  return 45;
+      if (place === 3)  return 40;
+      if (place === 4)  return 35;
+      if (place === 5)  return 30;
+      if (place === 6)  return 25;
+      if (place === 7)  return 20;
+      if (place === 8)  return 15;
+      if (place === 9)  return 10;
+      if (place <= 18)  return 5;
+      return 1; // cash
+    }
+
+    function fieldBonus(entrants, buyin) {
+      const raw = buyin.replace(/[^0-9]/g, '');
+      const buyinN = parseInt(raw) || 0;
+      const bonus = Math.floor(entrants / 100);
+      return Math.min(bonus, 100);
+    }
+
+    function formatMultiplier(m) {
+      if (m === 0.5) return '0.5×';
+      if (m === 1)   return '1×';
+      if (m === 1.5) return '1.5×';
+      if (m === 2)   return '2×';
+      if (m === 3)   return '3×';
+      return m + '×';
+    }
+
+    // Populate dropdown
+    const sel = document.getElementById('calc-event');
+    for (const ev of WSOP_EVENTS) {
+      const opt = document.createElement('option');
+      opt.value = ev.n;
+      opt.textContent = `Event #${ev.n} · ${ev.name} (${ev.buyin})`;
+      sel.appendChild(opt);
+    }
+
+    // Map event number → buyin
+    const evMap = {};
+    for (const ev of WSOP_EVENTS) evMap[ev.n] = ev;
+
+    // Special 3x: Main Event #82 och #60 Poker Players Championship ($50k)
+    const TRIPLE_EVENTS = new Set([82, 60]);
+
+    function getMultiplierForEvent(evN, buyin) {
+      if (TRIPLE_EVENTS.has(evN)) return 3;
+      return getMultiplier(buyin);
+    }
+
+    function updateReadouts() {
+      const evN = parseInt(sel.value);
+      const ev = evMap[evN];
+      if (!ev) {
+        document.getElementById('calc-buyin').textContent = '—';
+        document.getElementById('calc-multiplier').textContent = '—';
+        return;
+      }
+      document.getElementById('calc-buyin').textContent = ev.buyin;
+      const m = getMultiplierForEvent(evN, ev.buyin);
+      document.getElementById('calc-multiplier').textContent = formatMultiplier(m);
+
+      // Auto-fill entrants om vi har dem
+      const entrantsInput = document.getElementById('calc-entrants');
+      if (knownEntrants[evN] != null) {
+        entrantsInput.value = knownEntrants[evN];
+        entrantsInput.style.borderColor = 'var(--gold-dim)';
+      } else {
+        entrantsInput.value = '';
+        entrantsInput.style.borderColor = '';
+      }
+
+      calculate();
+    }
+
+    function calcPoints(place, m, field) {
+      const base = basePoints(place);
+      const brac = place === 1 ? 25 : 0;
+      return { pts: Math.round((base + field) * m + brac), base, brac };
+    }
+
+    function renderRefTable(m, field) {
+      const tbodyL = document.getElementById('calc-ref-tbody-left');
+      const tbodyR = document.getElementById('calc-ref-tbody-right');
+      if (!tbodyL || !tbodyR) return;
+
+      const rows = [
+        { label: '1:a',        place: 1  },
+        { label: '2:a',        place: 2  },
+        { label: '3:e',        place: 3  },
+        { label: '4:e',        place: 4  },
+        { label: '5:e',        place: 5  },
+        { label: '6:e',        place: 6  },
+        { label: '7:e',        place: 7  },
+        { label: '8:e',        place: 8  },
+        { label: '9:e',        place: 9  },
+        { label: '10–18',      place: 10 },
+        { label: '19+ (cash)', place: 19 },
+        { label: 'Ej cashed',  place: null },
+      ];
+
+      const half = Math.ceil(rows.length / 2);
+      const toRow = r => {
+        const pts = r.place != null ? calcPoints(r.place, m, field).pts : 0;
+        const gold = r.place === 1 ? ' class="calc-ref-gold"' : '';
+        return `<tr><td>${r.label}</td><td${gold}>${pts}</td></tr>`;
+      };
+
+      tbodyL.innerHTML = rows.slice(0, half).map(toRow).join('');
+      tbodyR.innerHTML = rows.slice(half).map(toRow).join('');
+    }
+
+    function calculate() {
+      const evN = parseInt(sel.value);
+      const ev = evMap[evN];
+      const place = parseInt(document.getElementById('calc-place').value);
+      const entrants = parseInt(document.getElementById('calc-entrants').value);
+
+      const numEl = document.getElementById('calc-result-num');
+      const bdEl  = document.getElementById('calc-result-breakdown');
+
+      const m = ev ? getMultiplierForEvent(evN, ev.buyin) : 1;
+      const field = ev && !isNaN(entrants) && entrants > 0 ? fieldBonus(entrants, ev.buyin) : 0;
+
+      // Always update table when event + entrants are known
+      if (ev) renderRefTable(m, field);
+
+      if (!ev || isNaN(place) || place < 1) {
+        numEl.textContent = '—';
+        numEl.className = 'calc-result-num';
+        bdEl.textContent = '';
+        return;
+      }
+
+      const { pts, base, brac } = calcPoints(place, m, field);
+
+      // Trigger pop animation
+      numEl.classList.remove('pop');
+      void numEl.offsetWidth;
+      numEl.className = 'calc-result-num has-result pop';
+      numEl.textContent = pts;
+
+      // Breakdown text
+      let breakdown = `(${base} bas`;
+      if (field > 0) breakdown += ` + ${field} fältbonus`;
+      breakdown += `) × ${formatMultiplier(m)}`;
+      if (brac > 0) breakdown += ` + ${brac} bracelet`;
+      bdEl.textContent = breakdown;
+    }
+
+    sel.addEventListener('change', updateReadouts);
+    document.getElementById('calc-entrants').addEventListener('input', calculate);
+    document.getElementById('calc-place').addEventListener('input', calculate);
+
+    // Render default table on load (no event selected yet)
+    renderRefTable(1, 0);
+
+    // Expose function to fill in known entrants from Firestore data
+    window._calcSetEntrants = function(map) {
+      for (const [k, v] of Object.entries(map)) {
+        knownEntrants[parseInt(k)] = v;
+      }
+      // If an event is already selected, refresh
+      if (sel.value) updateReadouts();
+    };
+  })();
 </script>
 
 </body>
