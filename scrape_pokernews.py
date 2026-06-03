@@ -186,11 +186,18 @@ def main():
         ranks = data.get("ranks", {})
         all_names = data.get("all_names", set())
 
+        # Alias för namnmatchning mot chip counts-tabellen
+        CHIP_COUNT_ALIASES = {
+            "kevin yun lam choi": "kevin choi",
+            "joao simao peres": "joao simao",
+        }
+        lookup_name = CHIP_COUNT_ALIASES.get(name_lower, name_lower)
+
         # Hitta rank — försök exakt match, annars partiell
-        player_rank = ranks.get(name_lower)
+        player_rank = ranks.get(lookup_name) or ranks.get(name_lower)
         if player_rank is None:
             for tbl_name, r in ranks.items():
-                if name_lower in tbl_name or tbl_name in name_lower:
+                if lookup_name in tbl_name or tbl_name in lookup_name:
                     player_rank = r
                     break
 
