@@ -5,7 +5,6 @@ import re
 from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
-from bs4 import BeautifulSoup
 
 FANTASY_PLAYERS = [
     "David Peters", "Josh Arieh", "Viktor Blom", "Ryutaro Suzuki",
@@ -43,57 +42,22 @@ def fetch_my_stable(cookie_string):
     resp.raise_for_status()
     return resp.json()
 
-def fetch_chip_counts_data(event_url):
-    """Hämtar players_left och spelarranker från PokerNews chip counts-sida (alla sidor).
-
-    Returnerar dict med:
-      players_left: int eller None
-      ranks: {spelarnamnlower: rank_int}
-      all_names: set med alla spelarnamnlower i tabellen
-    """
-    base_url = event_url.rstrip("/") + "/chip-counts/"
-    result = {"players_left": None, "ranks": {}, "all_names": set()}
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-    }
-    rank = 1
-    page = 1
-
-    while True:
-        url = base_url if page == 1 else f"{base_url}?page={page}"
-        try:
-            resp = requests.get(url, headers=headers, timeout=10)
-            if resp.status_code != 200:
-                break
-
-            # Players Left — bara från sida 1
-            if page == 1:
-                match = re.search(r'Players Left[^0-9]*(\d[\d,]*)', resp.text)
-                if match:
-                    result["players_left"] = int(match.group(1).replace(",", ""))
-
-            soup = BeautifulSoup(resp.text, "html.parser")
-
-            # Hitta spelarnamn på denna sida
-            found_any = False
-            for a in soup.find_all("a", href=True):
-                if "/poker-players/" in a["href"]:
-                    name = a.get_text(strip=True).lower()
-                    if name and name not in result["all_names"]:
-                        result["ranks"][name] = rank
-                        result["all_names"].add(name)
-                        rank += 1
-                        found_any = True
-
-            # PokerNews chip-counts visar alltid samma 18 spelare oavsett sida
-            break
-
-        except Exception as e:
-            print(f"  Fel vid hämtning av sida {page} från {url}: {e}")
-            break
-
-    print(f"  -> {result['players_left']} spelare kvar, {len(result['all_names'])} spelare i tabellen ({page} sidor)")
-    return result
+def fetch_players_left(event_url):
+    """Hämtar antal spelare kvar från PokerNews chip counts-sida."""
+    chip_url = event_url.rstrip("/") + "/chip-counts/"
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        }
+        resp = requests.get(chip_url, headers=headers, timeout=10)
+        if resp.status_code != 200:
+            return None
+        match = re.search(r'Players Left[^0-9]*(\d[\d,]*)', resp.text)
+        if match:
+            return int(match.group(1).replace(",", ""))
+    except Exception as e:
+        print(f"  Kunde inte hämta players_left från {chip_url}: {e}")
+    return None
 
 def init_firebase():
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
@@ -154,7 +118,6 @@ def main():
             if new_playing and not old_playing:
                 best_by_name[canonical] = record
             elif old_playing and not new_playing:
-                # Ny post är inte playing — byt om den är nyare (spelaren har åkt ut)
                 if (latest_action or "") > (existing["latest_action"] or ""):
                     best_by_name[canonical] = record
             else:
@@ -163,47 +126,20 @@ def main():
 
     results = list(best_by_name.values())
 
-    # Hämta chip counts-data per unik event_url för currentlyPlaying-spelare
+    # Hämta players_left per unik event_url för currentlyPlaying-spelare
     playing_urls = set(
         p["event_url"] for p in results
         if p["status"] == "currentlyPlaying" and p["event_url"]
     )
-    chip_data_by_url = {}
+    players_left_by_url = {}
     for url in playing_urls:
-        print(f"Hämtar chip counts från {url}...")
-        data = fetch_chip_counts_data(url)
-        chip_data_by_url[url] = data
+        print(f"Hämtar players_left från {url}...")
+        count = fetch_players_left(url)
+        players_left_by_url[url] = count
+        print(f"  -> {count} spelare kvar")
 
     for p in results:
-        if p["status"] != "currentlyPlaying" or not p["event_url"]:
-            p["players_left"] = None
-            continue
-        data = chip_data_by_url.get(p["event_url"], {})
-        p["players_left"] = data.get("players_left")
-
-        # Kolla om spelaren finns i chip counts-tabellen
-        name_lower = p["name"].lower()
-        ranks = data.get("ranks", {})
-        all_names = data.get("all_names", set())
-
-        # Alias för namnmatchning mot chip counts-tabellen
-        CHIP_COUNT_ALIASES = {
-            "kevin yun lam choi": "kevin choi",
-            "joao simao peres": "joao simao",
-        }
-        lookup_name = CHIP_COUNT_ALIASES.get(name_lower, name_lower)
-
-        # Hitta rank — försök exakt match, annars partiell
-        player_rank = ranks.get(lookup_name) or ranks.get(name_lower)
-        if player_rank is None:
-            for tbl_name, r in ranks.items():
-                if lookup_name in tbl_name or tbl_name in lookup_name:
-                    player_rank = r
-                    break
-
-        if player_rank is not None:
-            p["place"] = player_rank
-            print(f"  {p['name']}: rank {player_rank}")
+        p["players_left"] = players_left_by_url.get(p["event_url"])
 
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
