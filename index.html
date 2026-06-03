@@ -2369,9 +2369,8 @@
       numEl.textContent = pts;
 
       // Breakdown text
-      let breakdown = `(${base} bas`;
+      let breakdown = `${base} bas × ${formatMultiplier(m)}`;
       if (appliedField > 0) breakdown += ` + ${appliedField} fältbonus`;
-      breakdown += `) × ${formatMultiplier(m)}`;
       if (brac > 0) breakdown += ` + ${brac} bracelet`;
       bdEl.textContent = breakdown;
     }
