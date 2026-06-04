@@ -1758,7 +1758,7 @@
     }).join('');
   }
 
-  function renderTeams(teams, scores, ownerMap, playerUrls, livePlayingSet = new Set(), finalTableSet = new Set()) {
+  function renderTeams(teams, scores, ownerMap, playerUrls, livePlayingSet = new Set(), finalTableSet = new Set(), braceletsByPlayer = {}) {
     const el = document.getElementById('teams');
     const sorted = [...teams]
       .map((team, ti) => ({ ...team, ti }))
@@ -1776,9 +1776,11 @@
         const salary = SALARY[p];
         const salaryEl = salary != null ? ` <span class="player-salary">(${salary})</span>` : '';
         const url = playerUrls && playerUrls[p];
+        const playerBracelets = braceletsByPlayer[p] || 0;
+        const braceletImgs = playerBracelets > 0 ? Array(playerBracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet">`).join('') : '';
         const nameEl = url
-          ? `<a class="player-name player-link" href="${url}">${p}${salaryEl}${ftBadgeOv}${liveDot}${dots}</a>`
-          : `<span class="player-name">${p}${salaryEl}${ftBadgeOv}${liveDot}${dots}</span>`;
+          ? `<a class="player-name player-link" href="${url}">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${liveDot}${dots}</a>`
+          : `<span class="player-name">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${liveDot}${dots}</span>`;
         return `<li class="player-row">
           ${nameEl}
           <span class="player-score ${cls}">${pts}</span>
@@ -1917,8 +1919,13 @@
     const playerUrls = data.player_urls || {};
     const ownerMap = buildOwnerMap(TEAMS);
 
+    const braceletsByPlayer = {};
+    for (const ev of data.events || []) {
+      if (ev.placement === 1) braceletsByPlayer[ev.player] = (braceletsByPlayer[ev.player] || 0) + 1;
+    }
+
     renderStandings(TEAMS, scores, data.events || [], currentFinalTable);
-    renderTeams(TEAMS, scores, ownerMap, playerUrls, currentLivePlaying, currentFinalTable);
+    renderTeams(TEAMS, scores, ownerMap, playerUrls, currentLivePlaying, currentFinalTable, braceletsByPlayer);
     renderEventLog(ownerMap, data.events || [], playerUrls);
     renderSchedule();
 
