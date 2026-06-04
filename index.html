@@ -1787,9 +1787,12 @@
         </li>`;
       }).join('');
 
+      const teamBracelets = team.players.reduce((sum, p) => sum + (braceletsByPlayer[p] || 0), 0);
+      const teamBraceletImgs = teamBracelets > 0 ? Array(teamBracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet">`).join('') : '';
+
       return `<div class="team-card" data-team="${ti}">
         <div class="team-header" data-suit="${SUITS[ti]}">
-          <div class="team-owner">${team.owner}</div>
+          <div class="team-owner">${team.owner}${teamBraceletImgs}</div>
           <div class="team-score-wrap">
             <div class="team-score-num">${total}</div>
             <span class="team-score-label">poäng</span>
