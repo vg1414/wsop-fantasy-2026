@@ -7,13 +7,15 @@ import sys
 from datetime import datetime, timezone
 import certifi
 
-# Fix SSL for both requests and gRPC (Firebase) on Windows
-os.environ.setdefault("SSL_CERT_FILE", certifi.where())
-os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
-os.environ.setdefault("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", certifi.where())
+os.environ["GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"] = certifi.where()
+os.environ["SSL_CERT_FILE"] = certifi.where()
+os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 
 import firebase_admin
 from firebase_admin import credentials, firestore
+import google.auth
+import google.auth.transport.requests
+from google.oauth2 import service_account
 
 # Fix Windows terminal encoding for special characters
 sys.stdout.reconfigure(encoding="utf-8")
@@ -210,18 +212,48 @@ def build_player_urls(player_lookup):
         urls[canonical] = f"{BASE_URL}/players/player-profile/{slug}/"
     return urls
 
-def init_firebase():
+FIRESTORE_PROJECT = "wsop-54e15"
+FIRESTORE_URL = f"https://firestore.googleapis.com/v1/projects/{FIRESTORE_PROJECT}/databases/(default)/documents/scores/latest"
+FIRESTORE_SCOPES = ["https://www.googleapis.com/auth/datastore"]
+
+def get_firebase_token():
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
     if sa_json:
         sa_dict = json.loads(sa_json)
-        cred = credentials.Certificate(sa_dict)
+        cred = service_account.Credentials.from_service_account_info(sa_dict, scopes=FIRESTORE_SCOPES)
     else:
         key_path = r"C:\Users\David\.firebase-keys\wsop-54e15-firebase-adminsdk.json"
         if not os.path.exists(key_path):
             raise RuntimeError("Ingen Firebase-nyckel hittades (varken env-variabel eller lokal fil)")
-        cred = credentials.Certificate(key_path)
-    firebase_admin.initialize_app(cred)
-    return firestore.client()
+        cred = service_account.Credentials.from_service_account_file(key_path, scopes=FIRESTORE_SCOPES)
+    session = requests.Session()
+    session.verify = False
+    auth_req = google.auth.transport.requests.Request(session=session)
+    cred.refresh(auth_req)
+    return cred.token
+
+def to_firestore_value(v):
+    if isinstance(v, str):   return {"stringValue": v}
+    if isinstance(v, bool):  return {"booleanValue": v}
+    if isinstance(v, int):   return {"integerValue": str(v)}
+    if isinstance(v, float): return {"doubleValue": v}
+    if v is None:            return {"nullValue": None}
+    if isinstance(v, list):  return {"arrayValue": {"values": [to_firestore_value(i) for i in v]}}
+    if isinstance(v, dict):  return {"mapValue": {"fields": {k: to_firestore_value(val) for k, val in v.items()}}}
+    return {"stringValue": str(v)}
+
+def write_to_firestore(data):
+    token = get_firebase_token()
+    fields = {k: to_firestore_value(v) for k, v in data.items()}
+    res = requests.patch(
+        FIRESTORE_URL,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        json={"fields": fields},
+        verify=certifi.where(),
+        timeout=30,
+    )
+    res.raise_for_status()
+    return res.json()
 
 def main():
     player_lookup = {normalize(p): p for p in PLAYERS}
@@ -255,8 +287,14 @@ def main():
     event_statuses_raw, live_event_urls = scrape_event_statuses()
     event_statuses = {str(k): v for k, v in event_statuses_raw.items()}
 
-    # Check all live events for cashes (bubble burst detection)
-    # Use known URL pattern: /events/wsop-event/2026-event-{N}/
+    # Build event_entrants from already-fetched event details
+    event_entrants = {}
+    for ev in events:
+        m = ev["event"] and re.search(r'Event\s*#(\d+)', ev["event"], re.IGNORECASE)
+        if m and ev.get("entrants", 0) > 0:
+            event_entrants[int(m.group(1))] = ev["entrants"]
+
+    # Check all live events for cashes (bubble burst detection) + grab entrants
     print("Checking live events for ITM (bubble burst)...")
     live_event_nums = [k for k, v in event_statuses_raw.items() if v == "live"]
     print(f"  Live event nums from statuses: {live_event_nums}")
@@ -264,21 +302,24 @@ def main():
     print(f"  Checking URLs: {list(live_check_urls.values())}")
     live_details = scrape_event_details(list(live_check_urls.values()))
     for evN, url in live_check_urls.items():
-        if live_details.get(url, {}).get("has_cashes"):
+        d = live_details.get(url, {})
+        if d.get("has_cashes"):
             itm_event_nums.add(evN)
+        if d.get("entrants", 0) > 0:
+            event_entrants[evN] = d["entrants"]
     print(f"ITM events: {sorted(itm_event_nums)}")
+    print(f"Event entrants: { {k:v for k,v in sorted(event_entrants.items())} }")
 
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    db = init_firebase()
-    doc_ref = db.collection("scores").document("latest")
-    doc_ref.set({
+    write_to_firestore({
         "updated": updated,
         "players": scores,
         "player_urls": player_urls,
         "events": events,
         "event_statuses": event_statuses,
         "itm_events": sorted(itm_event_nums),
+        "event_entrants": event_entrants,
     })
 
     print(f"Wrote to Firestore. Updated: {updated}")

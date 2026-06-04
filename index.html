@@ -1893,17 +1893,26 @@
     renderSchedule();
 
     // Feed entrants data to calculator
-    if (data.events && window._calcSetEntrants) {
+    if (window._calcSetEntrants) {
       const entrantsMap = {};
-      for (const ev of data.events) {
-        const m = ev.event && ev.event.match(/Event #(\d+)/i);
-        if (m && ev.entrants) {
-          const num = parseInt(m[1]);
-          const n = parseInt(String(ev.entrants).replace(/[^0-9]/g, ''));
-          if (!isNaN(n) && n > 0) entrantsMap[num] = n;
+      // Primary: event_entrants map (covers all events, including live with no player cashes)
+      if (data.event_entrants) {
+        for (const [k, v] of Object.entries(data.event_entrants)) {
+          const n = parseInt(v);
+          if (!isNaN(n) && n > 0) entrantsMap[parseInt(k)] = n;
         }
       }
-      console.log('[calc] entrantsMap:', entrantsMap);
+      // Fallback: per-event entrants from player score entries
+      if (data.events) {
+        for (const ev of data.events) {
+          const m = ev.event && ev.event.match(/Event #(\d+)/i);
+          if (m && ev.entrants) {
+            const num = parseInt(m[1]);
+            const n = parseInt(String(ev.entrants).replace(/[^0-9]/g, ''));
+            if (!isNaN(n) && n > 0 && !entrantsMap[num]) entrantsMap[num] = n;
+          }
+        }
+      }
       window._calcSetEntrants(entrantsMap);
     }
 
