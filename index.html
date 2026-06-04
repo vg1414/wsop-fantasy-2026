@@ -704,6 +704,25 @@
                               0 0 22px 5px color-mix(in srgb, var(--gold) 35%, transparent); }
     }
 
+    .itm-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #d4f0d4;
+      background: rgba(60, 140, 80, 0.25);
+      border: 1px solid rgba(80, 180, 100, 0.35);
+      border-radius: 3px;
+      padding: 2px 5px;
+      margin-left: 7px;
+      vertical-align: middle;
+      position: relative;
+      top: -1px;
+    }
+
     .live-event {
       padding: 12px 8px;
       font-family: 'Oswald', sans-serif;
@@ -1992,13 +2011,18 @@
           : '';
         const isFinalTable = isPlaying && p.players_left != null && p.players_left < 10;
         const ftBadge = isFinalTable ? `<span class="ft-badge">FT</span>` : '';
+        const evNumMatch = isPlaying && p.event && p.event.match(/Event\s*#(\d+)/i);
+        const evNum = evNumMatch ? parseInt(evNumMatch[1]) : null;
+        const itmEvents = currentScoresData && currentScoresData.itm_events;
+        const isITM = isPlaying && evNum != null && itmEvents && itmEvents.includes(evNum);
+        const itmBadge = isITM && !isFinalTable ? `<span class="itm-badge">ITM</span>` : '';
         const dots = playerDots(p.name, ownerMap);
         const salary = SALARY[p.name];
         const salaryEl = salary != null ? `<span class="live-salary">(${salary})</span>` : '';
         const livePlayerUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[p.name];
         const liveNameEl = livePlayerUrl
-          ? `<a class="player-link" href="${livePlayerUrl}">${p.name}${salaryEl}</a>${ftBadge}${rankEl}${dots}`
-          : `${p.name}${salaryEl}${ftBadge}${rankEl}${dots}`;
+          ? `<a class="player-link" href="${livePlayerUrl}">${p.name}${salaryEl}</a>${ftBadge}${itmBadge}${rankEl}${dots}`
+          : `${p.name}${salaryEl}${ftBadge}${itmBadge}${rankEl}${dots}`;
         return `<div class="live-row">
           <div class="live-player">${liveNameEl}</div>
           <span class="live-dot ${dotCls}"></span>
