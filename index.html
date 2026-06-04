@@ -277,6 +277,13 @@
 
     .rank-1 .pts-col { color: var(--gold-light); }
 
+    .pts-guaranteed {
+      font-weight: 700;
+      color: var(--muted);
+      opacity: 0.7;
+      margin-right: 2px;
+    }
+
     /* ── TEAM CARDS ── */
     #teams {
       display: grid;
@@ -1612,6 +1619,81 @@
     return `<span class="player-dots">${dots}</span>`;
   }
 
+  // Returns a string like "26 + 11" for guaranteed minimum points from active tournaments,
+  // or "" if no team player is currently playing with known players_left.
+  function calcGuaranteedStr(team) {
+    const liveDetails = window._livePlayerDetails;
+    if (!liveDetails) return '';
+
+    // Build entrants lookup from currentScoresData.events
+    const entrantsMap = {};
+    if (currentScoresData && currentScoresData.events) {
+      for (const ev of currentScoresData.events) {
+        const m = ev.event && ev.event.match(/Event\s*#(\d+)/i);
+        if (m && ev.entrants) {
+          const n = parseInt(String(ev.entrants).replace(/[^0-9]/g, ''));
+          if (!isNaN(n) && n > 0) entrantsMap[parseInt(m[1])] = n;
+        }
+      }
+    }
+
+    // Point tables (mirrors calcPoints in calculator block)
+    function _basePoints(place) {
+      if (place === 1)  return 50;
+      if (place === 2)  return 45;
+      if (place === 3)  return 40;
+      if (place === 4)  return 35;
+      if (place === 5)  return 30;
+      if (place === 6)  return 25;
+      if (place === 7)  return 20;
+      if (place === 8)  return 15;
+      if (place === 9)  return 10;
+      if (place <= 18)  return 5;
+      return 1;
+    }
+    function _getMultiplier(buyin) {
+      const n = parseInt(String(buyin).replace(/[^0-9]/g, ''));
+      if (n >= 10000) return 2;
+      if (n >= 5000)  return 1.5;
+      if (n < 1000)   return 0.5;
+      return 1;
+    }
+    const TRIPLE_EVENTS = new Set([82, 60]);
+
+    const parts = [];
+    for (const playerName of team.players) {
+      const lp = liveDetails[playerName.toLowerCase()];
+      if (!lp || lp.players_left == null) continue;
+
+      // Extract event number from event string
+      const mt = lp.event && lp.event.match(/Event\s*#(\d+)/i);
+      const evN = mt ? parseInt(mt[1]) : null;
+
+      // Only show guaranteed pts if the bubble has burst (itm_events from backend covers all cashes, not just our players)
+      const itmEvents = currentScoresData && currentScoresData.itm_events;
+      const isITM = evN != null && itmEvents && itmEvents.includes(evN);
+      if (!isITM) continue;
+
+      // Look up event info
+      const evInfo = evN != null ? WSOP_EVENTS.find(e => e.n === evN) : null;
+      const m = evInfo ? (TRIPLE_EVENTS.has(evN) ? 3 : _getMultiplier(evInfo.buyin)) : 1;
+      const entrants = evN != null ? (entrantsMap[evN] || 0) : 0;
+      const field = entrants > 0 ? Math.min(Math.floor(entrants / 100), 100) : 0;
+
+      // Worst-case placement = players_left (they finish last among remaining)
+      const place = lp.players_left;
+      const base = _basePoints(place);
+      const brac = place === 1 ? 25 : 0;
+      const fieldCutoff = 18 + Math.floor(entrants / 1000) * 9;
+      const fieldPts = place <= fieldCutoff ? field : 0;
+      const pts = Math.round(base * m + fieldPts + brac);
+
+      parts.push(pts);
+    }
+
+    return parts.length > 0 ? parts.join(' + ') : '';
+  }
+
   function renderStandings(teams, scores, events, finalTableSet = new Set()) {
     const sorted = [...teams]
       .map((t, i) => ({ ...t, index: i, total: teamTotal(t, scores) }))
@@ -1633,11 +1715,15 @@
       const braceletStr = bracelets > 0 ? ' ' + '🥇'.repeat(bracelets) : '';
       const hasFT = t.players.some(p => finalTableSet.has(p.toLowerCase()));
       const ftBadgeStanding = hasFT ? `<span class="ft-badge">FT</span>` : '';
+      const guaranteedStr = calcGuaranteedStr(t);
+      const guaranteedEl = guaranteedStr
+        ? `<span class="pts-guaranteed">${guaranteedStr} + </span>`
+        : '';
       return `
       <div class="standing-row rank-${i + 1}">
         <div class="rank-col">${i + 1}</div>
         <div class="name-col">${t.owner}${braceletStr}${ftBadgeStanding}</div>
-        <div class="pts-col">${t.total}<small>pts</small></div>
+        <div class="pts-col">${guaranteedEl}${t.total}<small>pts</small></div>
       </div>`;
     }).join('');
   }
@@ -1867,6 +1953,11 @@
              .map(p => p.name.toLowerCase())
     );
     window._liveStatusPlayers = allPlayers;
+    // Map name (lowercase) → live player object for guaranteed-pts calculation
+    window._livePlayerDetails = {};
+    for (const p of playing) {
+      window._livePlayerDetails[p.name.toLowerCase()] = p;
+    }
     if (currentScoresData) {
       const s = currentScoresData;
       const ownerMap2 = buildOwnerMap(TEAMS);

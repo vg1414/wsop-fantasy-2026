@@ -154,11 +154,11 @@ def scrape_event_details(event_urls):
                                 placements[normalize(player)] = int(place)
                     break
 
-            cache[url] = {"entrants": entrants, "placements": placements}
+            cache[url] = {"entrants": entrants, "placements": placements, "has_cashes": len(placements) > 0}
             print(f"  {url} -> {entrants} entrants, {len(placements)} placements")
         except Exception as e:
             print(f"  Could not fetch event details for {url}: {e}")
-            cache[url] = {"entrants": 0, "placements": {}}
+            cache[url] = {"entrants": 0, "placements": {}, "has_cashes": False}
     return cache
 
 def scrape_event_statuses():
@@ -225,10 +225,16 @@ def main():
     # Fetch entrants + placements per unique event URL
     print("Fetching entrants and placements per event...")
     event_details = scrape_event_details([e["event_url"] for e in events])
+    # Build set of event numbers where at least one player has cashed (bubble burst)
+    itm_event_nums = set()
     for ev in events:
         details = event_details.get(ev["event_url"], {})
         ev["entrants"] = details.get("entrants", 0)
         ev["placement"] = details.get("placements", {}).get(normalize(ev["player"]), 0)
+        if details.get("has_cashes"):
+            m = ev["event"] and re.search(r'Event\s*#(\d+)', ev["event"], re.IGNORECASE)
+            if m:
+                itm_event_nums.add(int(m.group(1)))
 
     # Fallback: if totals page missed someone, sum from events
     for entry in events:
@@ -250,6 +256,7 @@ def main():
         "player_urls": player_urls,
         "events": events,
         "event_statuses": event_statuses,
+        "itm_events": sorted(itm_event_nums),
     })
 
     print(f"Wrote to Firestore. Updated: {updated}")
