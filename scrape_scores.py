@@ -259,7 +259,9 @@ def main():
     # Use known URL pattern: /events/wsop-event/2026-event-{N}/
     print("Checking live events for ITM (bubble burst)...")
     live_event_nums = [k for k, v in event_statuses_raw.items() if v == "live"]
+    print(f"  Live event nums from statuses: {live_event_nums}")
     live_check_urls = {n: f"{BASE_URL}/events/wsop-event/2026-event-{n}/" for n in live_event_nums}
+    print(f"  Checking URLs: {list(live_check_urls.values())}")
     live_details = scrape_event_details(list(live_check_urls.values()))
     for evN, url in live_check_urls.items():
         if live_details.get(url, {}).get("has_cashes"):
