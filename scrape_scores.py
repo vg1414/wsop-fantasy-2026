@@ -163,10 +163,12 @@ def scrape_event_details(event_urls):
 
 def scrape_event_statuses():
     """Fetch event statuses from 25kfantasy.com/events.
-    Returns dict {event_num: status} where status is one of:
-    'completed', 'live', 'upcoming'
+    Returns (statuses, live_event_urls) where:
+      statuses: dict {event_num: status}  ('completed'/'live'/'upcoming')
+      live_event_urls: dict {event_num: url} for events currently live
     """
     statuses = {}
+    live_event_urls = {}
     try:
         res = requests.get(f"{BASE_URL}/events", headers=HEADERS, timeout=15, verify=False)
         soup = BeautifulSoup(res.text, "html.parser")
@@ -185,6 +187,12 @@ def scrape_event_statuses():
                 statuses[num] = "completed"
             elif "tracking live" in status_text:
                 statuses[num] = "live"
+                # Grab the event URL from the first link in the row
+                link = row.find("a", href=True)
+                if link:
+                    href = link["href"]
+                    url = BASE_URL + href if href.startswith("/") else href
+                    live_event_urls[num] = url
             elif "not yet tracking" in status_text:
                 statuses[num] = "upcoming"
         print(f"Event statuses: {len(statuses)} found, "
@@ -192,7 +200,7 @@ def scrape_event_statuses():
               f"{sum(1 for s in statuses.values() if s == 'live')} live")
     except Exception as e:
         print(f"Error scraping event statuses: {e}")
-    return statuses
+    return statuses, live_event_urls
 
 def build_player_urls(player_lookup):
     """Build profile URLs for all players based on slug pattern."""
@@ -242,9 +250,21 @@ def main():
         if scores.get(p, 0) == 0 and entry["points"] > 0:
             scores[p] = scores.get(p, 0) + entry["points"]
 
-    # Fetch event statuses (completed / live / upcoming)
+    # Fetch event statuses (completed / live / upcoming) + URLs for live events
     print("Fetching event statuses...")
-    event_statuses = {str(k): v for k, v in scrape_event_statuses().items()}
+    event_statuses_raw, live_event_urls = scrape_event_statuses()
+    event_statuses = {str(k): v for k, v in event_statuses_raw.items()}
+
+    # Check all live events for cashes (bubble burst detection)
+    # Use known URL pattern: /events/wsop-event/2026-event-{N}/
+    print("Checking live events for ITM (bubble burst)...")
+    live_event_nums = [k for k, v in event_statuses_raw.items() if v == "live"]
+    live_check_urls = {n: f"{BASE_URL}/events/wsop-event/2026-event-{n}/" for n in live_event_nums}
+    live_details = scrape_event_details(list(live_check_urls.values()))
+    for evN, url in live_check_urls.items():
+        if live_details.get(url, {}).get("has_cashes"):
+            itm_event_nums.add(evN)
+    print(f"ITM events: {sorted(itm_event_nums)}")
 
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
