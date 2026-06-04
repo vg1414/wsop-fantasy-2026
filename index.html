@@ -676,6 +676,14 @@
       font-style: normal;
     }
 
+    .bracelet-icon {
+      height: 8px;
+      width: auto;
+      vertical-align: middle;
+      margin-left: 5px;
+      display: inline-block;
+    }
+
     .ft-badge {
       display: inline-flex;
       align-items: center;
@@ -1733,7 +1741,8 @@
     const el = document.getElementById('standings');
     el.innerHTML = sorted.map((t, i) => {
       const bracelets = t.players.reduce((sum, p) => sum + (braceletsByPlayer[p] || 0), 0);
-      const braceletStr = bracelets > 0 ? ' ' + '🥇'.repeat(bracelets) : '';
+      const braceletImg = `<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet">`;
+      const braceletStr = bracelets > 0 ? ' ' + Array(bracelets).fill(braceletImg).join('') : '';
       const hasFT = t.players.some(p => finalTableSet.has(p.toLowerCase()));
       const ftBadgeStanding = hasFT ? `<span class="ft-badge">FT</span>` : '';
       const guaranteedStr = calcGuaranteedStr(t);
