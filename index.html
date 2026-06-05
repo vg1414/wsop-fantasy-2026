@@ -1758,7 +1758,7 @@
     }).join('');
   }
 
-  function renderTeams(teams, scores, ownerMap, playerUrls, livePlayingSet = new Set(), finalTableSet = new Set(), braceletsByPlayer = {}) {
+  function renderTeams(teams, scores, ownerMap, playerUrls, livePlayingSet = new Set(), finalTableSet = new Set(), braceletsByPlayer = {}, itmSet = new Set()) {
     const el = document.getElementById('teams');
     const sorted = [...teams]
       .map((team, ti) => ({ ...team, ti }))
@@ -1773,14 +1773,15 @@
         const isLive = livePlayingSet.has(p.toLowerCase());
         const liveDot = isLive ? `<span class="live-playing-dot"></span>` : '';
         const ftBadgeOv = finalTableSet.has(p.toLowerCase()) ? `<span class="ft-badge">FT</span>` : '';
+        const itmBadgeOv = isLive && itmSet.has(p.toLowerCase()) && !finalTableSet.has(p.toLowerCase()) ? `<span class="itm-badge">ITM</span>` : '';
         const salary = SALARY[p];
         const salaryEl = salary != null ? ` <span class="player-salary">(${salary})</span>` : '';
         const url = playerUrls && playerUrls[p];
         const playerBracelets = braceletsByPlayer[p] || 0;
         const braceletImgs = playerBracelets > 0 ? Array(playerBracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet">`).join('') : '';
         const nameEl = url
-          ? `<a class="player-name player-link" href="${url}">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${liveDot}${dots}</a>`
-          : `<span class="player-name">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${liveDot}${dots}</span>`;
+          ? `<a class="player-name player-link" href="${url}">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${itmBadgeOv}${liveDot}${dots}</a>`
+          : `<span class="player-name">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${itmBadgeOv}${liveDot}${dots}</span>`;
         return `<li class="player-row">
           ${nameEl}
           <span class="player-score ${cls}">${pts}</span>
@@ -1915,6 +1916,7 @@
   let currentScoresData = null;
   let currentLivePlaying = new Set();
   let currentFinalTable = new Set();
+  let currentITM = new Set();
 
   function applyData(data) {
     currentScoresData = data;
@@ -1928,7 +1930,7 @@
     }
 
     renderStandings(TEAMS, scores, data.events || [], currentFinalTable);
-    renderTeams(TEAMS, scores, ownerMap, playerUrls, currentLivePlaying, currentFinalTable, braceletsByPlayer);
+    renderTeams(TEAMS, scores, ownerMap, playerUrls, currentLivePlaying, currentFinalTable, braceletsByPlayer, currentITM);
     renderEventLog(ownerMap, data.events || [], playerUrls);
     renderSchedule();
 
@@ -2002,6 +2004,14 @@
       playing.filter(p => p.players_left != null && p.players_left < 10)
              .map(p => p.name.toLowerCase())
     );
+    const itmEventsForSet = currentScoresData && currentScoresData.itm_events;
+    currentITM = new Set(
+      playing.filter(p => {
+        const mt = p.event && p.event.match(/Event\s*#(\d+)/i);
+        const evN = mt ? parseInt(mt[1]) : null;
+        return evN != null && itmEventsForSet && itmEventsForSet.includes(evN);
+      }).map(p => p.name.toLowerCase())
+    );
     window._liveStatusPlayers = allPlayers;
     // Map name (lowercase) → live player object for guaranteed-pts calculation
     window._livePlayerDetails = {};
@@ -2012,7 +2022,7 @@
       const s = currentScoresData;
       const ownerMap2 = buildOwnerMap(TEAMS);
       renderStandings(TEAMS, s.players || {}, s.events || [], currentFinalTable);
-      renderTeams(TEAMS, s.players || {}, ownerMap2, s.player_urls || {}, currentLivePlaying, currentFinalTable);
+      renderTeams(TEAMS, s.players || {}, ownerMap2, s.player_urls || {}, currentLivePlaying, currentFinalTable, {}, currentITM);
     }
     renderSchedule();
 

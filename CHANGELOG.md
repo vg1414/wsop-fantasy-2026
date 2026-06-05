@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-05
+- Översikt: ITM-badge visas nu även bredvid spelares namn i lagkorten (precis som på live-sidan), när spelaren är in the money och inte på finalbord
+
+## 2026-06-04
+- Dokumentation: skapade ARCHITECTURE.md med fullständig teknisk guide, dataflöden, poängsystem och checklista inför nya säsonger
+- README.md: uppdaterades att reflektera nuvarande funktioner (5 flikar, Firestore-arkitektur)
+
 ## 2026-06-03
 - Live: FT-badge (guldglödande) visas efter spelarnamn och lagnamn i ställningen när en spelare är på finalbord (<10 spelare kvar)
 - Scraper: hämtar nu "players_left" från PokerNews chip counts-sida per aktiv turnering
