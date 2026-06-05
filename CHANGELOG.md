@@ -2,6 +2,7 @@
 
 ## 2026-06-05
 - Översikt: ITM-badge visas nu även bredvid spelares namn i lagkorten (precis som på live-sidan), när spelaren är in the money och inte på finalbord
+- Översikt: spelarpoängen i lagkorten följer nu lagets färg (blå, orange, grön, lila, guld) istället för att alltid vara grön
 
 ## 2026-06-04
 - Dokumentation: skapade ARCHITECTURE.md med fullständig teknisk guide, dataflöden, poängsystem och checklista inför nya säsonger
