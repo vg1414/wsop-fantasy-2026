@@ -212,6 +212,28 @@ def build_player_urls(player_lookup):
         urls[canonical] = f"{BASE_URL}/players/player-profile/{slug}/"
     return urls
 
+def scrape_cash_counts(player_urls):
+    """Hämtar antal cashes per spelare från deras profilsida."""
+    counts = {}
+    for player, url in player_urls.items():
+        try:
+            res = requests.get(url, headers=HEADERS, timeout=15, verify=False)
+            soup = BeautifulSoup(res.text, "html.parser")
+            # Letar efter "X cashes" eller antal rader i cash-tabellen
+            cash_count = 0
+            for table in soup.find_all("table"):
+                headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
+                if "score" in headers and ("event" in headers or "placement" in "".join(headers)):
+                    cash_count = len([r for r in table.find_all("tr") if r.find("td")])
+                    break
+            counts[player] = cash_count
+            if cash_count > 0:
+                print(f"  {player}: {cash_count} cashes")
+        except Exception as e:
+            print(f"  Kunde inte hämta profil för {player}: {e}")
+            counts[player] = 0
+    return counts
+
 FIRESTORE_PROJECT = "wsop-54e15"
 FIRESTORE_URL = f"https://firestore.googleapis.com/v1/projects/{FIRESTORE_PROJECT}/databases/(default)/documents/scores/latest"
 FIRESTORE_SCOPES = ["https://www.googleapis.com/auth/datastore"]
@@ -310,6 +332,9 @@ def main():
     print(f"ITM events: {sorted(itm_event_nums)}")
     print(f"Event entrants: { {k:v for k,v in sorted(event_entrants.items())} }")
 
+    print("Hämtar antal cashes från spelarprofilsidor...")
+    cash_counts = scrape_cash_counts(player_urls)
+
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     write_to_firestore({
@@ -320,6 +345,7 @@ def main():
         "event_statuses": event_statuses,
         "itm_events": sorted(itm_event_nums),
         "event_entrants": event_entrants,
+        "cash_counts": cash_counts,
     })
 
     print(f"Wrote to Firestore. Updated: {updated}")
