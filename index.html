@@ -2104,7 +2104,7 @@
           const parts = p.chip_rank.split('/');
           const remaining = parseInt(parts[1]);
           const rankCls = remaining < 30 ? 'rank-red' : remaining < 100 ? 'rank-yellow' : '';
-          rankEl = `<span class="live-rank ${rankCls}">${p.chip_rank}</span>`;
+          rankEl = `<span class="live-rank ${rankCls}">${p.chip_rank} kvar</span>`;
         } else if (isPlaying && p.players_left != null) {
           rankEl = `<span class="live-rank ${p.players_left < 30 ? 'rank-red' : p.players_left < 100 ? 'rank-yellow' : ''}">${p.players_left} kvar</span>`;
         }
