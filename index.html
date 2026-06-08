@@ -1773,7 +1773,8 @@
       const place = lp.players_left;
       const base = _basePoints(place);
       const brac = place === 1 ? 25 : 0;
-      const fieldCutoff = 18 + Math.floor(entrants / 1000) * 9;
+      const buyinStr = evInfo ? evInfo.buyin : '';
+      const fieldCutoff = (() => { const raw = 18 + Math.floor(entrants / 1000) * 9; const bn = parseInt(String(buyinStr).replace(/[^0-9]/g, '')); return (!isNaN(bn) && bn <= 1500) ? Math.min(raw, 81) : raw; })();
       const fieldPts = place <= fieldCutoff ? field : 0;
       const pts = Math.round(base * m + fieldPts + brac);
 
@@ -2550,20 +2551,26 @@
       calculate();
     }
 
-    function calcPoints(place, m, field, entrants) {
+    function calcFieldCutoff(entrants, buyin) {
+      const raw = 18 + Math.floor(entrants / 1000) * 9;
+      const buyinNum = parseInt(String(buyin).replace(/[^0-9]/g, ''));
+      return (!isNaN(buyinNum) && buyinNum <= 1500) ? Math.min(raw, 81) : raw;
+    }
+
+    function calcPoints(place, m, field, entrants, buyin) {
       const base = basePoints(place);
       const brac = place === 1 ? 25 : 0;
-      const fieldCutoff = 18 + Math.floor(entrants / 1000) * 9;
+      const fieldCutoff = calcFieldCutoff(entrants, buyin);
       const f = place <= fieldCutoff ? field : 0;
       return { pts: Math.round(base * m + f + brac), base, brac, field: f };
     }
 
-    function renderRefTable(m, field, entrants) {
+    function renderRefTable(m, field, entrants, buyin) {
       const tbodyL = document.getElementById('calc-ref-tbody-left');
       const tbodyR = document.getElementById('calc-ref-tbody-right');
       if (!tbodyL || !tbodyR) return;
 
-      const fieldCutoff = 18 + Math.floor(entrants / 1000) * 9;
+      const fieldCutoff = calcFieldCutoff(entrants, buyin);
 
       const rows = [
         { label: '1:a',        place: 1  },
@@ -2590,7 +2597,7 @@
 
       const half = Math.ceil(rows.length / 2);
       const toRow = r => {
-        const pts = r.place != null ? calcPoints(r.place, m, field, entrants).pts : 0;
+        const pts = r.place != null ? calcPoints(r.place, m, field, entrants, buyin).pts : 0;
         const gold = r.place === 1 ? ' class="calc-ref-gold"' : '';
         return `<tr><td>${r.label}</td><td${gold}>${pts}</td></tr>`;
       };
@@ -2612,7 +2619,7 @@
       const field = ev && !isNaN(entrants) && entrants > 0 ? fieldBonus(entrants) : 0;
 
       // Always update table when event + entrants are known
-      if (ev) renderRefTable(m, field, entrants);
+      if (ev) renderRefTable(m, field, entrants, ev.buyin);
 
       if (!ev || isNaN(place) || place < 1) {
         numEl.textContent = '—';
@@ -2621,7 +2628,7 @@
         return;
       }
 
-      const { pts, base, brac, field: appliedField } = calcPoints(place, m, field, entrants);
+      const { pts, base, brac, field: appliedField } = calcPoints(place, m, field, entrants, ev ? ev.buyin : '');
 
       // Trigger pop animation
       numEl.classList.remove('pop');
@@ -2641,7 +2648,7 @@
     document.getElementById('calc-place').addEventListener('input', calculate);
 
     // Render default table on load (no event selected yet)
-    renderRefTable(1, 0, 0);
+    renderRefTable(1, 0, 0, '');
 
     // Expose function to fill in known entrants from Firestore data
     window._calcSetEntrants = function(map) {
