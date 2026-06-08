@@ -257,6 +257,12 @@
       color: var(--white);
     }
 
+    .standing-row[data-team="0"] .name-col { color: var(--team-0); }
+    .standing-row[data-team="1"] .name-col { color: var(--team-1); }
+    .standing-row[data-team="2"] .name-col { color: var(--team-2); }
+    .standing-row[data-team="3"] .name-col { color: var(--team-3); }
+    .standing-row[data-team="4"] .name-col { color: var(--team-4); }
+
     .pts-col {
       padding: 16px 20px 16px 0;
       font-family: 'Oswald', sans-serif;
@@ -1061,6 +1067,48 @@
       color: var(--muted);
     }
 
+    .calc-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .calc-label-row .calc-label { margin-bottom: 0; }
+
+    .calc-show-all-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .calc-show-all-label input[type="checkbox"] {
+      accent-color: var(--gold);
+      width: 12px;
+      height: 12px;
+      cursor: pointer;
+    }
+
+    .calc-event-hint {
+      margin: 0;
+      font-size: 0.68rem;
+      letter-spacing: 0.03em;
+      color: var(--muted);
+      border-left: 2px solid var(--gold-dim, #6b5420);
+      padding-left: 8px;
+      line-height: 1.4;
+      transition: opacity 0.2s;
+    }
+
+    .calc-event-hint em {
+      font-style: normal;
+      color: var(--gold);
+    }
+
     .calc-select-wrap {
       position: relative;
     }
@@ -1392,7 +1440,13 @@
 
       <!-- EVENT SELECTOR -->
       <div class="calc-block">
-        <label class="calc-label" for="calc-event">Event</label>
+        <div class="calc-label-row">
+          <label class="calc-label" for="calc-event">Event</label>
+          <label class="calc-show-all-label">
+            <input type="checkbox" id="calc-show-all"> Visa alla
+          </label>
+        </div>
+        <p class="calc-event-hint" id="calc-event-hint">Visar pågående events · bocka i <em>Visa alla</em> för hela schemat</p>
         <div class="calc-select-wrap">
           <select id="calc-event" class="calc-select">
             <option value="">— Välj event —</option>
@@ -1756,7 +1810,7 @@
         ? `<span class="pts-guaranteed">${guaranteedStr} + </span>`
         : '';
       return `
-      <div class="standing-row rank-${i + 1}">
+      <div class="standing-row rank-${i + 1}" data-team="${t.index}">
         <div class="rank-col">${i + 1}</div>
         <div class="name-col">${t.owner}${braceletStr}${ftBadgeStanding}</div>
         <div class="pts-col">${guaranteedEl}${t.total}<small>pts</small></div>
@@ -1923,6 +1977,7 @@
   let currentLivePlaying = new Set();
   let currentFinalTable = new Set();
   let currentITM = new Set();
+  let currentLiveEventNums = new Set();
 
   function applyData(data) {
     currentScoresData = data;
@@ -2167,6 +2222,8 @@
         }
       }
     }
+    currentLiveEventNums = liveEventNums;
+    if (window._calcSetActive) window._calcSetActive([...liveEventNums]);
 
     const html = WSOP_EVENTS.map(ev => {
       // Trust 25kfantasy for completed/live. For "upcoming": override with start date.
@@ -2425,16 +2482,40 @@
 
     // Populate dropdown
     const sel = document.getElementById('calc-event');
-    for (const ev of WSOP_EVENTS) {
-      const opt = document.createElement('option');
-      opt.value = ev.n;
-      opt.textContent = `Event #${ev.n} · ${ev.name} (${ev.buyin})`;
-      sel.appendChild(opt);
-    }
+    const showAllChk = document.getElementById('calc-show-all');
 
     // Map event number → buyin
     const evMap = {};
     for (const ev of WSOP_EVENTS) evMap[ev.n] = ev;
+
+    let activeEventNums = new Set(); // filled in by _calcSetActive
+
+    function populateDropdown() {
+      const showAll = showAllChk.checked;
+      const prevVal = sel.value;
+      sel.innerHTML = '<option value="">— Välj event —</option>';
+      const list = showAll
+        ? WSOP_EVENTS
+        : WSOP_EVENTS.filter(ev => activeEventNums.has(ev.n));
+      for (const ev of list) {
+        const opt = document.createElement('option');
+        opt.value = ev.n;
+        opt.textContent = `Event #${ev.n} · ${ev.name} (${ev.buyin})`;
+        sel.appendChild(opt);
+      }
+      // Restore selection if it's still available
+      if ([...sel.options].some(o => o.value === prevVal)) sel.value = prevVal;
+    }
+
+    const hintEl = document.getElementById('calc-event-hint');
+    function updateHint() {
+      if (hintEl) hintEl.innerHTML = showAllChk.checked
+        ? 'Visar alla 99 events · avbocka för att filtrera på <em>pågående</em>'
+        : 'Visar pågående events · bocka i <em>Visa alla</em> för hela schemat';
+    }
+
+    showAllChk.addEventListener('change', () => { populateDropdown(); updateReadouts(); updateHint(); });
+    populateDropdown();
 
     // Special 3x: Main Event #82 och #60 Poker Players Championship ($50k)
     const TRIPLE_EVENTS = new Set([82, 60]);
@@ -2482,6 +2563,8 @@
       const tbodyR = document.getElementById('calc-ref-tbody-right');
       if (!tbodyL || !tbodyR) return;
 
+      const fieldCutoff = 18 + Math.floor(entrants / 1000) * 9;
+
       const rows = [
         { label: '1:a',        place: 1  },
         { label: '2:a',        place: 2  },
@@ -2493,9 +2576,17 @@
         { label: '8:e',        place: 8  },
         { label: '9:e',        place: 9  },
         { label: '10–18',      place: 10 },
-        { label: '19+ (cash)', place: 19 },
-        { label: 'Ej cashed',  place: null },
       ];
+
+      // Om fieldCutoff > 18: lägg till en rad för 19–fieldCutoff (med fältbonus) och en för fieldCutoff+1+ (utan)
+      if (fieldCutoff > 18) {
+        rows.push({ label: `19–${fieldCutoff} (cash)`, place: 19 });
+        rows.push({ label: `${fieldCutoff + 1}+ (cash)`, place: fieldCutoff + 1 });
+      } else {
+        rows.push({ label: '19+ (cash)', place: 19 });
+      }
+
+      rows.push({ label: 'Ej cashed', place: null });
 
       const half = Math.ceil(rows.length / 2);
       const toRow = r => {
@@ -2557,8 +2648,13 @@
       for (const [k, v] of Object.entries(map)) {
         knownEntrants[parseInt(k)] = v;
       }
-      // If an event is already selected, refresh
       if (sel.value) updateReadouts();
+    };
+
+    // Expose function to set active (currently running) event numbers
+    window._calcSetActive = function(nums) {
+      activeEventNums = new Set(nums.map(Number));
+      if (!showAllChk.checked) populateDropdown();
     };
   })();
 </script>
