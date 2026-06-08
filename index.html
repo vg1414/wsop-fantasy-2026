@@ -1997,7 +1997,7 @@
     const cashCountByPlayer = {};
     for (const ev of data.events || []) {
       if (ev.placement === 1) braceletsByPlayer[ev.player] = (braceletsByPlayer[ev.player] || 0) + 1;
-      if ((ev.points || 0) > 0) cashCountByPlayer[ev.player] = (cashCountByPlayer[ev.player] || 0) + 1;
+      if ((ev.placement || 0) > 0 || (ev.points || 0) > 0) cashCountByPlayer[ev.player] = (cashCountByPlayer[ev.player] || 0) + 1;
     }
 
     renderStandings(TEAMS, scores, data.events || [], currentFinalTable);
@@ -2096,7 +2096,7 @@
       const cash2 = {};
       for (const ev of s.events || []) {
         if (ev.placement === 1) brac2[ev.player] = (brac2[ev.player] || 0) + 1;
-        if ((ev.points || 0) > 0) cash2[ev.player] = (cash2[ev.player] || 0) + 1;
+        if ((ev.placement || 0) > 0 || (ev.points || 0) > 0) cash2[ev.player] = (cash2[ev.player] || 0) + 1;
       }
       renderStandings(TEAMS, s.players || {}, s.events || [], currentFinalTable);
       renderTeams(TEAMS, s.players || {}, ownerMap2, s.player_urls || {}, currentLivePlaying, currentFinalTable, brac2, currentITM, cash2);
