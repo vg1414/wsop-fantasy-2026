@@ -58,26 +58,29 @@ def fetch_chip_positions(event_url):
 
         found_any = False
         for i, row in enumerate(rows):
-            # Ta bort HTML-taggar, kolla om en fantasy-spelare finns i raden
             text = re.sub(r'<[^>]+>', ' ', row)
             text_clean = ' '.join(text.split())
             name_lower = text_clean.lower()
 
             for fp_lower, fp_canon in FANTASY_PLAYERS_LOWER.items():
                 if fp_lower in name_lower:
-                    # Försök hitta ett rank-nummer i samma rad
-                    nums = re.findall(r'\b(\d{1,3})\b', text_clean)
-                    print(f"  HITTAD: {fp_canon} | rad {i} | nummer i raden: {nums} | text: {text_clean[:120]}")
+                    # Visa rå HTML så vi ser exakt <td>-strukturen
+                    print(f"  HITTAD: {fp_canon}")
+                    print(f"    text: {text_clean[:150]}")
+                    # Hitta alla <td>-celler
+                    tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
+                    tds_clean = [re.sub(r'<[^>]+>', '', td).strip() for td in tds]
+                    print(f"    <td>-celler: {tds_clean}")
                     found_any = True
 
         if not found_any:
-            print("  Ingen fantasy-spelare hittad i <tr>-rader")
-            # Visa de första 10 raderna för inspektion
-            for i, row in enumerate(rows[:10]):
-                text = re.sub(r'<[^>]+>', ' ', row)
-                text_clean = ' '.join(text.split())
-                if text_clean.strip():
-                    print(f"  rad {i}: {text_clean[:100]}")
+            print("  Ingen fantasy-spelare hittad")
+            # Visa rå HTML för de första 3 datarader
+            data_rows = [r for r in rows if '<td' in r][:3]
+            for i, row in enumerate(data_rows):
+                tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
+                tds_clean = [re.sub(r'<[^>]+>', '', td).strip() for td in tds]
+                print(f"  exempelrad {i}: {tds_clean}")
 
     except Exception as e:
         print(f"  FEL: {e}")
