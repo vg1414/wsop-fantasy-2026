@@ -2092,8 +2092,14 @@
     if (currentScoresData) {
       const s = currentScoresData;
       const ownerMap2 = buildOwnerMap(TEAMS);
+      const brac2 = {};
+      const cash2 = {};
+      for (const ev of s.events || []) {
+        if (ev.placement === 1) brac2[ev.player] = (brac2[ev.player] || 0) + 1;
+        if ((ev.points || 0) > 0) cash2[ev.player] = (cash2[ev.player] || 0) + 1;
+      }
       renderStandings(TEAMS, s.players || {}, s.events || [], currentFinalTable);
-      renderTeams(TEAMS, s.players || {}, ownerMap2, s.player_urls || {}, currentLivePlaying, currentFinalTable, {}, currentITM);
+      renderTeams(TEAMS, s.players || {}, ownerMap2, s.player_urls || {}, currentLivePlaying, currentFinalTable, brac2, currentITM, cash2);
     }
     renderSchedule();
 
