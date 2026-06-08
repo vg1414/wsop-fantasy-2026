@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-08
+- Live: chip-rank visas nu för ITM-spelare (t.ex. "5/7") från 25kfantasy sweat-API; för övriga spelas fortfarande "X kvar" baserat på players_left
+- Scraper: scrape_pokernews.py hämtar nu chip_rank per spelare via 25kfantasy.com/process/sweat
+
 ## 2026-06-05
 - Översikt: ITM-badge visas nu även bredvid spelares namn i lagkorten (precis som på live-sidan), när spelaren är in the money och inte på finalbord
 - Översikt: spelarpoängen i lagkorten följer nu lagets färg (blå, orange, grön, lila, guld) istället för att alltid vara grön
