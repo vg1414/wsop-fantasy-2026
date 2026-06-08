@@ -56,31 +56,29 @@ def fetch_chip_positions(event_url):
         rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL | re.IGNORECASE)
         print(f"  Antal <tr>-rader: {len(rows)}")
 
+        # Filtrera ut bara datarader (har minst en <td>)
+        data_rows = [r for r in rows if '<td' in r]
+        print(f"  Antal datarader: {len(data_rows)}")
+
         found_any = False
-        for i, row in enumerate(rows):
+        for rank, row in enumerate(data_rows, start=1):
             text = re.sub(r'<[^>]+>', ' ', row)
             text_clean = ' '.join(text.split())
             name_lower = text_clean.lower()
 
             for fp_lower, fp_canon in FANTASY_PLAYERS_LOWER.items():
                 if fp_lower in name_lower:
-                    # Visa rå HTML så vi ser exakt <td>-strukturen
-                    print(f"  HITTAD: {fp_canon}")
-                    print(f"    text: {text_clean[:150]}")
-                    # Hitta alla <td>-celler
                     tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
                     tds_clean = [re.sub(r'<[^>]+>', '', td).strip() for td in tds]
-                    print(f"    <td>-celler: {tds_clean}")
+                    print(f"  HITTAD: {fp_canon} | radrank={rank}/{len(data_rows)} | celler={tds_clean}")
                     found_any = True
 
         if not found_any:
             print("  Ingen fantasy-spelare hittad")
-            # Visa rå HTML för de första 3 datarader
-            data_rows = [r for r in rows if '<td' in r][:3]
-            for i, row in enumerate(data_rows):
+            for i, row in enumerate(data_rows[:3]):
                 tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
                 tds_clean = [re.sub(r'<[^>]+>', '', td).strip() for td in tds]
-                print(f"  exempelrad {i}: {tds_clean}")
+                print(f"  exempelrad {i+1}: {tds_clean}")
 
     except Exception as e:
         print(f"  FEL: {e}")
