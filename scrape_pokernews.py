@@ -153,8 +153,7 @@ def main():
     print(f"Wrote {len(results)} fantasy players to Firestore")
     print(f"Currently playing: {[p['name'] for p in currently_playing]}")
     for p in currently_playing:
-        if p.get("players_left") is not None:
-            print(f"  {p['name']}: {p['players_left']} spelare kvar")
+        print(f"  DEBUG {p['name']}: place={repr(p.get('place'))} total_players={repr(p.get('total_players'))} players_left={p.get('players_left')}")
 
 if __name__ == "__main__":
     main()
