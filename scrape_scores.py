@@ -204,11 +204,20 @@ def scrape_event_statuses():
         print(f"Error scraping event statuses: {e}")
     return statuses, live_event_urls
 
+PLAYER_SLUG_OVERRIDES = {
+    "Joao Simao Peres": "joao-simao",
+    "Kevin Yun Lam Choi": "kevin-choi",
+}
+
 def build_player_urls(player_lookup):
     """Build profile URLs for all players based on slug pattern."""
     urls = {}
+    seen = set()
     for norm, canonical in player_lookup.items():
-        slug = player_slug(canonical)
+        if canonical in seen:
+            continue
+        seen.add(canonical)
+        slug = PLAYER_SLUG_OVERRIDES.get(canonical, player_slug(canonical))
         urls[canonical] = f"{BASE_URL}/players/player-profile/{slug}/"
     return urls
 
@@ -224,7 +233,11 @@ def scrape_cash_counts(player_urls):
             for table in soup.find_all("table"):
                 headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
                 if "score" in headers and ("event" in headers or "placement" in "".join(headers)):
-                    cash_count = len([r for r in table.find_all("tr") if r.find("td")])
+                    data_rows = [
+                        r for r in table.find_all("tr")
+                        if r.find("td") and "no scores" not in r.get_text(strip=True).lower()
+                    ]
+                    cash_count = len(data_rows)
                     break
             counts[player] = cash_count
             if cash_count > 0:
