@@ -31,3 +31,6 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           POKERNEWS_COOKIES: ${{ secrets.POKERNEWS_COOKIES }}
         run: python scrape_pokernews.py
+
+      - name: TEST chip positions (tillfällig)
+        run: python test_chip_positions.py
