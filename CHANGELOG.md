@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 2026-06-08
+- Översikt: antal ITM (cashes) visas inom parantes efter spelarens poäng i lagkorten, t.ex. "61 (1)"
 - Live: chip-rank visas nu för ITM-spelare (t.ex. "5/7") från 25kfantasy sweat-API; för övriga spelas fortfarande "X kvar" baserat på players_left
 - Scraper: scrape_pokernews.py hämtar nu chip_rank per spelare via 25kfantasy.com/process/sweat
 
