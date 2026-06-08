@@ -32,8 +32,3 @@ jobs:
           POKERNEWS_COOKIES: ${{ secrets.POKERNEWS_COOKIES }}
         run: python scrape_pokernews.py
 
-      - name: TEST chip positions (tillfällig)
-        run: python test_chip_positions.py
-
-      - name: TEST sweat API (tillfällig)
-        run: python test_sweat_api.py

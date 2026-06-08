@@ -25,6 +25,15 @@ FANTASY_PLAYERS_LOWER["joão simão"] = "Joao Simao Peres"
 FANTASY_PLAYERS_LOWER["joão simão peres"] = "Joao Simao Peres"
 
 API_URL = "https://www.pokernews.com/api/my-stable"
+SWEAT_URL = "https://www.25kfantasy.com/process/sweat"
+
+SWEAT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+    "Content-Type": "application/json",
+    "X-Requested-With": "XMLHttpRequest",
+    "Referer": "https://www.25kfantasy.com/sweat",
+    "Origin": "https://www.25kfantasy.com",
+}
 
 def fetch_my_stable(cookie_string):
     headers = {
@@ -43,7 +52,6 @@ def fetch_my_stable(cookie_string):
     return resp.json()
 
 def fetch_players_left(event_url):
-    """Hämtar antal spelare kvar från PokerNews chip counts-sida."""
     chip_url = event_url.rstrip("/") + "/chip-counts/"
     try:
         headers = {
@@ -58,6 +66,57 @@ def fetch_players_left(event_url):
     except Exception as e:
         print(f"  Kunde inte hämta players_left från {chip_url}: {e}")
     return None
+
+def fetch_sweat_ranks():
+    """Hämtar chip-rank per fantasy-spelare från 25kfantasy sweat-API.
+    Returnerar dict: spelarnamn (lowercase) -> rank-sträng t.ex. '5/7'
+    """
+    ranks = {}
+    try:
+        # Steg 1: hämta aktiva events
+        r = requests.post(SWEAT_URL, headers=SWEAT_HEADERS, json={"q": "sweat_events"}, timeout=15)
+        if r.status_code != 200:
+            print(f"  sweat_events HTTP {r.status_code}")
+            return ranks
+        data = r.json()
+        events = data.get("data", {}).get("events", [])
+        print(f"  Aktiva sweat-events: {len(events)}")
+
+        # Steg 2: för varje event, hämta rank per spelare
+        for ev in events:
+            event_id = ev.get("id")
+            event_name = ev.get("name", "")
+            print(f"  Hämtar sweat_by_event för {event_name} (id={event_id})...")
+            r2 = requests.post(SWEAT_URL, headers=SWEAT_HEADERS, json={"q": "sweat_by_event", "event_id": str(event_id)}, timeout=15)
+            if r2.status_code != 200:
+                print(f"    HTTP {r2.status_code}")
+                continue
+            html = r2.json().get("data", {}).get("results", "")
+
+            # Parsa tabellrader: <td>5 / 7</td><td ...>Klemens Roiter</td>
+            rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL | re.IGNORECASE)
+            for row in rows:
+                tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
+                tds_clean = [re.sub(r'<[^>]+>', '', td).strip() for td in tds]
+                if len(tds_clean) < 2:
+                    continue
+                # Första cellen är rank (t.ex. "5 / 7"), andra är spelarnamn
+                rank_str = tds_clean[0]
+                player_cell = tds_clean[1]
+                if not re.match(r'^\d+\s*/\s*\d+$', rank_str):
+                    continue
+                # Normalisera till "5/7"
+                rank_normalized = re.sub(r'\s*/\s*', '/', rank_str)
+                # Matcha spelarnamn mot våra fantasy-spelare
+                player_lower = player_cell.lower()
+                for fp_lower, fp_canon in FANTASY_PLAYERS_LOWER.items():
+                    if fp_lower in player_lower:
+                        ranks[fp_canon.lower()] = rank_normalized
+                        print(f"    {fp_canon}: {rank_normalized}")
+                        break
+    except Exception as e:
+        print(f"  Fel i fetch_sweat_ranks: {e}")
+    return ranks
 
 def init_firebase():
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
@@ -90,8 +149,6 @@ def main():
         tournament_title = status.get("tournamentTitle", "")
         event_title = status.get("title", "")
         event_url = status.get("url", "")
-        place = status.get("place", "")
-        total_players = status.get("totalPlayers", "")
         latest_action = status.get("latestActionDate", "")
 
         if event_url and not event_url.startswith("http"):
@@ -103,12 +160,9 @@ def main():
             "tournament": tournament_title,
             "event": event_title,
             "event_url": event_url,
-            "place": place,
-            "total_players": total_players,
             "latest_action": latest_action,
         }
 
-        # Deduplicera: currentlyPlaying vinner om den är nyare; annars senast latest_action
         existing = best_by_name.get(canonical)
         if not existing:
             best_by_name[canonical] = record
@@ -141,6 +195,12 @@ def main():
     for p in results:
         p["players_left"] = players_left_by_url.get(p["event_url"])
 
+    # Hämta chip-rank från 25kfantasy sweat-API
+    print("Hämtar chip-rank från 25kfantasy...")
+    sweat_ranks = fetch_sweat_ranks()
+    for p in results:
+        p["chip_rank"] = sweat_ranks.get(p["name"].lower())
+
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     db = init_firebase()
@@ -153,7 +213,7 @@ def main():
     print(f"Wrote {len(results)} fantasy players to Firestore")
     print(f"Currently playing: {[p['name'] for p in currently_playing]}")
     for p in currently_playing:
-        print(f"  DEBUG {p['name']}: place={repr(p.get('place'))} total_players={repr(p.get('total_players'))} players_left={p.get('players_left')}")
+        print(f"  {p['name']}: players_left={p.get('players_left')} chip_rank={p.get('chip_rank')}")
 
 if __name__ == "__main__":
     main()
