@@ -206,7 +206,6 @@ def scrape_event_statuses():
 
 PLAYER_SLUG_OVERRIDES = {
     "Joao Simao Peres": "joao-simao",
-    "Kevin Yun Lam Choi": "kevin-choi",
 }
 
 def build_player_urls(player_lookup):
