@@ -93,7 +93,7 @@ def fetch_sweat_ranks():
                 continue
             html = r2.json().get("data", {}).get("results", "")
 
-            # Parsa tabellrader: <td>5 / 7</td><td ...>Klemens Roiter</td>
+            # Parsa tabellrader: Rank | Player | Team | Chips | BB | Bonus | Points
             rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL | re.IGNORECASE)
             for row in rows:
                 tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
@@ -107,12 +107,19 @@ def fetch_sweat_ranks():
                     continue
                 # Normalisera till "5/7"
                 rank_normalized = re.sub(r'\s*/\s*', '/', rank_str)
+                # BB är kolumn 4 (index 4), formatet är "15.6 BB"
+                bb_str = None
+                if len(tds_clean) > 4:
+                    bb_raw = tds_clean[4]
+                    m = re.search(r'([\d.]+)\s*BB', bb_raw, re.IGNORECASE)
+                    if m:
+                        bb_str = m.group(1) + " BB"
                 # Matcha spelarnamn mot våra fantasy-spelare
                 player_lower = player_cell.lower()
                 for fp_lower, fp_canon in FANTASY_PLAYERS_LOWER.items():
                     if fp_lower in player_lower:
-                        ranks[fp_canon.lower()] = {"rank": rank_normalized, "event": event_name}
-                        print(f"    {fp_canon}: {rank_normalized} ({event_name})")
+                        ranks[fp_canon.lower()] = {"rank": rank_normalized, "event": event_name, "bb": bb_str}
+                        print(f"    {fp_canon}: {rank_normalized} {bb_str or ''} ({event_name})")
                         break
     except Exception as e:
         print(f"  Fel i fetch_sweat_ranks: {e}")
@@ -201,6 +208,7 @@ def main():
     for p in results:
         sweat = sweat_ranks.get(p["name"].lower())
         p["chip_rank"] = sweat["rank"] if sweat else None
+        p["bb"] = sweat["bb"] if sweat else None
 
     # Fallback: spelare som syns i sweat men inte som currentlyPlaying i PokerNews
     playing_names = {p["name"].lower() for p in results if p["status"] == "currentlyPlaying"}
@@ -214,6 +222,7 @@ def main():
             if existing:
                 existing["status"] = "currentlyPlaying"
                 existing["chip_rank"] = sweat["rank"]
+                existing["bb"] = sweat["bb"]
                 if not existing.get("event"):
                     existing["event"] = sweat["event"]
                 print(f"  Fallback (sweat→playing): {canon} ({sweat['rank']} i {sweat['event']})")
@@ -228,6 +237,7 @@ def main():
                     "latest_action": "",
                     "players_left": None,
                     "chip_rank": sweat["rank"],
+                    "bb": sweat["bb"],
                 }
                 results.append(new_record)
                 print(f"  Fallback (sweat→ny post): {canon} ({sweat['rank']} i {sweat['event']})")

@@ -685,6 +685,13 @@
     }
     .live-rank.rank-yellow { color: var(--gold); }
     .live-rank.rank-red { color: #e05555; }
+    .live-bb {
+      font-size: 0.8rem;
+      font-weight: 400;
+      margin-left: 6px;
+      color: #888;
+      font-style: italic;
+    }
 
     .player-salary {
       font-size: 0.72rem;
@@ -2124,6 +2131,7 @@
         } else if (isPlaying && p.players_left != null) {
           rankEl = `<span class="live-rank ${p.players_left < 30 ? 'rank-red' : p.players_left < 100 ? 'rank-yellow' : ''}">${p.players_left} kvar</span>`;
         }
+        const bbEl = isPlaying && p.bb ? `<span class="live-bb">${p.bb}</span>` : '';
         const isFinalTable = isPlaying && p.players_left != null && p.players_left < 10;
         const ftBadge = isFinalTable ? `<span class="ft-badge">FT</span>` : '';
         const evNumMatch = isPlaying && p.event && p.event.match(/Event\s*#(\d+)/i);
@@ -2136,8 +2144,8 @@
         const salaryEl = salary != null ? `<span class="live-salary">(${salary})</span>` : '';
         const livePlayerUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[p.name];
         const liveNameEl = livePlayerUrl
-          ? `<a class="player-link" href="${livePlayerUrl}">${p.name}${salaryEl}</a>${ftBadge}${itmBadge}${rankEl}${dots}`
-          : `${p.name}${salaryEl}${ftBadge}${itmBadge}${rankEl}${dots}`;
+          ? `<a class="player-link" href="${livePlayerUrl}">${p.name}${salaryEl}</a>${ftBadge}${itmBadge}${rankEl}${bbEl}${dots}`
+          : `${p.name}${salaryEl}${ftBadge}${itmBadge}${rankEl}${bbEl}${dots}`;
         return `<div class="live-row">
           <div class="live-player">${liveNameEl}</div>
           <span class="live-dot ${dotCls}"></span>
