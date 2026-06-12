@@ -69,7 +69,7 @@ def fetch_players_left(event_url):
 
 def fetch_sweat_ranks():
     """Hämtar chip-rank per fantasy-spelare från 25kfantasy sweat-API.
-    Returnerar dict: spelarnamn (lowercase) -> rank-sträng t.ex. '5/7'
+    Returnerar dict: spelarnamn (lowercase) -> {"rank": "5/7", "event": "Event #37: ..."}
     """
     ranks = {}
     try:
@@ -111,8 +111,8 @@ def fetch_sweat_ranks():
                 player_lower = player_cell.lower()
                 for fp_lower, fp_canon in FANTASY_PLAYERS_LOWER.items():
                     if fp_lower in player_lower:
-                        ranks[fp_canon.lower()] = rank_normalized
-                        print(f"    {fp_canon}: {rank_normalized}")
+                        ranks[fp_canon.lower()] = {"rank": rank_normalized, "event": event_name}
+                        print(f"    {fp_canon}: {rank_normalized} ({event_name})")
                         break
     except Exception as e:
         print(f"  Fel i fetch_sweat_ranks: {e}")
@@ -199,7 +199,38 @@ def main():
     print("Hämtar chip-rank från 25kfantasy...")
     sweat_ranks = fetch_sweat_ranks()
     for p in results:
-        p["chip_rank"] = sweat_ranks.get(p["name"].lower())
+        sweat = sweat_ranks.get(p["name"].lower())
+        p["chip_rank"] = sweat["rank"] if sweat else None
+
+    # Fallback: spelare som syns i sweat men inte som currentlyPlaying i PokerNews
+    playing_names = {p["name"].lower() for p in results if p["status"] == "currentlyPlaying"}
+    for name_lower, sweat in sweat_ranks.items():
+        if name_lower not in playing_names:
+            canon = FANTASY_PLAYERS_LOWER.get(name_lower)
+            if not canon:
+                continue
+            # Kolla om spelaren finns i results men med fel status
+            existing = best_by_name.get(canon)
+            if existing:
+                existing["status"] = "currentlyPlaying"
+                existing["chip_rank"] = sweat["rank"]
+                if not existing.get("event"):
+                    existing["event"] = sweat["event"]
+                print(f"  Fallback (sweat→playing): {canon} ({sweat['rank']} i {sweat['event']})")
+            else:
+                # Spelaren saknas helt — skapa en minimal post
+                new_record = {
+                    "name": canon,
+                    "status": "currentlyPlaying",
+                    "tournament": "WSOP 2026",
+                    "event": sweat["event"],
+                    "event_url": "",
+                    "latest_action": "",
+                    "players_left": None,
+                    "chip_rank": sweat["rank"],
+                }
+                results.append(new_record)
+                print(f"  Fallback (sweat→ny post): {canon} ({sweat['rank']} i {sweat['event']})")
 
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
