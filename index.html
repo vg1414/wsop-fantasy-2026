@@ -2476,8 +2476,6 @@
       const raw = buyin.replace(/[^0-9]/g, '');
       const n = parseInt(raw);
       if (isNaN(n)) return 1;
-      // Main Event (#82) och $50k Players Championship (#60)
-      if (n >= 50000) return 3;
       if (n >= 10000) return 2;
       if (n >= 5000) return 1.5;
       if (n < 1000) return 0.5;

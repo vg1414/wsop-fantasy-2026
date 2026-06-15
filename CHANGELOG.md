@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-15
+- Fix: multiplier-bugg där events med $50k+ buy-in (t.ex. #29 $50k, #36 $100k, #41 $250k) felaktigt fick 3x istället för 2x — nu får alla $10k+-events 2x, och 3x gäller enbart #82 (Main Event) och #60 (Poker Players Championship)
+
 ## 2026-06-08
 - Översikt: antal ITM (cashes) visas inom parantes efter spelarens poäng i lagkorten, t.ex. "61 (1)"
 - Live: chip-rank visas nu för ITM-spelare (t.ex. "5/7") från 25kfantasy sweat-API; för övriga spelas fortfarande "X kvar" baserat på players_left
