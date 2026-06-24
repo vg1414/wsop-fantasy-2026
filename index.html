@@ -559,8 +559,7 @@
       background: rgba(0,0,0,0.55);
     }
     .hamburger-menu {
-      position: absolute;
-      top: 0;
+      position: fixed;
       right: 0;
       width: 220px;
       background: var(--card);
@@ -2845,7 +2844,13 @@
   const hamburgerOverlay = document.getElementById('hamburger-overlay');
 
   hamburgerBtn.addEventListener('click', () => {
-    hamburgerDropdown.style.display = hamburgerDropdown.style.display === 'block' ? 'none' : 'block';
+    if (hamburgerDropdown.style.display === 'block') {
+      hamburgerDropdown.style.display = 'none';
+    } else {
+      const rect = hamburgerBtn.getBoundingClientRect();
+      document.querySelector('.hamburger-menu').style.top = rect.bottom + 'px';
+      hamburgerDropdown.style.display = 'block';
+    }
   });
   hamburgerOverlay.addEventListener('click', () => {
     hamburgerDropdown.style.display = 'none';
