@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-06-24
+- Ny flik "Lag-statistik" med historiska WSOP-karriärmeriter per lag (vinster, cashes, armband, final tables) som stapeldiagram med lagfärger
+- Lagnamn i statistik-fliken visas i respektive lags färg
+- Fotnot i statistik-fliken: "Statistiken avser karriärmeriter t.o.m. innan WSOP 2026"
+- Nytt skript `seed_wsop_stats.py` med hardkodad statistik för alla 33 spelare (hämtad från wsop.com)
+- Nytt GitHub Actions-workflow `seed-stats.yml` för manuell seeding av historisk statistik
+- Hamburgermeny på mobil (≤640px): flikraden ersätts av ☰ MENY-knapp med panel som glider in från höger
+- Hamburgerknapp: guldglimmer-animation vid sidladdning (10 pulser), ikon roterar 90° när menyn är öppen
+- Live-flik: borttagen redundant "Uppdaterad"-rad (visas redan i statusbaren)
+- Dokumentation: ARCHITECTURE.md och README.md uppdaterade med allt nytt
+
 ## 2026-06-15
 - Fix: multiplier-bugg där events med $50k+ buy-in (t.ex. #29 $50k, #36 $100k, #41 $250k) felaktigt fick 3x istället för 2x — nu får alla $10k+-events 2x, och 3x gäller enbart #82 (Main Event) och #60 (Poker Players Championship)
 
