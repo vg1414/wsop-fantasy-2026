@@ -553,6 +553,14 @@
       font-size: 0.62rem;
       letter-spacing: 2px;
     }
+    @keyframes hamburger-glow {
+      0%   { border-color: var(--border); color: var(--muted2); box-shadow: none; }
+      50%  { border-color: var(--gold); color: var(--gold-light); box-shadow: 0 0 8px rgba(201,152,43,0.45); }
+      100% { border-color: var(--border); color: var(--muted2); box-shadow: none; }
+    }
+    .hamburger-btn.attract {
+      animation: hamburger-glow 1.4s ease-in-out 10;
+    }
     .hamburger-dropdown {
       display: none;
       position: fixed;
@@ -579,6 +587,18 @@
       flex-direction: column;
       padding-top: 8px;
       padding-bottom: 8px;
+      transform: translateX(100%);
+      transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hamburger-menu.open {
+      transform: translateX(0);
+    }
+    .hamburger-btn-icon {
+      display: inline-block;
+      transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hamburger-btn.open .hamburger-btn-icon {
+      transform: rotate(90deg);
     }
     .hamburger-menu-item {
       font-family: 'Oswald', sans-serif;
@@ -1633,7 +1653,7 @@
 
 <div class="hamburger-bar" id="hamburger-bar">
   <span class="hamburger-active-label" id="hamburger-active-label">Översikt</span>
-  <button class="hamburger-btn" id="hamburger-btn" aria-label="Meny">☰ <span class="hamburger-btn-label">MENY</span></button>
+  <button class="hamburger-btn" id="hamburger-btn" aria-label="Meny"><span class="hamburger-btn-icon">☰</span> <span class="hamburger-btn-label">MENY</span></button>
 </div>
 
 <div class="hamburger-dropdown" id="hamburger-dropdown">
@@ -2852,22 +2872,38 @@
   const hamburgerDropdown = document.getElementById('hamburger-dropdown');
   const hamburgerOverlay = document.getElementById('hamburger-overlay');
 
-  hamburgerBtn.addEventListener('click', () => {
-    if (hamburgerDropdown.style.display === 'block') {
+  const hamburgerMenu = document.querySelector('.hamburger-menu');
+
+  // Glimmeranimation vid sidladdning för att dra uppmärksamhet
+  hamburgerBtn.classList.add('attract');
+  hamburgerBtn.addEventListener('animationend', () => hamburgerBtn.classList.remove('attract'), { once: true });
+
+  function openHamburger() {
+    const rect = hamburgerBtn.getBoundingClientRect();
+    hamburgerMenu.style.top = rect.bottom + 'px';
+    hamburgerDropdown.style.display = 'block';
+    requestAnimationFrame(() => {
+      hamburgerMenu.classList.add('open');
+      hamburgerBtn.classList.add('open');
+    });
+  }
+
+  function closeHamburger() {
+    hamburgerMenu.classList.remove('open');
+    hamburgerBtn.classList.remove('open');
+    hamburgerMenu.addEventListener('transitionend', () => {
       hamburgerDropdown.style.display = 'none';
-    } else {
-      const rect = hamburgerBtn.getBoundingClientRect();
-      document.querySelector('.hamburger-menu').style.top = rect.bottom + 'px';
-      hamburgerDropdown.style.display = 'block';
-    }
+    }, { once: true });
+  }
+
+  hamburgerBtn.addEventListener('click', () => {
+    hamburgerMenu.classList.contains('open') ? closeHamburger() : openHamburger();
   });
-  hamburgerOverlay.addEventListener('click', () => {
-    hamburgerDropdown.style.display = 'none';
-  });
+  hamburgerOverlay.addEventListener('click', closeHamburger);
   document.querySelectorAll('.hamburger-menu-item').forEach(btn => {
     btn.addEventListener('click', () => {
       switchTab(btn.dataset.tab);
-      hamburgerDropdown.style.display = 'none';
+      closeHamburger();
     });
   });
 
