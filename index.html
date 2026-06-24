@@ -1693,7 +1693,7 @@
       Historisk statistik laddas in automatiskt · Kör GitHub Actions workflow för att hämta data
     </div>
 
-    <div class="metrics-source">Källor: WSOP.com · Statistiken uppdateras automatiskt via GitHub Actions</div>
+    <div class="metrics-source">Källor: WSOP.com · Statistiken avser karriärmeriter t.o.m. innan WSOP 2026</div>
   </div>
 
 </main>
@@ -2400,30 +2400,35 @@
       { label: 'FINAL TABLES',  top: byFT[0],          val: byFT[0].final_tables,               anchor: byFT[0].topEarner.name },
     ];
 
-    document.getElementById('metrics-top-cards').innerHTML = cardsData.map(c => `
+    const teamIndex = Object.fromEntries(TEAMS.map((t, i) => [t.owner, i]));
+    document.getElementById('metrics-top-cards').innerHTML = cardsData.map(c => {
+      const ti = teamIndex[c.top.owner] ?? 0;
+      return `
       <div class="metrics-card">
         <div class="metrics-card-label">${c.label}</div>
         <div class="metrics-card-value">${c.val}</div>
-        <div class="metrics-card-team">${c.top.owner}</div>
+        <div class="metrics-card-team" style="color:var(--team-${ti})">${c.top.owner}</div>
         <div class="metrics-card-anchor">Stjärna: ${c.anchor}</div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
     // Stapeldiagram-funktion
     function renderChart(containerId, sorted, valFn, fmtFn, colorClass) {
       const max = valFn(sorted[0]) || 1;
-      document.getElementById(containerId).innerHTML = sorted.map((t, i) => `
+      document.getElementById(containerId).innerHTML = sorted.map((t, i) => {
+        const ti = teamIndex[t.owner] ?? 0;
+        return `
         <div class="metrics-bar-row">
           <div class="metrics-bar-rank">
             <span>${String(i+1).padStart(2,'0')}</span>
-            <div class="metrics-bar-name">${t.owner}</div>
+            <div class="metrics-bar-name" style="color:var(--team-${ti})">${t.owner}</div>
           </div>
           <div class="metrics-bar-track">
             <div class="metrics-bar-fill ${colorClass}" style="width:${Math.round(valFn(t)/max*100)}%"></div>
           </div>
           <div class="metrics-bar-val">${fmtFn(valFn(t))}</div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
     }
 
     renderChart('metrics-chart-earnings',  byEarnings,   t => t.earnings,     fmt$M,         'gold');
