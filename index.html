@@ -1753,7 +1753,7 @@
       if (place === 8)  return 15;
       if (place === 9)  return 10;
       if (place <= 18)  return 5;
-      return 0;
+      return 1;
     }
     function _getMultiplier(buyin) {
       const n = parseInt(String(buyin).replace(/[^0-9]/g, ''));
@@ -2504,7 +2504,7 @@
       if (place === 8)  return 15;
       if (place === 9)  return 10;
       if (place <= 18)  return 5;
-      return 0;
+      return 1;
     }
 
     function fieldBonus(entrants) {
@@ -2615,28 +2615,39 @@
 
       const itmCutoff = entrants > 0 ? Math.ceil(entrants * 0.15) : 18;
 
+      // Bygg rader dynamiskt baserat på ITM- och fältbonus-gränser
       const rows = [
-        { label: '1:a',        place: 1  },
-        { label: '2:a',        place: 2  },
-        { label: '3:e',        place: 3  },
-        { label: '4:e',        place: 4  },
-        { label: '5:e',        place: 5  },
-        { label: '6:e',        place: 6  },
-        { label: '7:e',        place: 7  },
-        { label: '8:e',        place: 8  },
-        { label: '9:e',        place: 9  },
-        { label: `10–${Math.min(18, itmCutoff)}`, place: 10 },
+        { label: '1:a', place: 1 },
+        { label: '2:a', place: 2 },
+        { label: '3:e', place: 3 },
+        { label: '4:e', place: 4 },
+        { label: '5:e', place: 5 },
+        { label: '6:e', place: 6 },
+        { label: '7:e', place: 7 },
+        { label: '8:e', place: 8 },
+        { label: '9:e', place: 9 },
       ];
 
-      // Om fieldCutoff > 18: lägg till cash-rader med fältbonus
-      if (fieldCutoff > 18) {
-        rows.push({ label: `19–${fieldCutoff} (cash)`, place: 19 });
-        rows.push({ label: `${fieldCutoff + 1}+ (cash)`, place: fieldCutoff + 1 });
-      } else {
-        rows.push({ label: '19+ (cash)', place: 19 });
+      // Plats 10–18-gruppen: begränsa till ITM om ITM < 18
+      const top18end = Math.min(18, itmCutoff);
+      if (top18end >= 10) rows.push({ label: `10–${top18end}`, place: 10 });
+
+      // Om ITM sträcker sig förbi 18: lägg till cash-grupper med/utan fältbonus
+      if (itmCutoff > 18) {
+        if (fieldCutoff > 18) {
+          // Med fältbonus: 19–min(fieldCutoff, itmCutoff)
+          const withBonus = Math.min(fieldCutoff, itmCutoff);
+          rows.push({ label: `19–${withBonus}`, place: 19 });
+          // Utan fältbonus: fieldCutoff+1–itmCutoff (om det finns sådana platser)
+          if (itmCutoff > fieldCutoff) {
+            rows.push({ label: `${fieldCutoff + 1}–${itmCutoff}`, place: fieldCutoff + 1 });
+          }
+        } else {
+          rows.push({ label: `19–${itmCutoff}`, place: 19 });
+        }
       }
 
-      // Ta bort rader som ger 0 poäng (utanför ITM)
+      // Filtrera bort rader utanför ITM (ger 0p)
       const filteredRows = rows.filter(r => calcPoints(r.place, m, field, entrants, buyin).pts > 0);
 
 
@@ -2661,10 +2672,11 @@
       const bdEl  = document.getElementById('calc-result-breakdown');
 
       const m = ev ? getMultiplierForEvent(evN, ev.buyin) : 1;
-      const field = ev && !isNaN(entrants) && entrants > 0 ? fieldBonus(entrants) : 0;
+      const effectiveEntrants = (!isNaN(entrants) && entrants > 0) ? entrants : (knownEntrants[evN] || 0);
+      const field = ev && effectiveEntrants > 0 ? fieldBonus(effectiveEntrants) : 0;
 
       // Always update table when event + entrants are known
-      if (ev) renderRefTable(m, field, entrants, ev.buyin);
+      if (ev) renderRefTable(m, field, effectiveEntrants, ev.buyin);
 
       if (!ev || isNaN(place) || place < 1) {
         numEl.textContent = '—';
