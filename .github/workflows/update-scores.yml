@@ -32,3 +32,8 @@ jobs:
           POKERNEWS_COOKIES: ${{ secrets.POKERNEWS_COOKIES }}
         run: python scrape_pokernews.py
 
+      - name: Scrape WSOP historical stats
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: python scrape_wsop_stats.py
+

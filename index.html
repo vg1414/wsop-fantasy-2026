@@ -1381,6 +1381,137 @@
       .live-updated { padding: 8px 12px; font-size: 0.72rem; }
     }
 
+    /* ── LAG-STATISTIK ── */
+    .metrics-top-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .metrics-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px 14px 14px;
+    }
+    .metrics-card-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .metrics-card-value {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .metrics-card-team {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--white);
+      margin-bottom: 3px;
+    }
+    .metrics-card-anchor {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .metrics-chart-block {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 18px 16px 14px;
+    }
+    .metrics-chart-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .metrics-chart-title.gold       { color: var(--gold); }
+    .metrics-chart-title.red        { color: var(--red-wsop); }
+    .metrics-chart-title.gold-dim   { color: var(--gold); opacity: 0.7; }
+    .metrics-chart-title.green      { color: var(--green); }
+
+    .metrics-bar-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 56px;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 7px;
+    }
+    .metrics-bar-rank {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.65rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .metrics-bar-rank span {
+      font-size: 0.6rem;
+      color: var(--muted);
+      min-width: 16px;
+    }
+    .metrics-bar-name {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.82rem;
+      color: var(--white);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .metrics-bar-track {
+      height: 8px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .metrics-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+    .metrics-bar-fill.gold    { background: var(--gold); }
+    .metrics-bar-fill.red     { background: var(--red-wsop); }
+    .metrics-bar-fill.yellow  { background: var(--gold-light); opacity: 0.75; }
+    .metrics-bar-fill.green   { background: var(--green); }
+
+    .metrics-bar-val {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.82rem;
+      color: var(--muted2);
+      text-align: right;
+    }
+    .metrics-source {
+      margin-top: 20px;
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    @media (max-width: 640px) {
+      .metrics-top-cards { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+      .metrics-card { padding: 12px 10px 10px; }
+      .metrics-card-value { font-size: 1.5rem; }
+      .metrics-card-team { font-size: 0.78rem; }
+      .metrics-grid { grid-template-columns: 1fr; gap: 10px; }
+      .metrics-bar-row { grid-template-columns: 100px 1fr 48px; gap: 6px; }
+      .metrics-bar-name { font-size: 0.75rem; }
+      .metrics-bar-val { font-size: 0.75rem; }
+    }
+
   </style>
 </head>
 <body>
@@ -1418,6 +1549,7 @@
   <button class="tab" data-tab="history">Historik</button>
   <button class="tab" data-tab="calculator">Poängberäknare</button>
   <button class="tab" data-tab="live">Live</button>
+  <button class="tab" data-tab="metrics">Lag-statistik</button>
 </nav>
 
 <main>
@@ -1528,6 +1660,40 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- ── LAG-STATISTIK ── -->
+  <div id="tab-metrics" style="display:none">
+    <div class="section-label">Lag-statistik · Historiska WSOP-meriter</div>
+
+    <!-- Top-4 cards -->
+    <div class="metrics-top-cards" id="metrics-top-cards"></div>
+
+    <!-- Charts + rankings -->
+    <div class="metrics-grid">
+      <div class="metrics-chart-block">
+        <div class="metrics-chart-title gold">WSOP VINSTER</div>
+        <div id="metrics-chart-earnings"></div>
+      </div>
+      <div class="metrics-chart-block">
+        <div class="metrics-chart-title red">FINAL TABLES</div>
+        <div id="metrics-chart-ft"></div>
+      </div>
+      <div class="metrics-chart-block">
+        <div class="metrics-chart-title gold-dim">ARMBAND</div>
+        <div id="metrics-chart-bracelets"></div>
+      </div>
+      <div class="metrics-chart-block">
+        <div class="metrics-chart-title green">CASHES</div>
+        <div id="metrics-chart-cashes"></div>
+      </div>
+    </div>
+
+    <div id="metrics-empty" style="display:none" class="live-empty">
+      Historisk statistik laddas in automatiskt · Kör GitHub Actions workflow för att hämta data
+    </div>
+
+    <div class="metrics-source">Källor: WSOP.com · Statistiken uppdateras automatiskt via GitHub Actions</div>
   </div>
 
 </main>
@@ -2184,6 +2350,88 @@
     else document.getElementById('live-log').innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
   });
 
+  // ── LAG-STATISTIK ──
+  onSnapshot(doc(db, "wsop_stats", "latest"), (snap) => {
+    if (snap.exists()) renderMetrics(snap.data());
+    else document.getElementById('metrics-empty').style.display = '';
+  });
+
+  function renderMetrics(data) {
+    const players = data.players || {};
+    const empty = document.getElementById('metrics-empty');
+
+    if (!Object.keys(players).length) { empty.style.display = ''; return; }
+    empty.style.display = 'none';
+
+    // Summera per lag
+    const teamStats = TEAMS.map(t => {
+      let earnings = 0, bracelets = 0, final_tables = 0, cashes = 0;
+      let topEarner = { name: '', earnings: 0 };
+      let topBracelet = { name: '', bracelets: 0 };
+      t.players.forEach(p => {
+        const s = players[p];
+        if (!s) return;
+        earnings     += s.earnings     || 0;
+        bracelets    += s.bracelets    || 0;
+        final_tables += s.final_tables || 0;
+        cashes       += s.cashes       || 0;
+        if ((s.earnings || 0) > topEarner.earnings)   topEarner   = { name: p, earnings: s.earnings };
+        if ((s.bracelets || 0) > topBracelet.bracelets) topBracelet = { name: p, bracelets: s.bracelets };
+      });
+      return { owner: t.owner, earnings, bracelets, final_tables, cashes, topEarner, topBracelet };
+    });
+
+    // Top-cards: vem leder varje kategori
+    const byEarnings = [...teamStats].sort((a,b) => b.earnings - a.earnings);
+    const byFT       = [...teamStats].sort((a,b) => b.final_tables - a.final_tables);
+    const byBracelets= [...teamStats].sort((a,b) => b.bracelets - a.bracelets);
+    const byCashes   = [...teamStats].sort((a,b) => b.cashes - a.cashes);
+
+    function fmt$M(v) {
+      if (v >= 1e6) return '$' + (v/1e6).toFixed(1) + 'M';
+      if (v >= 1e3) return '$' + Math.round(v/1e3) + 'K';
+      return '$' + v;
+    }
+
+    const cardsData = [
+      { label: 'WSOP VINSTER',  top: byEarnings[0],    val: fmt$M(byEarnings[0].earnings),      anchor: byEarnings[0].topEarner.name },
+      { label: 'CASHES',        top: byCashes[0],      val: byCashes[0].cashes,                 anchor: byCashes[0].topEarner.name },
+      { label: 'ARMBAND',       top: byBracelets[0],   val: byBracelets[0].bracelets,           anchor: byBracelets[0].topBracelet.name },
+      { label: 'FINAL TABLES',  top: byFT[0],          val: byFT[0].final_tables,               anchor: byFT[0].topEarner.name },
+    ];
+
+    document.getElementById('metrics-top-cards').innerHTML = cardsData.map(c => `
+      <div class="metrics-card">
+        <div class="metrics-card-label">${c.label}</div>
+        <div class="metrics-card-value">${c.val}</div>
+        <div class="metrics-card-team">${c.top.owner}</div>
+        <div class="metrics-card-anchor">Stjärna: ${c.anchor}</div>
+      </div>
+    `).join('');
+
+    // Stapeldiagram-funktion
+    function renderChart(containerId, sorted, valFn, fmtFn, colorClass) {
+      const max = valFn(sorted[0]) || 1;
+      document.getElementById(containerId).innerHTML = sorted.map((t, i) => `
+        <div class="metrics-bar-row">
+          <div class="metrics-bar-rank">
+            <span>${String(i+1).padStart(2,'0')}</span>
+            <div class="metrics-bar-name">${t.owner}</div>
+          </div>
+          <div class="metrics-bar-track">
+            <div class="metrics-bar-fill ${colorClass}" style="width:${Math.round(valFn(t)/max*100)}%"></div>
+          </div>
+          <div class="metrics-bar-val">${fmtFn(valFn(t))}</div>
+        </div>
+      `).join('');
+    }
+
+    renderChart('metrics-chart-earnings',  byEarnings,   t => t.earnings,     fmt$M,         'gold');
+    renderChart('metrics-chart-ft',        byFT,         t => t.final_tables, v => v,        'red');
+    renderChart('metrics-chart-bracelets', byBracelets,  t => t.bracelets,    v => v,        'yellow');
+    renderChart('metrics-chart-cashes',    byCashes,     t => t.cashes,       v => v,        'green');
+  }
+
   // ── SCHEMA ──
   const KNOWN_SLUGS = {
     1:  'event-1-mini-mystery-millions',
@@ -2478,6 +2726,7 @@
       document.getElementById('tab-live').style.display = tab === 'live' ? '' : 'none';
       document.getElementById('tab-schedule').style.display = tab === 'schedule' ? '' : 'none';
       document.getElementById('tab-calculator').style.display = tab === 'calculator' ? '' : 'none';
+      document.getElementById('tab-metrics').style.display = tab === 'metrics' ? '' : 'none';
     });
   });
 
