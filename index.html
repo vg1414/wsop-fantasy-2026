@@ -1753,7 +1753,7 @@
       if (place === 8)  return 15;
       if (place === 9)  return 10;
       if (place <= 18)  return 5;
-      return 1;
+      return 0;
     }
     function _getMultiplier(buyin) {
       const n = parseInt(String(buyin).replace(/[^0-9]/g, ''));
@@ -1786,7 +1786,8 @@
 
       // Worst-case placement = players_left (they finish last among remaining)
       const place = lp.players_left;
-      const base = _basePoints(place);
+      const itmCutoff = entrants > 0 ? Math.ceil(entrants * 0.15) : 18;
+      const base = place > itmCutoff ? 0 : _basePoints(place);
       const brac = place === 1 ? 25 : 0;
       const buyinStr = evInfo ? evInfo.buyin : '';
       const fieldCutoff = (() => { const raw = 18 + Math.floor(entrants / 1000) * 9; const bn = parseInt(String(buyinStr).replace(/[^0-9]/g, '')); return (!isNaN(bn) && bn <= 1500) ? Math.min(raw, 81) : raw; })();
@@ -2254,7 +2255,6 @@
       }
     }
     currentLiveEventNums = liveEventNums;
-    if (window._calcSetActive) window._calcSetActive([...liveEventNums]);
 
     const html = WSOP_EVENTS.map(ev => {
       // Trust 25kfantasy for completed/live. For "upcoming": override with start date.
@@ -2412,6 +2412,17 @@
     }).join('');
 
     el.innerHTML = html;
+
+    // Feed all ongoing events to the calculator dropdown
+    if (window._calcSetActive) {
+      const ongoingNums = WSOP_EVENTS.filter(ev => {
+        const scrapedStatus = eventStatuses[ev.n] || eventStatuses[String(ev.n)];
+        const hasAnyStatuses = Object.keys(eventStatuses).length > 0;
+        const finished = scrapedStatus === 'completed' || (!hasAnyStatuses && today > ev.end);
+        return !finished && (scrapedStatus === 'live' || (!hasAnyStatuses && today >= ev.start) || (scrapedStatus === 'upcoming' && today >= ev.start));
+      }).map(ev => ev.n);
+      window._calcSetActive(ongoingNums);
+    }
   }
 
   // Trigger GitHub workflow
@@ -2493,7 +2504,7 @@
       if (place === 8)  return 15;
       if (place === 9)  return 10;
       if (place <= 18)  return 5;
-      return 1; // cash
+      return 0;
     }
 
     function fieldBonus(entrants) {
@@ -2586,6 +2597,8 @@
     }
 
     function calcPoints(place, m, field, entrants, buyin) {
+      const itmCutoff = entrants > 0 ? Math.ceil(entrants * 0.15) : 18;
+      if (place > itmCutoff) return { pts: 0, base: 0, brac: 0, field: 0 };
       const base = basePoints(place);
       const brac = place === 1 ? 25 : 0;
       const fieldCutoff = calcFieldCutoff(entrants, buyin);
@@ -2600,6 +2613,8 @@
 
       const fieldCutoff = calcFieldCutoff(entrants, buyin);
 
+      const itmCutoff = entrants > 0 ? Math.ceil(entrants * 0.15) : 18;
+
       const rows = [
         { label: '1:a',        place: 1  },
         { label: '2:a',        place: 2  },
@@ -2610,10 +2625,10 @@
         { label: '7:e',        place: 7  },
         { label: '8:e',        place: 8  },
         { label: '9:e',        place: 9  },
-        { label: '10–18',      place: 10 },
+        { label: `10–${Math.min(18, itmCutoff)}`, place: 10 },
       ];
 
-      // Om fieldCutoff > 18: lägg till en rad för 19–fieldCutoff (med fältbonus) och en för fieldCutoff+1+ (utan)
+      // Om fieldCutoff > 18: lägg till cash-rader med fältbonus
       if (fieldCutoff > 18) {
         rows.push({ label: `19–${fieldCutoff} (cash)`, place: 19 });
         rows.push({ label: `${fieldCutoff + 1}+ (cash)`, place: fieldCutoff + 1 });
@@ -2621,16 +2636,19 @@
         rows.push({ label: '19+ (cash)', place: 19 });
       }
 
+      // Ta bort rader som ger 0 poäng (utanför ITM)
+      const filteredRows = rows.filter(r => calcPoints(r.place, m, field, entrants, buyin).pts > 0);
 
-      const half = Math.ceil(rows.length / 2);
+
+      const half = Math.ceil(filteredRows.length / 2);
       const toRow = r => {
         const pts = r.place != null ? calcPoints(r.place, m, field, entrants, buyin).pts : 0;
         const gold = r.place === 1 ? ' class="calc-ref-gold"' : '';
         return `<tr><td>${r.label}</td><td${gold}>${pts}</td></tr>`;
       };
 
-      tbodyL.innerHTML = rows.slice(0, half).map(toRow).join('');
-      tbodyR.innerHTML = rows.slice(half).map(toRow).join('');
+      tbodyL.innerHTML = filteredRows.slice(0, half).map(toRow).join('');
+      tbodyR.innerHTML = filteredRows.slice(half).map(toRow).join('');
     }
 
     function calculate() {
