@@ -537,12 +537,21 @@
     }
     .hamburger-btn {
       background: none;
-      border: none;
+      border: 1px solid var(--border);
+      border-radius: 3px;
       color: var(--muted2);
-      font-size: 1.3rem;
+      font-size: 1rem;
       cursor: pointer;
-      padding: 4px 8px;
+      padding: 5px 10px;
       line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hamburger-btn-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 2px;
     }
     .hamburger-dropdown {
       display: none;
@@ -1624,7 +1633,7 @@
 
 <div class="hamburger-bar" id="hamburger-bar">
   <span class="hamburger-active-label" id="hamburger-active-label">Översikt</span>
-  <button class="hamburger-btn" id="hamburger-btn" aria-label="Meny">☰</button>
+  <button class="hamburger-btn" id="hamburger-btn" aria-label="Meny">☰ <span class="hamburger-btn-label">MENY</span></button>
 </div>
 
 <div class="hamburger-dropdown" id="hamburger-dropdown">
