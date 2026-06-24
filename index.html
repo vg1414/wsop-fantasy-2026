@@ -1470,11 +1470,15 @@
         </div>
       </div>
 
-      <!-- ROW: BUY-IN + MULTIPLIER (read-only, auto-filled) -->
-      <div class="calc-row-2">
+      <!-- ROW: BUY-IN + MULTIPLIER + FÄLTBONUS (read-only, auto-filled) -->
+      <div class="calc-row-2" style="grid-template-columns: 1fr 1fr 1fr;">
         <div class="calc-block">
           <label class="calc-label">Buy-in</label>
           <div class="calc-readout" id="calc-buyin">—</div>
+        </div>
+        <div class="calc-block">
+          <label class="calc-label">Fältbonus</label>
+          <div class="calc-readout" id="calc-fieldbonus">—</div>
         </div>
         <div class="calc-block">
           <label class="calc-label">Multiplier</label>
@@ -2571,6 +2575,7 @@
       if (!ev) {
         document.getElementById('calc-buyin').textContent = '—';
         document.getElementById('calc-multiplier').textContent = '—';
+        document.getElementById('calc-fieldbonus').textContent = '—';
         return;
       }
       document.getElementById('calc-buyin').textContent = ev.buyin;
@@ -2677,6 +2682,10 @@
 
       // Always update table when event + entrants are known
       if (ev) renderRefTable(m, field, effectiveEntrants, ev.buyin);
+
+      // Update field bonus readout
+      const fbEl = document.getElementById('calc-fieldbonus');
+      if (fbEl) fbEl.textContent = effectiveEntrants > 0 ? `+${field} pts` : '—';
 
       if (!ev || isNaN(place) || place < 1) {
         numEl.textContent = '—';
