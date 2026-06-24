@@ -518,6 +518,75 @@
     .tab:hover { color: var(--muted2); }
     .tab.active { color: var(--gold-light); border-bottom-color: var(--gold); }
 
+    /* ── HAMBURGERMENY (mobil only) ── */
+    .hamburger-bar {
+      display: none;
+      background: var(--dark);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      align-items: center;
+      justify-content: space-between;
+      height: 44px;
+    }
+    .hamburger-active-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+    }
+    .hamburger-btn {
+      background: none;
+      border: none;
+      color: var(--muted2);
+      font-size: 1.3rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+    .hamburger-dropdown {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 200;
+    }
+    .hamburger-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+    }
+    .hamburger-menu {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 220px;
+      background: var(--card);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+    }
+    .hamburger-menu-item {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.82rem;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: none;
+      border: none;
+      border-left: 3px solid transparent;
+      padding: 16px 24px;
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .hamburger-menu-item:hover { color: var(--white); }
+    .hamburger-menu-item.active { color: var(--gold-light); border-left-color: var(--gold); }
+
     /* ── EVENT LOG ── */
     .event-date-group { margin-bottom: 2px; }
 
@@ -1337,9 +1406,9 @@
       /* Team card score label */
       .team-score-label { font-size: 0.68rem; letter-spacing: 2px; }
 
-      /* Tabs */
-      .tab-bar { padding: 0 4px; }
-      .tab { padding: 14px 12px; font-size: 0.75rem; letter-spacing: 1px; }
+      /* Tabs → hamburgermeny på mobil */
+      .tab-bar { display: none; }
+      .hamburger-bar { display: flex; }
 
       /* Event log */
       .ev-event { font-size: 0.65rem; min-width: 60px; }
@@ -1551,6 +1620,23 @@
   <button class="tab" data-tab="live">Live</button>
   <button class="tab" data-tab="metrics">Lag-statistik</button>
 </nav>
+
+<div class="hamburger-bar" id="hamburger-bar">
+  <span class="hamburger-active-label" id="hamburger-active-label">Översikt</span>
+  <button class="hamburger-btn" id="hamburger-btn" aria-label="Meny">☰</button>
+</div>
+
+<div class="hamburger-dropdown" id="hamburger-dropdown">
+  <div class="hamburger-overlay" id="hamburger-overlay"></div>
+  <div class="hamburger-menu">
+    <button class="hamburger-menu-item active" data-tab="overview">Översikt</button>
+    <button class="hamburger-menu-item" data-tab="schedule">Schema</button>
+    <button class="hamburger-menu-item" data-tab="history">Historik</button>
+    <button class="hamburger-menu-item" data-tab="calculator">Poängberäknare</button>
+    <button class="hamburger-menu-item" data-tab="live">Live</button>
+    <button class="hamburger-menu-item" data-tab="metrics">Lag-statistik</button>
+  </div>
+</div>
 
 <main>
 
@@ -2720,18 +2806,52 @@
   btn.textContent = '↻ Laddar...';
   setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 30000);
 
-  // Tab switching
+  // Tab switching (desktop tabs + mobile hamburgermeny)
+  const TAB_LABELS = {
+    overview: 'Översikt', schedule: 'Schema', history: 'Historik',
+    calculator: 'Poängberäknare', live: 'Live', metrics: 'Lag-statistik'
+  };
+
+  function switchTab(tab) {
+    // Desktop tabs
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === tab);
+    });
+    // Hamburgermeny-items
+    document.querySelectorAll('.hamburger-menu-item').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === tab);
+    });
+    // Aktiv-etikett i hamburgerbar
+    const lbl = document.getElementById('hamburger-active-label');
+    if (lbl) lbl.textContent = TAB_LABELS[tab] || tab;
+    // Tab-innehåll
+    document.getElementById('tab-overview').style.display = tab === 'overview' ? '' : 'none';
+    document.getElementById('tab-history').style.display = tab === 'history' ? '' : 'none';
+    document.getElementById('tab-live').style.display = tab === 'live' ? '' : 'none';
+    document.getElementById('tab-schedule').style.display = tab === 'schedule' ? '' : 'none';
+    document.getElementById('tab-calculator').style.display = tab === 'calculator' ? '' : 'none';
+    document.getElementById('tab-metrics').style.display = tab === 'metrics' ? '' : 'none';
+  }
+
   document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Hamburgermeny-logik
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const hamburgerDropdown = document.getElementById('hamburger-dropdown');
+  const hamburgerOverlay = document.getElementById('hamburger-overlay');
+
+  hamburgerBtn.addEventListener('click', () => {
+    hamburgerDropdown.style.display = hamburgerDropdown.style.display === 'block' ? 'none' : 'block';
+  });
+  hamburgerOverlay.addEventListener('click', () => {
+    hamburgerDropdown.style.display = 'none';
+  });
+  document.querySelectorAll('.hamburger-menu-item').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-      const tab = btn.dataset.tab;
-      document.getElementById('tab-overview').style.display = tab === 'overview' ? '' : 'none';
-      document.getElementById('tab-history').style.display = tab === 'history' ? '' : 'none';
-      document.getElementById('tab-live').style.display = tab === 'live' ? '' : 'none';
-      document.getElementById('tab-schedule').style.display = tab === 'schedule' ? '' : 'none';
-      document.getElementById('tab-calculator').style.display = tab === 'calculator' ? '' : 'none';
-      document.getElementById('tab-metrics').style.display = tab === 'metrics' ? '' : 'none';
+      switchTab(btn.dataset.tab);
+      hamburgerDropdown.style.display = 'none';
     });
   });
 
