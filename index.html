@@ -525,10 +525,14 @@
       border-bottom: 1px solid var(--border);
       padding: 0 16px;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       height: 44px;
+      position: relative;
     }
     .hamburger-active-label {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
       font-family: 'Oswald', sans-serif;
       font-size: 0.7rem;
       letter-spacing: 3px;
