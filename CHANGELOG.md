@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-25 (uppdatering 2)
+- Modal: scroll-position återställs alltid till toppen när en ny modal öppnas
+
 ## 2026-06-25
 - Ställning: poäng räknas upp med cubic-ease-animation vid laddning
 - Modal: graderad färgskala på poäng (guld ≥100p → grönt 1p, glidande)
