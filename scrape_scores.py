@@ -220,23 +220,40 @@ def build_player_urls(player_lookup):
         urls[canonical] = f"{BASE_URL}/players/player-profile/{slug}/"
     return urls
 
-def scrape_cash_counts(player_urls):
-    """Hämtar antal cashes per spelare från deras profilsida."""
+def scrape_player_profiles(player_urls):
+    """Hämtar antal cashes och placement=1-events per spelare från deras profilsida.
+    Returnerar (cash_counts, wins) där wins är en lista med dicts {player, event, placement}.
+    """
     counts = {}
+    wins = []
     for player, url in player_urls.items():
         try:
             res = requests.get(url, headers=HEADERS, timeout=15, verify=False)
             soup = BeautifulSoup(res.text, "html.parser")
-            # Letar efter "X cashes" eller antal rader i cash-tabellen
             cash_count = 0
             for table in soup.find_all("table"):
                 headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
                 if "score" in headers and ("event" in headers or "placement" in "".join(headers)):
+                    place_i = next((i for i, h in enumerate(headers) if "place" in h), None)
+                    event_i = next((i for i, h in enumerate(headers) if "event" in h), None)
                     data_rows = [
                         r for r in table.find_all("tr")
                         if r.find("td") and "no scores" not in r.get_text(strip=True).lower()
                     ]
                     cash_count = len(data_rows)
+                    if place_i is not None and event_i is not None:
+                        for row in data_rows:
+                            cells = row.find_all("td")
+                            if len(cells) <= max(place_i, event_i):
+                                continue
+                            place_text = cells[place_i].get_text(strip=True)
+                            event_text = cells[event_i].get_text(strip=True)
+                            if place_text == "1":
+                                wins.append({
+                                    "player": player,
+                                    "event": event_text,
+                                    "placement": 1,
+                                })
                     break
             counts[player] = cash_count
             if cash_count > 0:
@@ -244,10 +261,11 @@ def scrape_cash_counts(player_urls):
         except Exception as e:
             print(f"  Kunde inte hämta profil för {player}: {e}")
             counts[player] = 0
-    return counts
+    return counts, wins
 
 FIRESTORE_PROJECT = "wsop-54e15"
 FIRESTORE_URL = f"https://firestore.googleapis.com/v1/projects/{FIRESTORE_PROJECT}/databases/(default)/documents/scores/latest"
+FIRESTORE_HISTORY_URL = f"https://firestore.googleapis.com/v1/projects/{FIRESTORE_PROJECT}/databases/(default)/documents/score_history/all"
 FIRESTORE_SCOPES = ["https://www.googleapis.com/auth/datastore"]
 
 def get_firebase_token():
@@ -288,6 +306,125 @@ def write_to_firestore(data):
     )
     res.raise_for_status()
     return res.json()
+
+def read_history_from_firestore(token):
+    """Reads existing score_history/all from Firestore. Returns list of event dicts."""
+    res = requests.get(
+        FIRESTORE_HISTORY_URL,
+        headers={"Authorization": f"Bearer {token}"},
+        verify=certifi.where(),
+        timeout=30,
+    )
+    if res.status_code == 404:
+        return []
+    res.raise_for_status()
+    doc = res.json()
+    fields = doc.get("fields", {})
+    events_field = fields.get("events", {})
+    arr = events_field.get("arrayValue", {}).get("values", [])
+    result = []
+    for item in arr:
+        mv = item.get("mapValue", {}).get("fields", {})
+        def sv(f, default=""):
+            v = mv.get(f, {})
+            if "stringValue" in v: return v["stringValue"]
+            if "integerValue" in v: return int(v["integerValue"])
+            if "doubleValue" in v: return v["doubleValue"]
+            return default
+        result.append({
+            "date": sv("date"),
+            "player": sv("player"),
+            "player_url": sv("player_url"),
+            "event": sv("event"),
+            "event_url": sv("event_url"),
+            "points": sv("points", 0),
+            "placement": sv("placement", 0),
+            "entrants": sv("entrants", 0),
+        })
+    return result
+
+def _event_num_key(ev):
+    """Extrahera eventnummer ur eventnamn eller event_url för deduplicering."""
+    m = re.search(r'Event\s*#(\d+)', ev.get("event", ""), re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+    m = re.search(r'2026-event-(\d+)', ev.get("event_url", ""), re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+    return None
+
+def read_latest_events_from_firestore(token):
+    """Fallback: reads events from scores/latest."""
+    res = requests.get(
+        FIRESTORE_URL,
+        headers={"Authorization": f"Bearer {token}"},
+        verify=certifi.where(),
+        timeout=30,
+    )
+    if res.status_code == 404:
+        return []
+    res.raise_for_status()
+    doc = res.json()
+    arr = doc.get("fields", {}).get("events", {}).get("arrayValue", {}).get("values", [])
+    result = []
+    for item in arr:
+        mv = item.get("mapValue", {}).get("fields", {})
+        def sv(f, default=""):
+            v = mv.get(f, {})
+            if "stringValue" in v: return v["stringValue"]
+            if "integerValue" in v: return int(v["integerValue"])
+            if "doubleValue" in v: return v["doubleValue"]
+            return default
+        result.append({
+            "date": sv("date"), "player": sv("player"), "player_url": sv("player_url"),
+            "event": sv("event"), "event_url": sv("event_url"),
+            "points": sv("points", 0), "placement": sv("placement", 0), "entrants": sv("entrants", 0),
+        })
+    return result
+
+def merge_and_write_history(new_events, token):
+    """Merges new_events into persisted history (dedup by player+event number), writes back."""
+    existing = read_history_from_firestore(token)
+    # Safety: if history is empty but scores/latest has more events, use that as base
+    if len(existing) < len(new_events):
+        fallback = read_latest_events_from_firestore(token)
+        if len(fallback) > len(existing):
+            print(f"  History empty/short ({len(existing)}), falling back to scores/latest ({len(fallback)} events)")
+            existing = fallback
+    # Build lookup by (player_lower, event_num) — falls back to (player_lower, event_name)
+    by_key = {}
+    for e in existing:
+        n = _event_num_key(e)
+        key = (e["player"].lower(), n) if n else (e["player"].lower(), e["event"])
+        by_key[key] = e
+    added = 0
+    for ev in new_events:
+        n = _event_num_key(ev)
+        key = (ev["player"].lower(), n) if n else (ev["player"].lower(), ev["event"])
+        if key not in by_key:
+            by_key[key] = ev
+            added += 1
+        else:
+            old = by_key[key]
+            merged = dict(old)
+            for field in ("date", "event_url", "player_url", "entrants", "placement", "points"):
+                if not merged.get(field) and ev.get(field):
+                    merged[field] = ev[field]
+            if len(ev.get("event", "")) > len(merged.get("event", "")):
+                merged["event"] = ev["event"]
+            by_key[key] = merged
+    existing = list(by_key.values())
+    print(f"History: {len(existing)} total events ({added} new added)")
+    fields = {"events": to_firestore_value(existing)}
+    res = requests.patch(
+        FIRESTORE_HISTORY_URL,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        json={"fields": fields},
+        verify=certifi.where(),
+        timeout=30,
+    )
+    res.raise_for_status()
+    return existing
 
 def main():
     player_lookup = {normalize(p): p for p in PLAYERS}
@@ -344,16 +481,52 @@ def main():
     print(f"ITM events: {sorted(itm_event_nums)}")
     print(f"Event entrants: { {k:v for k,v in sorted(event_entrants.items())} }")
 
-    print("Hämtar antal cashes från spelarprofilsidor...")
-    cash_counts = scrape_cash_counts(player_urls)
+    print("Hämtar antal cashes och vinster från spelarprofilsidor...")
+    cash_counts, profile_wins = scrape_player_profiles(player_urls)
+
+    # Extrahera event-nummer ur en evenemangsnamnsträng, t.ex. "Event #44" eller "Event #44: ..."
+    def extract_event_num(event_str):
+        m = re.search(r'Event\s*#(\d+)', event_str or '', re.IGNORECASE)
+        return int(m.group(1)) if m else None
+
+    # Komplettera events med vinster från profilsidor
+    # Matcha på (spelare, event-nummer) för att hantera korta vs långa evenemangnamn
+    for win in profile_wins:
+        win_num = extract_event_num(win["event"])
+        match = next(
+            (ev for ev in events
+             if ev["player"] == win["player"] and extract_event_num(ev["event"]) == win_num),
+            None
+        )
+        if match:
+            if match.get("placement", 0) != 1:
+                match["placement"] = 1
+                print(f"  Uppdaterar placement=1 från profil: {win['player']} - {match['event']}")
+        else:
+            print(f"  Lägger till saknad vinst från profil: {win['player']} - {win['event']}")
+            events.append({
+                "date": "",
+                "player": win["player"],
+                "player_url": player_urls.get(win["player"], ""),
+                "event": win["event"],
+                "event_url": "",
+                "points": 0,
+                "entrants": 0,
+                "placement": 1,
+            })
 
     updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Merge scraped events into persistent history, get full history back
+    print("Merging events into persistent history...")
+    token = get_firebase_token()
+    full_history = merge_and_write_history(events, token)
 
     write_to_firestore({
         "updated": updated,
         "players": scores,
         "player_urls": player_urls,
-        "events": events,
+        "events": full_history,
         "event_statuses": event_statuses,
         "itm_events": sorted(itm_event_nums),
         "event_entrants": event_entrants,
@@ -362,7 +535,7 @@ def main():
 
     print(f"Wrote to Firestore. Updated: {updated}")
     print(f"Players with points: { {k:v for k,v in scores.items() if v > 0} }")
-    print(f"Event entries for our players: {len(events)}")
+    print(f"Event entries for our players: {len(full_history)} (full history)")
 
 if __name__ == "__main__":
     main()

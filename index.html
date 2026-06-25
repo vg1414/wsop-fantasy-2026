@@ -1615,9 +1615,310 @@
       .metrics-bar-val { font-size: 0.75rem; }
     }
 
+    /* ── HISTORY MODAL ── */
+    @keyframes hmodal-overlay-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes hmodal-slide-up {
+      from { transform: translateY(40px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    @keyframes hmodal-row-in {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes hmodal-count-up-flash {
+      0%   { opacity: 0.3; transform: scale(0.88); }
+      60%  { opacity: 1;   transform: scale(1.06); }
+      100% { opacity: 1;   transform: scale(1); }
+    }
+    @keyframes hmodal-bar-grow {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+
+    .hmodal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      animation: hmodal-overlay-in 0.18s ease both;
+    }
+    .hmodal-overlay.hidden { display: none; }
+
+    @media (min-width: 540px) {
+      .hmodal-overlay { align-items: center; }
+    }
+
+    .hmodal {
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-bottom: none;
+      width: 100%;
+      max-width: 500px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      animation: hmodal-slide-up 0.32s cubic-bezier(0.22,1,0.36,1) both;
+      overflow: hidden;
+    }
+
+    @media (min-width: 540px) {
+      .hmodal {
+        border-bottom: 1px solid #2a2a2a;
+        max-height: 82vh;
+        border-radius: 2px;
+      }
+    }
+
+    /* Lagfärgad toppkant – sätts dynamiskt via JS */
+    .hmodal-color-bar {
+      height: 3px;
+      background: var(--gold);
+      transform-origin: left;
+      animation: hmodal-bar-grow 0.4s cubic-bezier(0.22,1,0.36,1) 0.1s both;
+      flex-shrink: 0;
+    }
+
+    .hmodal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 20px 0;
+      flex-shrink: 0;
+    }
+
+    .hmodal-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      line-height: 1;
+    }
+
+    .hmodal-close {
+      background: none;
+      border: none;
+      color: #444;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s;
+      flex-shrink: 0;
+      margin-right: -4px;
+    }
+    .hmodal-close:hover { color: var(--white); }
+
+    .hmodal-subhead {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 3px;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding: 4px 20px 0;
+      flex-shrink: 0;
+    }
+
+    .hmodal-total-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 14px 20px 12px;
+      border-bottom: 1px solid #1e1e1e;
+      flex-shrink: 0;
+    }
+    .hmodal-total-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.58rem;
+      letter-spacing: 4px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .hmodal-total-num {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      line-height: 1;
+      animation: hmodal-count-up-flash 0.45s cubic-bezier(0.22,1,0.36,1) 0.15s both;
+    }
+
+    .hmodal-body {
+      overflow-y: auto;
+      padding: 0 0 16px;
+      overscroll-behavior: contain;
+    }
+
+    .hmodal-history-note {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.7rem;
+      color: #555;
+      text-align: center;
+      padding: 10px 20px 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .hmodal-date-header {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.58rem;
+      letter-spacing: 4px;
+      color: #444;
+      text-transform: uppercase;
+      padding: 14px 20px 5px;
+      background: #111;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .hmodal-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 20px;
+      border-bottom: 1px solid #181818;
+      position: relative;
+      opacity: 0;
+      animation: hmodal-row-in 0.28s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .hmodal-row:last-child { border-bottom: none; }
+
+    /* Guldlinje som drar sig in vid hover */
+    .hmodal-row::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--gold);
+      transform: scaleY(0);
+      transition: transform 0.18s cubic-bezier(0.22,1,0.36,1);
+      transform-origin: center;
+    }
+    .hmodal-row:hover::before { transform: scaleY(1); }
+    .hmodal-row:hover { background: rgba(255,255,255,0.02); }
+
+    .hmodal-player {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      color: var(--white);
+      text-transform: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hmodal-event {
+      font-size: 0.78rem;
+      color: var(--muted2);
+      line-height: 1.4;
+      margin-top: 1px;
+    }
+
+    .hmodal-placement {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.65rem;
+      color: #555;
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+
+    .hmodal-pts {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--green);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* Guld för 1:a plats */
+    .hmodal-pts.gold { color: var(--gold-light); }
+
+    .hmodal-empty {
+      padding: 40px 20px;
+      color: var(--muted);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .team-owner-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      letter-spacing: inherit;
+      text-transform: inherit;
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      text-align: left;
+      transition: color 0.15s;
+    }
+    .team-owner-btn:hover { color: var(--gold-light); }
+
+    .player-name-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 300;
+      font-style: italic;
+      font-family: 'Source Serif 4', Georgia, serif;
+      color: #bbb;
+      text-align: left;
+      transition: color 0.15s;
+    }
+    .player-name-btn:hover { color: var(--gold-light); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hmodal, .hmodal-overlay, .hmodal-row, .hmodal-total-num, .hmodal-color-bar {
+        animation: none;
+      }
+    }
+
   </style>
 </head>
 <body>
+
+<div class="hmodal-overlay hidden" id="hmodal-overlay">
+  <div class="hmodal" id="hmodal">
+    <div class="hmodal-color-bar" id="hmodal-color-bar"></div>
+    <div class="hmodal-header">
+      <div class="hmodal-title" id="hmodal-title"></div>
+      <button class="hmodal-close" id="hmodal-close">✕</button>
+    </div>
+    <div class="hmodal-subhead" id="hmodal-subhead"></div>
+    <div class="hmodal-total-bar">
+      <div class="hmodal-total-label">Totalt</div>
+      <div class="hmodal-total-num" id="hmodal-total-num"></div>
+    </div>
+    <div class="hmodal-body" id="hmodal-body"></div>
+  </div>
+</div>
 
 <header>
   <div class="header-top">
@@ -2118,13 +2419,149 @@
         ? `<span class="pts-guaranteed">${guaranteedStr} + </span>`
         : '';
       return `
-      <div class="standing-row rank-${i + 1}" data-team="${t.index}">
+      <div class="standing-row rank-${i + 1}" data-team="${t.index}" onclick="openTeamModal(${t.index})" style="cursor:pointer">
         <div class="rank-col">${i + 1}</div>
         <div class="name-col">${t.owner}${braceletStr}${ftBadgeStanding}</div>
         <div class="pts-col">${guaranteedEl}${t.total}<small>pts</small></div>
       </div>`;
     }).join('');
   }
+
+  function buildModalRows(events) {
+    if (!events || events.length === 0) {
+      return '<div class="hmodal-empty">Inga cashes ännu</div>';
+    }
+    const byDate = {};
+    const dateOrder = [];
+    for (const ev of events) {
+      if (!byDate[ev.date]) { byDate[ev.date] = []; dateOrder.push(ev.date); }
+      byDate[ev.date].push(ev);
+    }
+    let rowIndex = 0;
+    return dateOrder.map(date => {
+      const rows = byDate[date].map(ev => {
+        const delay = Math.min(rowIndex * 35, 400);
+        rowIndex++;
+        const isBracelet = ev.placement === 1;
+        const ptsCls = isBracelet ? 'hmodal-pts gold' : 'hmodal-pts';
+        const braceletMark = isBracelet ? ` <img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet" style="height:12px;vertical-align:middle;margin-left:2px">` : '';
+        const placementTxt = (ev.placement || ev.entrants)
+          ? `<div class="hmodal-placement">${[ev.placement ? `Plats ${ev.placement}` : '', ev.entrants ? `${String(ev.entrants).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} entrants` : ''].filter(Boolean).join(' · ')}</div>` : '';
+        const salary = ev._showPlayer && SALARY[ev.player] != null
+          ? ` <span style="font-weight:300;font-size:0.8rem;color:var(--muted2)">(${SALARY[ev.player]})</span>`
+          : '';
+        const playerLine = ev._showPlayer
+          ? `<div class="hmodal-player">${ev.player}${salary}</div>`
+          : '';
+        return `<div class="hmodal-row" style="animation-delay:${delay}ms">
+          <div>
+            ${playerLine}
+            <div class="hmodal-event">${ev.event}${braceletMark}</div>
+            ${placementTxt}
+          </div>
+          <div class="${ptsCls}">+${ev.points}</div>
+        </div>`;
+      }).join('');
+      return `<div><div class="hmodal-date-header">${date}</div>${rows}</div>`;
+    }).join('');
+  }
+
+  function animateCount(el, target) {
+    const duration = Math.min(600 + target * 0.4, 1200);
+    const start = performance.now();
+    function tick(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(ease * target) + 'p';
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  const TEAM_COLORS = ['#4a9eff','#e07b39','#7ec86a','#c97de0','#e8b84b'];
+
+  function showModal(title, subhead, total, accentColor, eventsHtml) {
+    const overlay = document.getElementById('hmodal-overlay');
+    const modal = document.getElementById('hmodal');
+    const titleEl = document.getElementById('hmodal-title');
+    const subEl = document.getElementById('hmodal-subhead');
+    const totalEl = document.getElementById('hmodal-total-num');
+    const bodyEl = document.getElementById('hmodal-body');
+    const barEl = document.getElementById('hmodal-color-bar');
+
+    titleEl.textContent = title;
+    titleEl.style.color = accentColor || 'var(--gold-light)';
+    subEl.textContent = subhead;
+    totalEl.style.color = accentColor || 'var(--gold-light)';
+    totalEl.textContent = '0p';
+    barEl.style.background = accentColor || 'var(--gold)';
+    bodyEl.innerHTML = eventsHtml;
+
+    // Återstarta animationer på modal
+    modal.style.animation = 'none';
+    modal.offsetHeight;
+    modal.style.animation = '';
+
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    setTimeout(() => animateCount(totalEl, total), 180);
+  }
+
+  function openTeamModal(teamIndex) {
+    const team = TEAMS[teamIndex];
+    if (!team || !currentScoresData) return;
+    const playerSet = new Set(team.players.map(p => p.toLowerCase()));
+    // Assign each player a distinct color from a fixed palette
+    const playerPalette = ['#4a9eff','#e07b39','#7ec86a','#c97de0','#e8b84b','#e05c7a','#4ecdc4','#f7b731'];
+    const playerColorMap = {};
+    team.players.forEach((p, i) => { playerColorMap[p.toLowerCase()] = playerPalette[i % playerPalette.length]; });
+    const events = (currentScoresData.events || [])
+      .filter(ev => playerSet.has((ev.player || '').toLowerCase()))
+      .map(ev => ({ ...ev, _showPlayer: true, _dotColor: playerColorMap[(ev.player || '').toLowerCase()] }));
+    const total = events.reduce((s, ev) => s + (ev.points || 0), 0);
+    const color = TEAM_COLORS[teamIndex] || null;
+    showModal(
+      team.owner,
+      `${team.players.length} spelare · ${events.length} cashes`,
+      total,
+      color,
+      buildModalRows(events)
+    );
+  }
+
+  function openPlayerModal(playerName) {
+    if (!currentScoresData) return;
+    const nameLower = playerName.toLowerCase();
+    const events = (currentScoresData.events || [])
+      .filter(ev => (ev.player || '').toLowerCase() === nameLower);
+    const total = events.reduce((s, ev) => s + (ev.points || 0), 0);
+    showModal(
+      playerName,
+      `${events.length} cashes`,
+      total,
+      null,
+      buildModalRows(events)
+    );
+  }
+
+  function closeHistoryModal() {
+    document.getElementById('hmodal-overlay').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  window.openTeamModal = openTeamModal;
+  window.openPlayerModal = openPlayerModal;
+
+  document.getElementById('hmodal-close').addEventListener('click', closeHistoryModal);
+  document.getElementById('hmodal-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('hmodal-overlay')) closeHistoryModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !document.getElementById('hmodal-overlay').classList.contains('hidden')) {
+      closeHistoryModal();
+    }
+  });
 
   function renderTeams(teams, scores, ownerMap, playerUrls, livePlayingSet = new Set(), finalTableSet = new Set(), braceletsByPlayer = {}, itmSet = new Set(), cashCountByPlayer = {}) {
     const el = document.getElementById('teams');
@@ -2147,9 +2584,7 @@
         const url = playerUrls && playerUrls[p];
         const playerBracelets = braceletsByPlayer[p] || 0;
         const braceletImgs = playerBracelets > 0 ? Array(playerBracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet">`).join('') : '';
-        const nameEl = url
-          ? `<a class="player-name player-link" href="${url}">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${itmBadgeOv}${liveDot}${dots}</a>`
-          : `<span class="player-name">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${itmBadgeOv}${liveDot}${dots}</span>`;
+        const nameEl = `<button class="player-name player-name-btn" onclick="openPlayerModal(${JSON.stringify(p)})">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${itmBadgeOv}${liveDot}${dots}</button>`;
         const cashCount = cashCountByPlayer[p] || 0;
         const cashEl = cashCount > 0 ? ` <span class="player-cash-count">(${cashCount})</span>` : '';
         return `<li class="player-row">
@@ -2163,7 +2598,7 @@
 
       return `<div class="team-card" data-team="${ti}">
         <div class="team-header" data-suit="${SUITS[ti]}">
-          <div class="team-owner">${team.owner}${teamBraceletImgs}</div>
+          <div class="team-owner"><button class="team-owner-btn" onclick="openTeamModal(${ti})">${team.owner}${teamBraceletImgs}</button></div>
           <div class="team-score-wrap">
             <div class="team-score-num">${total}</div>
             <span class="team-score-label">poäng</span>
@@ -2190,13 +2625,12 @@
       .filter(p => p.best > 0).sort((a, b) => b.best - a.best).slice(0, 3);
 
     const statRow = (p, extra) => {
-      const url = playerUrls && playerUrls[p.name];
       const dots = playerDots(p.name, ownerMap);
       const isLive = livePlayingSet.has(p.name.toLowerCase());
       const liveDot = isLive ? `<span class="live-playing-dot"></span>` : '';
       const salary = SALARY[p.name] != null ? ` <span class="player-salary">(${SALARY[p.name]})</span>` : '';
       const inner = `${p.name}${salary}${liveDot}${dots}`;
-      const nameEl = url ? `<a class="player-link" href="${url}">${inner}</a>` : `<span>${inner}</span>`;
+      const nameEl = `<button class="player-name-btn" style="font-style:normal;color:var(--muted2);font-family:'Oswald',sans-serif;font-size:0.82rem;font-weight:400" onclick="openPlayerModal(${JSON.stringify(p.name)})">${inner}</button>`;
       return `<li class="stats-row">${nameEl}<span class="stats-val">${extra}</span></li>`;
     };
 
