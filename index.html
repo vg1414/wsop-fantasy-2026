@@ -1824,6 +1824,8 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    button.hmodal-player { display: block; background: none; border: none; padding: 0; cursor: pointer; transition: color 0.15s; }
+    button.hmodal-player:hover { color: var(--gold-light); }
 
     .hmodal-event {
       font-size: 0.78rem;
@@ -2490,7 +2492,7 @@
           ? ` <span style="font-weight:300;font-size:0.8rem;color:var(--muted2)">(${SALARY[ev.player]})</span>`
           : '';
         const playerLine = ev._showPlayer
-          ? `<div class="hmodal-player">${ev.player}${salary}</div>`
+          ? `<button class="hmodal-player" onclick="openPlayerModal(${JSON.stringify(ev.player).replace(/"/g,'&quot;')})">${ev.player}${salary}</button>`
           : '';
         return `<div class="hmodal-row" style="animation-delay:${delay}ms">
           <div>
@@ -2561,6 +2563,8 @@
       .map(ev => ({ ...ev, _showPlayer: true, _dotColor: playerColorMap[(ev.player || '').toLowerCase()] }));
     const total = events.reduce((s, ev) => s + (ev.points || 0), 0);
     const color = TEAM_COLORS[teamIndex] || null;
+    const bracelets = events.filter(ev => ev.placement === 1).length;
+    const braceletImgs = bracelets > 0 ? Array(bracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet" style="height:18px;vertical-align:middle;margin-left:3px">`).join('') : '';
     showModal(
       team.owner,
       `${team.players.length} spelare · ${events.length} cashes`,
@@ -2568,6 +2572,10 @@
       color,
       buildModalRows(events)
     );
+    if (braceletImgs) {
+      const titleEl = document.getElementById('hmodal-title');
+      titleEl.innerHTML = titleEl.textContent + braceletImgs;
+    }
   }
 
   function openPlayerModal(playerName) {
@@ -2915,10 +2923,7 @@
         const dots = playerDots(p.name, ownerMap);
         const salary = SALARY[p.name];
         const salaryEl = salary != null ? `<span class="live-salary">(${salary})</span>` : '';
-        const livePlayerUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[p.name];
-        const liveNameEl = livePlayerUrl
-          ? `<a class="player-link" href="${livePlayerUrl}">${p.name}${salaryEl}</a>${ftBadge}${itmBadge}${rankEl}${bbEl}${dots}`
-          : `${p.name}${salaryEl}${ftBadge}${itmBadge}${rankEl}${bbEl}${dots}`;
+        const liveNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(p.name).replace(/"/g,'&quot;')})">${p.name}${salaryEl}</button>${ftBadge}${itmBadge}${rankEl}${bbEl}${dots}`;
         return `<div class="live-row">
           <div class="live-player">${liveNameEl}</div>
           <span class="live-dot ${dotCls}"></span>

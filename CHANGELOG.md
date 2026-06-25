@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-25 (uppdatering 3)
+- Spelarmodal: öppnas nu från live-fliken, lagmodalen och statistik-fliken (alla spelarknappar)
+- Lagmodal: spelarnamn klickbara, armband visas efter lagnamnet
+- Lagmodal: spelarnamns utseende återställt efter knapp-konvertering
+
 ## 2026-06-25 (uppdatering 2)
 - Modal: scroll-position återställs alltid till toppen när en ny modal öppnas
 
