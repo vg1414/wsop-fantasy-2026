@@ -2535,6 +2535,7 @@
     totalEl.textContent = '0p';
     barEl.style.background = accentColor || 'var(--gold)';
     bodyEl.innerHTML = eventsHtml;
+    bodyEl.scrollTop = 0;
 
     // Återstarta animationer på modal
     modal.style.animation = 'none';
