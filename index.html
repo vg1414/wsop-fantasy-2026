@@ -2437,9 +2437,14 @@
       <div class="standing-row rank-${i + 1}" data-team="${t.index}" onclick="openTeamModal(${t.index})" style="cursor:pointer">
         <div class="rank-col">${i + 1}</div>
         <div class="name-col">${t.owner}${braceletStr}${ftBadgeStanding}</div>
-        <div class="pts-col">${guaranteedEl}${t.total}<small>pts</small></div>
+        <div class="pts-col">${guaranteedEl}<span class="pts-num">0</span><small>pts</small></div>
       </div>`;
     }).join('');
+
+    el.querySelectorAll('.pts-num').forEach((span, i) => {
+      const target = sorted[i].total;
+      animateCount(span, target, '');
+    });
   }
 
   function ptsColor(pts) {
@@ -2500,13 +2505,13 @@
     }).join('');
   }
 
-  function animateCount(el, target) {
+  function animateCount(el, target, suffix = 'p') {
     const duration = Math.min(600 + target * 0.4, 1200);
     const start = performance.now();
     function tick(now) {
       const t = Math.min((now - start) / duration, 1);
       const ease = 1 - Math.pow(1 - t, 3);
-      el.textContent = Math.round(ease * target) + 'p';
+      el.textContent = Math.round(ease * target) + suffix;
       if (t < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
