@@ -2497,7 +2497,7 @@
         return `<div class="hmodal-row" style="animation-delay:${delay}ms">
           <div>
             ${playerLine}
-            <div class="hmodal-event">${ev.event}${braceletMark}</div>
+            <div class="hmodal-event">${ev.event_url ? `<a href="${ev.event_url}" style="color:inherit;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.2)">${ev.event}</a>` : ev.event}${braceletMark}</div>
             ${placementTxt}
           </div>
           <div class="${ptsCls}" style="${ptsStyle}">+${ev.points}</div>

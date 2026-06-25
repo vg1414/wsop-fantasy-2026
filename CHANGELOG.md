@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-25 (uppdatering 4)
+- Modal: turneringsnamn är nu klickbar länk till 25kfantasy.com-sidan för respektive event (samma fönster)
+
 ## 2026-06-25 (uppdatering 3)
 - Spelarmodal: öppnas nu från live-fliken, lagmodalen och statistik-fliken (alla spelarknappar)
 - Lagmodal: spelarnamn klickbara, armband visas efter lagnamnet
