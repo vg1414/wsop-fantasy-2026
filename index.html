@@ -1833,11 +1833,27 @@
     }
 
     .hmodal-placement {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-top: 4px;
       font-family: 'Oswald', sans-serif;
-      font-size: 0.65rem;
-      color: #555;
-      margin-top: 2px;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
+    }
+    .hmodal-placement-rank {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #bbb;
+    }
+    .hmodal-placement-of {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #bbb;
+    }
+    .hmodal-placement-field {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #bbb;
     }
 
     .hmodal-pts {
@@ -1849,8 +1865,7 @@
       white-space: nowrap;
     }
 
-    /* Guld för 1:a plats */
-    .hmodal-pts.gold { color: var(--gold-light); }
+    /* Färg sätts inline via ptsColor() */
 
     .hmodal-empty {
       padding: 40px 20px;
@@ -2427,13 +2442,25 @@
     }).join('');
   }
 
+  function ptsColor(pts) {
+    // Guld (#e8b84b) vid >=100p, grönt (#3cb371) vid 1p, glidande däremellan
+    const t = Math.min(Math.max((pts - 1) / 99, 0), 1);
+    // Guld: H=40, S=78%, L=60% — Grönt: H=146, S=47%, L=47%
+    const h = Math.round(40 + (146 - 40) * (1 - t));
+    const s = Math.round(78 + (47 - 78) * (1 - t));
+    const l = Math.round(60 + (47 - 60) * (1 - t));
+    return `hsl(${h},${s}%,${l}%)`;
+  }
+
   function buildModalRows(events) {
     if (!events || events.length === 0) {
       return '<div class="hmodal-empty">Inga cashes ännu</div>';
     }
+    const evNum = ev => { const m = (ev.event_url || ev.event || '').match(/(\d+)/g); return m ? parseInt(m[m.length-1]) : 0; };
+    const sorted = [...events].sort((a, b) => evNum(b) - evNum(a));
     const byDate = {};
     const dateOrder = [];
-    for (const ev of events) {
+    for (const ev of sorted) {
       if (!byDate[ev.date]) { byDate[ev.date] = []; dateOrder.push(ev.date); }
       byDate[ev.date].push(ev);
     }
@@ -2443,10 +2470,17 @@
         const delay = Math.min(rowIndex * 35, 400);
         rowIndex++;
         const isBracelet = ev.placement === 1;
-        const ptsCls = isBracelet ? 'hmodal-pts gold' : 'hmodal-pts';
+        const ptsCls = 'hmodal-pts';
+        const ptsStyle = `color:${ptsColor(ev.points || 0)}`;
         const braceletMark = isBracelet ? ` <img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet" style="height:12px;vertical-align:middle;margin-left:2px">` : '';
-        const placementTxt = (ev.placement || ev.entrants)
-          ? `<div class="hmodal-placement">${[ev.placement ? `Plats ${ev.placement}` : '', ev.entrants ? `${String(ev.entrants).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} entrants` : ''].filter(Boolean).join(' · ')}</div>` : '';
+        const fmtNum = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        const placementTxt = ev.placement
+          ? `<div class="hmodal-placement">
+              <span class="hmodal-placement-rank">${ev.placement}:a</span>${ev.entrants
+                ? `<span class="hmodal-placement-of">av</span><span class="hmodal-placement-field">${fmtNum(ev.entrants)}</span>`
+                : ''}
+             </div>`
+          : '';
         const salary = ev._showPlayer && SALARY[ev.player] != null
           ? ` <span style="font-weight:300;font-size:0.8rem;color:var(--muted2)">(${SALARY[ev.player]})</span>`
           : '';
@@ -2459,7 +2493,7 @@
             <div class="hmodal-event">${ev.event}${braceletMark}</div>
             ${placementTxt}
           </div>
-          <div class="${ptsCls}">+${ev.points}</div>
+          <div class="${ptsCls}" style="${ptsStyle}">+${ev.points}</div>
         </div>`;
       }).join('');
       return `<div><div class="hmodal-date-header">${date}</div>${rows}</div>`;
@@ -2536,13 +2570,20 @@
     const events = (currentScoresData.events || [])
       .filter(ev => (ev.player || '').toLowerCase() === nameLower);
     const total = events.reduce((s, ev) => s + (ev.points || 0), 0);
+    const bracelets = events.filter(ev => ev.placement === 1).length;
+    const braceletImgs = bracelets > 0 ? Array(bracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet" style="height:18px;vertical-align:middle;margin-left:3px">`).join('') : '';
+    const salaryStr = SALARY[playerName] != null ? ` (${SALARY[playerName]})` : '';
     showModal(
-      playerName,
+      `${playerName}${salaryStr}`,
       `${events.length} cashes`,
       total,
-      null,
+      '#a0a0c0',
       buildModalRows(events)
     );
+    if (braceletImgs) {
+      const titleEl = document.getElementById('hmodal-title');
+      titleEl.innerHTML = titleEl.textContent + braceletImgs;
+    }
   }
 
   function closeHistoryModal() {
@@ -2584,7 +2625,7 @@
         const url = playerUrls && playerUrls[p];
         const playerBracelets = braceletsByPlayer[p] || 0;
         const braceletImgs = playerBracelets > 0 ? Array(playerBracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet">`).join('') : '';
-        const nameEl = `<button class="player-name player-name-btn" onclick="openPlayerModal(${JSON.stringify(p)})">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${itmBadgeOv}${liveDot}${dots}</button>`;
+        const nameEl = `<button class="player-name player-name-btn" onclick="openPlayerModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${itmBadgeOv}${liveDot}${dots}</button>`;
         const cashCount = cashCountByPlayer[p] || 0;
         const cashEl = cashCount > 0 ? ` <span class="player-cash-count">(${cashCount})</span>` : '';
         return `<li class="player-row">
@@ -2630,7 +2671,7 @@
       const liveDot = isLive ? `<span class="live-playing-dot"></span>` : '';
       const salary = SALARY[p.name] != null ? ` <span class="player-salary">(${SALARY[p.name]})</span>` : '';
       const inner = `${p.name}${salary}${liveDot}${dots}`;
-      const nameEl = `<button class="player-name-btn" style="font-style:normal;color:var(--muted2);font-family:'Oswald',sans-serif;font-size:0.82rem;font-weight:400" onclick="openPlayerModal(${JSON.stringify(p.name)})">${inner}</button>`;
+      const nameEl = `<button class="player-name-btn" style="font-style:normal;color:var(--muted2);font-family:'Oswald',sans-serif;font-size:0.82rem;font-weight:400" onclick="openPlayerModal(${JSON.stringify(p.name).replace(/"/g,'&quot;')})">${inner}</button>`;
       return `<li class="stats-row">${nameEl}<span class="stats-val">${extra}</span></li>`;
     };
 

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-25
+- Modal: graderad färgskala på poäng (guld ≥100p → grönt 1p, glidande)
+- Modal: spelarnamn klickbara i lagkorten öppnar spelarens egna resultatmodal
+- Spelarmodal: visar värde i parentes efter namn, armband efter namnet
+- Buggfix: `JSON.stringify` med dubbla citattecken bröt onclick-attribut för spelarknappar
+
 ## 2026-06-24
 - Ny flik "Lag-statistik" med historiska WSOP-karriärmeriter per lag (vinster, cashes, armband, final tables) som stapeldiagram med lagfärger
 - Lagnamn i statistik-fliken visas i respektive lags färg
