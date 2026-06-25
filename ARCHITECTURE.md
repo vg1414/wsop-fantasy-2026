@@ -1,6 +1,6 @@
 # WSOP Fantasy – Teknisk arkitektur och guide för framtida år
 
-> Senast uppdaterad 2026-06-24. Använd den här filen för att snabbt förstå projektet i en ny chatt,
+> Senast uppdaterad 2026-06-25. Använd den här filen för att snabbt förstå projektet i en ny chatt,
 > eller för att sätta upp en ny säsong med nya lag och ett nytt schema.
 
 ---
@@ -223,6 +223,13 @@ Hämtar från tre undersidor:
 }
 ```
 
+**OBS om händelsehistorik:** 25kfantasy.com trunkerar gamla events på `/all-scores/`. Därför finns en
+separat persistent samling `score_history/all` som aldrig skrivs över — scriptet slår ihop nya events
+med befintliga vid varje körning. `scores/latest` uppdateras alltid med den fullständiga historiken.
+
+**Deduplicering:** Sker på `(player, event_number)` — event-numret extraheras ur URL eller eventnamn.
+Dubbelposter med kortare ("Event #47") och fullständigt namn slås ihop och bevarar den längre varianten.
+
 ---
 
 ## scrape_pokernews.py
@@ -292,7 +299,8 @@ Behöver bara köras en gång per säsong (eller om statistiken uppdateras).
 **Samlingar:**
 | Samling | Skrivs av | Innehåll |
 |---------|-----------|----------|
-| `scores/latest` | `scrape_scores.py` | Poäng, events, ställning |
+| `scores/latest` | `scrape_scores.py` | Poäng, events (fullständig historik), ställning |
+| `score_history/all` | `scrape_scores.py` | Persistent händelsehistorik — ackumuleras, skrivs aldrig över |
 | `live_status/latest` | `scrape_pokernews.py` | Spelares live-status |
 | `wsop_stats/latest` | `seed_wsop_stats.py` | Historisk karriärstatistik |
 
@@ -387,3 +395,5 @@ Pages serverar `index.html` direkt från `main`-branchen. Ingen byggprocess — 
 | Spelare saknas i datan | Namnmatchning felaktig | Kontrollera stavning mot 25kfantasy.com |
 | SSL-fel lokalt | Windows certifi-problem | Kör via GitHub Actions istället (fungerar alltid) |
 | Lag-statistik visas inte | Firestore ej seedat | Kör "Seed WSOP Stats"-workflowen manuellt |
+| Modal visar fel poäng | `score_history/all` saknas eller är tom | Kör `scrape_scores.py` manuellt — den bygger upp historiken automatiskt |
+| Spelarmodal öppnas inte vid klick | Spelarnamn innehåller citattecken som bryts i onclick | Kontrollera att `JSON.stringify(name).replace(/"/g,'&quot;')` används |
