@@ -674,7 +674,6 @@
       font-family: 'Oswald', sans-serif;
       font-size: 1.1rem;
       font-weight: 600;
-      color: var(--gold);
       text-align: right;
       min-width: 52px;
     }
@@ -2734,9 +2733,7 @@
 
         const playerUrl = (playerUrls && playerUrls[ev.player]) || ev.player_url || '';
         const salaryLog = SALARY[ev.player] != null ? ` <span class="player-salary">(${SALARY[ev.player]})</span>` : '';
-        const playerEl = playerUrl
-          ? `<a class="player-link" href="${playerUrl}">${ev.player}${salaryLog}${dotWrap}</a>`
-          : `${ev.player}${salaryLog}${dotWrap}`;
+        const playerEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(ev.player).replace(/"/g,'&quot;')})">${ev.player}${salaryLog}${dotWrap}</button>`;
 
         const eventUrl = ev.event_url || '';
         const eventEl = eventUrl
@@ -2751,7 +2748,7 @@
           <div class="ev-player">${playerEl}</div>
           <div class="ev-event">${eventEl}</div>
           ${placementEl}
-          <div class="ev-pts">+${ev.points}</div>
+          <div class="ev-pts" style="color:${ptsColor(ev.points||0)}">+${ev.points}</div>
         </div>`;
       }).join('');
 
@@ -3207,9 +3204,7 @@
         ).join('');
         const salaryLive = SALARY[lp.name] != null ? ` <span class="sch-salary">(${SALARY[lp.name]})</span>` : '';
         const schLiveUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[lp.name];
-        const schLiveNameEl = schLiveUrl
-          ? `<a class="player-link" href="${schLiveUrl}">${lp.name}${salaryLive}</a>`
-          : `${lp.name}${salaryLive}`;
+        const schLiveNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(lp.name).replace(/"/g,'&quot;')})">${lp.name}${salaryLive}</button>`;
         bodyHtml += `<div class="sch-player-row live-now">
           <span class="sch-live-dot"></span>
           <span class="sch-player-name">${schLiveNameEl}</span>
@@ -3229,9 +3224,7 @@
           : '';
         const salaryCashed = SALARY[row.player] != null ? ` <span class="sch-salary">(${SALARY[row.player]})</span>` : '';
         const schCashedUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[row.player];
-        const schCashedNameEl = schCashedUrl
-          ? `<a class="player-link" href="${schCashedUrl}">${row.player}${salaryCashed}</a>`
-          : `${row.player}${salaryCashed}`;
+        const schCashedNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(row.player).replace(/"/g,'&quot;')})">${row.player}${salaryCashed}</button>`;
         bodyHtml += `<div class="sch-player-row">
           <span class="sch-player-name">${schCashedNameEl}</span>
           <span style="display:flex;gap:3px;margin-left:6px">${dots}</span>
