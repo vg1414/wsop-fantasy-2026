@@ -1620,8 +1620,12 @@
       to   { opacity: 1; }
     }
     @keyframes hmodal-slide-up {
-      from { transform: translateY(40px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+    @keyframes hmodal-slide-down {
+      from { transform: translateY(0); }
+      to   { transform: translateY(100%); }
     }
     @keyframes hmodal-row-in {
       from { opacity: 0; transform: translateX(-10px); }
@@ -1650,6 +1654,16 @@
       animation: hmodal-overlay-in 0.18s ease both;
     }
     .hmodal-overlay.hidden { display: none; }
+    .hmodal-overlay.closing {
+      animation: hmodal-overlay-out 0.28s ease forwards;
+    }
+    .hmodal-overlay.closing .hmodal {
+      animation: hmodal-slide-down 0.28s cubic-bezier(0.4,0,1,1) forwards;
+    }
+    @keyframes hmodal-overlay-out {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
 
     @media (min-width: 540px) {
       .hmodal-overlay { align-items: center; }
@@ -1665,8 +1679,20 @@
       display: flex;
       flex-direction: column;
       position: relative;
-      animation: hmodal-slide-up 0.32s cubic-bezier(0.22,1,0.36,1) both;
+      animation: hmodal-slide-up 0.36s cubic-bezier(0.22,1,0.36,1) both;
       overflow: hidden;
+      will-change: transform;
+    }
+    .hmodal-drag-handle {
+      width: 36px;
+      height: 4px;
+      background: #333;
+      border-radius: 2px;
+      margin: 10px auto 0;
+      flex-shrink: 0;
+    }
+    @media (min-width: 540px) {
+      .hmodal-drag-handle { display: none; }
     }
 
     @media (min-width: 540px) {
@@ -1777,10 +1803,6 @@
       color: #444;
       text-transform: uppercase;
       padding: 14px 20px 5px;
-      background: #111;
-      position: sticky;
-      top: 0;
-      z-index: 1;
     }
 
     .hmodal-row {
@@ -1922,6 +1944,7 @@
 
 <div class="hmodal-overlay hidden" id="hmodal-overlay">
   <div class="hmodal" id="hmodal">
+    <div class="hmodal-drag-handle"></div>
     <div class="hmodal-color-bar" id="hmodal-color-bar"></div>
     <div class="hmodal-header">
       <div class="hmodal-title" id="hmodal-title"></div>
@@ -2538,11 +2561,14 @@
     bodyEl.innerHTML = eventsHtml;
     bodyEl.scrollTop = 0;
 
-    // Återstarta animationer på modal
+    // Återstarta slide-up-animation
+    modal.style.transition = '';
+    modal.style.transform = '';
     modal.style.animation = 'none';
     modal.offsetHeight;
     modal.style.animation = '';
 
+    overlay.style.opacity = '';
     overlay.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
@@ -2600,8 +2626,16 @@
   }
 
   function closeHistoryModal() {
-    document.getElementById('hmodal-overlay').classList.add('hidden');
-    document.body.style.overflow = '';
+    const overlay = document.getElementById('hmodal-overlay');
+    const modal = document.getElementById('hmodal');
+    // Rensa eventuella inline-stilar från drag så CSS-animationen tar över
+    modal.style.cssText = '';
+    overlay.classList.add('closing');
+    setTimeout(() => {
+      overlay.classList.add('hidden');
+      overlay.classList.remove('closing');
+      document.body.style.overflow = '';
+    }, 290);
   }
 
   window.openTeamModal = openTeamModal;
@@ -2616,6 +2650,59 @@
       closeHistoryModal();
     }
   });
+
+  // Drag-ner för att stänga (touch)
+  (function() {
+    const modal = document.getElementById('hmodal');
+    let startY = 0, currentY = 0, dragging = false, startScrollTop = 0;
+
+    modal.addEventListener('touchstart', e => {
+      const body = document.getElementById('hmodal-body');
+      startScrollTop = body ? body.scrollTop : 0;
+      startY = e.touches[0].clientY;
+      currentY = startY;
+      dragging = true;
+      modal.style.transition = 'none';
+    }, { passive: true });
+
+    modal.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      const body = document.getElementById('hmodal-body');
+      const scrollTop = body ? body.scrollTop : 0;
+      currentY = e.touches[0].clientY;
+      const dy = currentY - startY;
+      // Tillåt drag nedåt bara om vi är i toppen av scrollat innehåll
+      if (dy > 0 && scrollTop <= 0) {
+        modal.style.transform = `translateY(${dy}px)`;
+      }
+    }, { passive: true });
+
+    modal.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      const dy = currentY - startY;
+      if (dy > 80) {
+        // Fortsätt draget till botten istället för att återgå
+        modal.style.transition = 'transform 0.22s cubic-bezier(0.4,0,1,1)';
+        modal.style.transform = `translateY(100%)`;
+        const overlay = document.getElementById('hmodal-overlay');
+        overlay.style.transition = 'opacity 0.22s ease';
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+          overlay.classList.add('hidden');
+          overlay.style.opacity = '';
+          overlay.style.transition = '';
+          modal.style.transform = '';
+          modal.style.transition = '';
+          document.body.style.overflow = '';
+        }, 230);
+      } else {
+        modal.style.transition = 'transform 0.22s cubic-bezier(0.22,1,0.36,1)';
+        modal.style.transform = 'translateY(0)';
+        setTimeout(() => { modal.style.transition = ''; }, 220);
+      }
+    });
+  })();
 
   function renderTeams(teams, scores, ownerMap, playerUrls, livePlayingSet = new Set(), finalTableSet = new Set(), braceletsByPlayer = {}, itmSet = new Set(), cashCountByPlayer = {}) {
     const el = document.getElementById('teams');
