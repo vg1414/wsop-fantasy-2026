@@ -6,3 +6,9 @@
 # Python
 __pycache__/
 *.pyc
+
+# Editor
+.vscode/
+
+# Engångsscript (körda lokalt, ej del av appen)
+backfill_entrants.py
