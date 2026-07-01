@@ -204,6 +204,26 @@ def scrape_event_statuses():
         print(f"Error scraping event statuses: {e}")
     return statuses, live_event_urls
 
+def scrape_event_names():
+    """Fetch full event names (with description) from 25kfantasy.com/events.
+    Returns dict {event_num: full_name}, e.g. {60: "Event #60: $50,000 Poker Players Championship"}"""
+    names = {}
+    try:
+        res = requests.get(f"{BASE_URL}/events", headers=HEADERS, timeout=15, verify=False)
+        soup = BeautifulSoup(res.text, "html.parser")
+        for row in soup.find_all("tr"):
+            row_text = row.get_text(" ", strip=True)
+            m = re.search(r'(Event\s*#\d+\s*:[^|]+?)(?:\s+Event Completed|\s+Tracking Live|\s+Not Yet Tracking|$)', row_text, re.IGNORECASE)
+            if not m:
+                continue
+            full_name = m.group(1).strip()
+            num_m = re.search(r'Event\s*#(\d+)', full_name, re.IGNORECASE)
+            if num_m:
+                names[int(num_m.group(1))] = full_name
+    except Exception as e:
+        print(f"Error scraping event names: {e}")
+    return names
+
 PLAYER_SLUG_OVERRIDES = {
     "Joao Simao Peres": "joao-simao",
 }
@@ -382,7 +402,7 @@ def read_latest_events_from_firestore(token):
         })
     return result
 
-def merge_and_write_history(new_events, token):
+def merge_and_write_history(new_events, token, event_names=None):
     """Merges new_events into persisted history (dedup by player+event number), writes back."""
     existing = read_history_from_firestore(token)
     # Safety: if history is empty but scores/latest has more events, use that as base
@@ -414,6 +434,16 @@ def merge_and_write_history(new_events, token):
                 merged["event"] = ev["event"]
             by_key[key] = merged
     existing = list(by_key.values())
+
+    # Uppgradera korta eventnamn ("Event #60") till fulla namn med beskrivning
+    # ("Event #60: $50,000 Poker Players Championship"), även för gamla poster
+    # som scrollat bort från /all-scores/ och därför inte fångas av merget ovan
+    if event_names:
+        for e in existing:
+            n = _event_num_key(e)
+            if n in event_names and len(event_names[n]) > len(e.get("event", "")):
+                e["event"] = event_names[n]
+
     print(f"History: {len(existing)} total events ({added} new added)")
     fields = {"events": to_firestore_value(existing)}
     res = requests.patch(
@@ -432,6 +462,16 @@ def main():
     scores = scrape_totals(player_lookup)
     events = scrape_events(player_lookup)
     player_urls = build_player_urls(player_lookup)
+
+    # Fetch full event names (with description) and apply to every event
+    # so all rows show e.g. "Event #60: $50,000 Poker Players Championship"
+    # instead of just "Event #60"
+    print("Fetching full event names...")
+    event_names = scrape_event_names()
+    for ev in events:
+        m = re.search(r'Event\s*#(\d+)', ev.get("event", ""), re.IGNORECASE)
+        if m and int(m.group(1)) in event_names:
+            ev["event"] = event_names[int(m.group(1))]
 
     # Fetch entrants + placements per unique event URL
     print("Fetching entrants and placements per event...")
@@ -520,7 +560,7 @@ def main():
     # Merge scraped events into persistent history, get full history back
     print("Merging events into persistent history...")
     token = get_firebase_token()
-    full_history = merge_and_write_history(events, token)
+    full_history = merge_and_write_history(events, token, event_names)
 
     write_to_firestore({
         "updated": updated,

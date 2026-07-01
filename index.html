@@ -2666,6 +2666,17 @@
       byDate[ev.date].push(ev);
     }
 
+    // Sortera datumgrupperna kronologiskt (nyast först) i stället för
+    // efter i vilken ordning de först dök upp i events-arrayen
+    dateOrder.sort((a, b) => {
+      const ta = new Date(a).getTime();
+      const tb = new Date(b).getTime();
+      if (isNaN(ta) && isNaN(tb)) return 0;
+      if (isNaN(ta)) return 1;
+      if (isNaN(tb)) return -1;
+      return tb - ta;
+    });
+
     el.innerHTML = dateOrder.map(date => {
       const rows = byDate[date].map(ev => {
         const entries = ownerMap[ev.player] || [];
