@@ -2,6 +2,7 @@
 
 ## 2026-07-01
 - Bättre kontrast på alla datum/tidsstämplar (statusrad, uppdatera-knapp, datumrubriker i historik/spelarmodal/schema, "Fantasy · 2026" i headern) för läsbarhet i solljus på mobil
+- Bättre kontrast på flikarna i menyn (Översikt, Schema, Historik, Poängberäknare, Live)
 
 ## 2026-06-25 (uppdatering 4)
 - Modal: turneringsnamn är nu klickbar länk till 25kfantasy.com-sidan för respektive event (samma fönster)
