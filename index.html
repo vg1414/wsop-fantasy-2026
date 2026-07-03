@@ -807,6 +807,12 @@
     }
     .live-rank.rank-yellow { color: var(--gold); }
     .live-rank.rank-red { color: #e05555; }
+    .live-sweat-rank {
+      font-size: 0.78rem;
+      font-weight: 300;
+      margin-left: 8px;
+      color: #888;
+    }
     .live-bb {
       font-size: 0.8rem;
       font-weight: 400;
@@ -2814,8 +2820,30 @@
       return;
     }
 
+    function extractEventNum(p) {
+      const m = p.event && p.event.match(/Event\s*#(\d+)/i);
+      return m ? parseInt(m[1]) : null;
+    }
+    // Gruppera spelare i samma event ihop (sorterat på lägst players_left
+    // bland eventets spelare), sekundärt sorterade på egen players_left.
+    const minPlayersLeftByEvent = {};
+    for (const p of players) {
+      if (p.status !== 'currentlyPlaying') continue;
+      const evN = extractEventNum(p);
+      if (evN == null) continue;
+      const cur = minPlayersLeftByEvent[evN];
+      const val = p.players_left ?? Infinity;
+      if (cur == null || val < cur) minPlayersLeftByEvent[evN] = val;
+    }
     const playing = players.filter(p => p.status === 'currentlyPlaying')
-      .sort((a, b) => (a.players_left ?? Infinity) - (b.players_left ?? Infinity));
+      .sort((a, b) => {
+        const evA = extractEventNum(a), evB = extractEventNum(b);
+        const groupA = evA != null ? (minPlayersLeftByEvent[evA] ?? Infinity) : Infinity;
+        const groupB = evB != null ? (minPlayersLeftByEvent[evB] ?? Infinity) : Infinity;
+        if (groupA !== groupB) return groupA - groupB;
+        if (evA !== evB) return (evA ?? Infinity) - (evB ?? Infinity);
+        return (a.players_left ?? Infinity) - (b.players_left ?? Infinity);
+      });
     const lastSeen = players.filter(p => p.status !== 'currentlyPlaying' && p.status !== '');
 
     currentLivePlaying = new Set(playing.map(p => p.name.toLowerCase()));
@@ -2861,14 +2889,17 @@
           ? `<a href="${p.event_url}">${p.event}</a>`
           : p.event || '—';
         const placeEl = '';
+        // "X kvar" ska alltid spegla verkliga antalet spelare kvar i turneringen
+        // (players_left), samma tal som ligger till grund för garanterade poäng.
+        // chip_rank (25kfantasy sweat-rank) är en annan mätning — spelarens
+        // rank bland de fantasy-bevakade spelarna — och visas separat.
         let rankEl = '';
-        if (isPlaying && p.chip_rank) {
-          const parts = p.chip_rank.split('/');
-          const remaining = parseInt(parts[1]);
-          const rankCls = remaining < 30 ? 'rank-red' : remaining < 100 ? 'rank-yellow' : '';
-          rankEl = `<span class="live-rank ${rankCls}">${p.chip_rank} kvar</span>`;
-        } else if (isPlaying && p.players_left != null) {
+        if (isPlaying && p.players_left != null) {
           rankEl = `<span class="live-rank ${p.players_left < 30 ? 'rank-red' : p.players_left < 100 ? 'rank-yellow' : ''}">${p.players_left} kvar</span>`;
+        }
+        let sweatRankEl = '';
+        if (isPlaying && p.chip_rank) {
+          sweatRankEl = `<span class="live-sweat-rank" title="Sweat-rank på 25kfantasy">Sweat ${p.chip_rank}</span>`;
         }
         const bbEl = isPlaying && p.bb ? `<span class="live-bb">${p.bb}</span>` : '';
         const isFinalTable = isPlaying && p.players_left != null && p.players_left < 10;
@@ -2881,7 +2912,7 @@
         const dots = playerDots(p.name, ownerMap);
         const salary = SALARY[p.name];
         const salaryEl = salary != null ? `<span class="live-salary">(${salary})</span>` : '';
-        const liveNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(p.name).replace(/"/g,'&quot;')})">${p.name}${salaryEl}</button>${ftBadge}${itmBadge}${rankEl}${bbEl}${dots}`;
+        const liveNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(p.name).replace(/"/g,'&quot;')})">${p.name}${salaryEl}</button>${ftBadge}${itmBadge}${rankEl}${sweatRankEl}${bbEl}${dots}`;
         return `<div class="live-row">
           <div class="live-player">${liveNameEl}</div>
           <span class="live-dot ${dotCls}"></span>

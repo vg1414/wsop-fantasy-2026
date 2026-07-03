@@ -140,6 +140,12 @@ def scrape_event_details(event_urls):
 
             inp = soup.find("input", {"id": "event-entrants"})
             entrants = int(inp["value"]) if inp and inp.get("value") else 0
+            if entrants == 0:
+                # Fallback: PokerNews har tagit bort #event-entrants-inputen
+                # på vissa sidor. Leta i klartext efter "Total Entries: N".
+                m = re.search(r'Total Entries[^0-9]*(\d[\d,]*)', res.text, re.IGNORECASE)
+                if m:
+                    entrants = int(m.group(1).replace(",", ""))
 
             placements = {}
             for table in soup.find_all("table"):
