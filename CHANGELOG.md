@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-07-04
+- Fix: spelare som bustat kunde hänga kvar i "Spelar just nu" i Live-fliken om PokerNews My Stable inte hunnit uppdatera status. Scrapern sätter nu status till "busted" när en spelare som tidigare var currentlyPlaying inte längre finns i 25kfantasys chip-count-data (dvs. han har fått poäng och är klar)
+
 ## 2026-07-03
 - Uppdatera-knappen visar nu "✓ Klar" i grönt (istället för "✓ Uppdaterad") när uppdateringen är klar, innan den går tillbaka till "Uppdatera"
 - Live-fliken: BB (Big Blinds-antal) fick en egen kolumn istället för att klippas av på slutet av spelarraden. På desktop placerad mellan spelarnamn och live-pricken, på mobil syns den alltid intill live-pricken

@@ -230,6 +230,19 @@ def main():
         p["chip_rank"] = sweat["rank"] if sweat else None
         p["bb"] = sweat["bb"] if sweat else None
 
+    # Om en spelare visas som currentlyPlaying men inte längre finns i sweats
+    # chip-count-data har han fått poäng på 25kfantasy och är därmed bustad —
+    # sweat är den färskare källan, PokerNews my-stable hinner ofta inte
+    # uppdatera status i tid.
+    for p in results:
+        if p["status"] != "currentlyPlaying":
+            continue
+        if p["name"].lower() in sweat_ranks:
+            continue
+        print(f"  Bustad enligt sweat (saknas i chip-count-data): {p['name']}")
+        p["status"] = "busted"
+        p["players_left"] = None
+
     def canonical_event_name(sweat_event_name):
         m = re.search(r'Event\s*#(\d+)', sweat_event_name or "", re.IGNORECASE)
         if m:
