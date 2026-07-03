@@ -807,12 +807,6 @@
     }
     .live-rank.rank-yellow { color: var(--gold); }
     .live-rank.rank-red { color: #e05555; }
-    .live-sweat-rank {
-      font-size: 0.78rem;
-      font-weight: 300;
-      margin-left: 8px;
-      color: #888;
-    }
     .live-bb {
       font-size: 0.8rem;
       font-weight: 400;
@@ -2889,17 +2883,14 @@
           ? `<a href="${p.event_url}">${p.event}</a>`
           : p.event || '—';
         const placeEl = '';
-        // "X kvar" ska alltid spegla verkliga antalet spelare kvar i turneringen
-        // (players_left), samma tal som ligger till grund för garanterade poäng.
-        // chip_rank (25kfantasy sweat-rank) är en annan mätning — spelarens
-        // rank bland de fantasy-bevakade spelarna — och visas separat.
         let rankEl = '';
-        if (isPlaying && p.players_left != null) {
-          rankEl = `<span class="live-rank ${p.players_left < 30 ? 'rank-red' : p.players_left < 100 ? 'rank-yellow' : ''}">${p.players_left} kvar</span>`;
-        }
-        let sweatRankEl = '';
         if (isPlaying && p.chip_rank) {
-          sweatRankEl = `<span class="live-sweat-rank" title="Sweat-rank på 25kfantasy">Sweat ${p.chip_rank}</span>`;
+          const parts = p.chip_rank.split('/');
+          const remaining = parseInt(parts[1]);
+          const rankCls = remaining < 30 ? 'rank-red' : remaining < 100 ? 'rank-yellow' : '';
+          rankEl = `<span class="live-rank ${rankCls}">${p.chip_rank} kvar</span>`;
+        } else if (isPlaying && p.players_left != null) {
+          rankEl = `<span class="live-rank ${p.players_left < 30 ? 'rank-red' : p.players_left < 100 ? 'rank-yellow' : ''}">${p.players_left} kvar</span>`;
         }
         const bbEl = isPlaying && p.bb ? `<span class="live-bb">${p.bb}</span>` : '';
         const isFinalTable = isPlaying && p.players_left != null && p.players_left < 10;
@@ -2912,7 +2903,7 @@
         const dots = playerDots(p.name, ownerMap);
         const salary = SALARY[p.name];
         const salaryEl = salary != null ? `<span class="live-salary">(${salary})</span>` : '';
-        const liveNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(p.name).replace(/"/g,'&quot;')})">${p.name}${salaryEl}</button>${ftBadge}${itmBadge}${rankEl}${sweatRankEl}${bbEl}${dots}`;
+        const liveNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(p.name).replace(/"/g,'&quot;')})">${p.name}${salaryEl}</button>${ftBadge}${itmBadge}${rankEl}${bbEl}${dots}`;
         return `<div class="live-row">
           <div class="live-player">${liveNameEl}</div>
           <span class="live-dot ${dotCls}"></span>

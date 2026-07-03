@@ -4,9 +4,9 @@
 - Fix: spelare som fångas via sweat-fallback (aktiva i 25kfantasy men inte som "currentlyPlaying" i PokerNews My Stable) fick fel eventnamn kvar från gammal PokerNews-data. Eventnamnet skrivs nu alltid över med sweat-datans event, så chip_rank/BB och eventnamn hör ihop.
 - Fix: eventnamn normaliseras nu mot PokerNews kanoniska titel (via eventnummer) för spelare som kommer in via 25kfantasy sweat-fallback, så alla spelare i samma event visar exakt samma eventnamn (tidigare kunde 25kfantasys eget namnformat, t.ex. med "— X left (ITM)" inbakat, avvika från PokerNews-titeln)
 - Uppdatera-knappen visar nu verklig status: väntar på att Firestore-datan faktiskt ändras (inte bara en fast 30s-timer) innan den visar "Uppdaterad", med en 2-minuters fallback om det tar längre tid
-- Live-fliken: "X kvar"-badgen visar nu alltid players_left (verkligt antal spelare kvar i turneringen, samma tal som garanterade poäng räknas på) istället för chip_rank (25kfantasys sweat-rank), som nu visas separat och tydligt märkt som "Sweat X/Y"
 - Live-fliken: spelare i samma event grupperas nu ihop i listan istället för att sorteras enbart på players_left oberoende av event
 - Fix: entrants (deltagarantal) för ett event kunde bli fel eftersom PokerNews tagit bort HTML-inputen #event-entrants på vissa sidor. Scrapern faller nu tillbaka på att läsa "Total Entries: N" i klartext
+- Fix: players_left för spelare som fångas via 25kfantasy sweat-fallback (t.ex. spelare PokerNews My Stable inte listar som spelande) hängde kvar med värdet från spelarens gamla/felaktiga event istället för att räknas om för det korrekta eventet. Gav fel "X kvar"-siffra och fel gruppering i Live-fliken (t.ex. Jon Turner visade 12 kvar i Event #83 istället för korrekta 227)
 
 ## 2026-07-01
 - Bättre kontrast på alla datum/tidsstämplar (statusrad, uppdatera-knapp, datumrubriker i historik/spelarmodal/schema, "Fantasy · 2026" i headern) för läsbarhet i solljus på mobil
