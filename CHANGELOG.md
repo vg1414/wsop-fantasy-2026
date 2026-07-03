@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-07-03
+- Fix: spelare som fångas via sweat-fallback (aktiva i 25kfantasy men inte som "currentlyPlaying" i PokerNews My Stable) fick fel eventnamn kvar från gammal PokerNews-data. Eventnamnet skrivs nu alltid över med sweat-datans event, så chip_rank/BB och eventnamn hör ihop.
+
 ## 2026-07-01
 - Bättre kontrast på alla datum/tidsstämplar (statusrad, uppdatera-knapp, datumrubriker i historik/spelarmodal/schema, "Fantasy · 2026" i headern) för läsbarhet i solljus på mobil
 - Bättre kontrast på flikarna i menyn (Översikt, Schema, Historik, Poängberäknare, Live)

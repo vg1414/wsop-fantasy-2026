@@ -223,8 +223,7 @@ def main():
                 existing["status"] = "currentlyPlaying"
                 existing["chip_rank"] = sweat["rank"]
                 existing["bb"] = sweat["bb"]
-                if not existing.get("event"):
-                    existing["event"] = sweat["event"]
+                existing["event"] = sweat["event"]
                 print(f"  Fallback (sweat→playing): {canon} ({sweat['rank']} i {sweat['event']})")
             else:
                 # Spelaren saknas helt — skapa en minimal post
