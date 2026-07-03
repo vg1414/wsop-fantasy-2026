@@ -7,6 +7,7 @@
 - Live-fliken: spelare i samma event grupperas nu ihop i listan istället för att sorteras enbart på players_left oberoende av event
 - Fix: entrants (deltagarantal) för ett event kunde bli fel eftersom PokerNews tagit bort HTML-inputen #event-entrants på vissa sidor. Scrapern faller nu tillbaka på att läsa "Total Entries: N" i klartext
 - Fix: players_left för spelare som fångas via 25kfantasy sweat-fallback (t.ex. spelare PokerNews My Stable inte listar som spelande) hängde kvar med värdet från spelarens gamla/felaktiga event istället för att räknas om för det korrekta eventet. Gav fel "X kvar"-siffra och fel gruppering i Live-fliken (t.ex. Jon Turner visade 12 kvar i Event #83 istället för korrekta 227)
+- Live-fliken: spelare inom samma event sorteras nu på faktisk placering (chip_rank), inte bara på players_left (som är samma tal för alla i eventet). Spelare utan känd placering grupperas per fantasy-lag istället
 
 ## 2026-07-01
 - Bättre kontrast på alla datum/tidsstämplar (statusrad, uppdatera-knapp, datumrubriker i historik/spelarmodal/schema, "Fantasy · 2026" i headern) för läsbarhet i solljus på mobil
