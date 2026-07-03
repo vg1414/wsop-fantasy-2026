@@ -2,6 +2,7 @@
 
 ## 2026-07-04
 - Fix: spelare som bustat kunde hänga kvar i "Spelar just nu" i Live-fliken om PokerNews My Stable inte hunnit uppdatera status. Scrapern sätter nu status till "busted" när en spelare som tidigare var currentlyPlaying inte längre finns i 25kfantasys chip-count-data (dvs. han har fått poäng och är klar)
+- Fix: föregående busted-fix var för aggressiv och flaggade felaktigt spelare med stackar kvar (t.ex. vidare till dag 2) som bustade, eftersom 25kfantasys sweat bara trackar events som nått ITM. Busted-flaggan sätts nu bara om spelarens event faktiskt är ITM enligt sweat men han saknas i det eventets chip-count-tabell — events som inte är ITM ännu lämnas orörda
 
 ## 2026-07-03
 - Uppdatera-knappen visar nu "✓ Klar" i grönt (istället för "✓ Uppdaterad") när uppdateringen är klar, innan den går tillbaka till "Uppdatera"

@@ -69,15 +69,18 @@ def fetch_players_left(event_url):
 
 def fetch_sweat_ranks():
     """Hämtar chip-rank per fantasy-spelare från 25kfantasy sweat-API.
-    Returnerar dict: spelarnamn (lowercase) -> {"rank": "5/7", "event": "Event #37: ..."}
+    Returnerar (ranks, active_event_nums):
+      ranks: dict spelarnamn (lowercase) -> {"rank": "5/7", "event": "Event #37: ..."}
+      active_event_nums: set med eventnummer som sweat trackar just nu
     """
     ranks = {}
+    active_event_nums = set()
     try:
         # Steg 1: hämta aktiva events
         r = requests.post(SWEAT_URL, headers=SWEAT_HEADERS, json={"q": "sweat_events"}, timeout=15)
         if r.status_code != 200:
             print(f"  sweat_events HTTP {r.status_code}")
-            return ranks
+            return ranks, active_event_nums
         data = r.json()
         events = data.get("data", {}).get("events", [])
         print(f"  Aktiva sweat-events: {len(events)}")
@@ -86,6 +89,9 @@ def fetch_sweat_ranks():
         for ev in events:
             event_id = ev.get("id")
             event_name = ev.get("name", "")
+            m_num = re.search(r'Event\s*#(\d+)', event_name, re.IGNORECASE)
+            if m_num:
+                active_event_nums.add(int(m_num.group(1)))
             print(f"  Hämtar sweat_by_event för {event_name} (id={event_id})...")
             r2 = requests.post(SWEAT_URL, headers=SWEAT_HEADERS, json={"q": "sweat_by_event", "event_id": str(event_id)}, timeout=15)
             if r2.status_code != 200:
@@ -123,7 +129,7 @@ def fetch_sweat_ranks():
                         break
     except Exception as e:
         print(f"  Fel i fetch_sweat_ranks: {e}")
-    return ranks
+    return ranks, active_event_nums
 
 def init_firebase():
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
@@ -224,22 +230,27 @@ def main():
 
     # Hämta chip-rank från 25kfantasy sweat-API
     print("Hämtar chip-rank från 25kfantasy...")
-    sweat_ranks = fetch_sweat_ranks()
+    sweat_ranks, active_sweat_event_nums = fetch_sweat_ranks()
     for p in results:
         sweat = sweat_ranks.get(p["name"].lower())
         p["chip_rank"] = sweat["rank"] if sweat else None
         p["bb"] = sweat["bb"] if sweat else None
 
-    # Om en spelare visas som currentlyPlaying men inte längre finns i sweats
-    # chip-count-data har han fått poäng på 25kfantasy och är därmed bustad —
-    # sweat är den färskare källan, PokerNews my-stable hinner ofta inte
-    # uppdatera status i tid.
+    # Sweat trackar bara events som är ITM. Om en spelares event är ITM enligt
+    # sweat (dvs finns i sweat_events) men han inte finns i det eventets
+    # chip-count-tabell, har han fått poäng och är bustad. Om eventet inte är
+    # ITM än trackar sweat det inte alls, och då kan vi inte dra någon
+    # slutsats — spelare i icke-ITM-events (t.ex. de som gått vidare till en
+    # ny dag) ska inte påverkas.
     for p in results:
         if p["status"] != "currentlyPlaying":
             continue
         if p["name"].lower() in sweat_ranks:
             continue
-        print(f"  Bustad enligt sweat (saknas i chip-count-data): {p['name']}")
+        m = re.search(r'Event\s*#(\d+)', p.get("event") or "", re.IGNORECASE)
+        if not m or int(m.group(1)) not in active_sweat_event_nums:
+            continue
+        print(f"  Bustad enligt sweat (event är ITM, spelare saknas i tabellen): {p['name']}")
         p["status"] = "busted"
         p["players_left"] = None
 
