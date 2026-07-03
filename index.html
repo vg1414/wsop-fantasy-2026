@@ -2911,8 +2911,14 @@
   }
 
   onSnapshot(doc(db, "live_status", "latest"), (snap) => {
-    if (snap.exists()) renderLive(snap.data());
-    else document.getElementById('live-log').innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
+    if (snap.exists()) {
+      const data = snap.data();
+      renderLive(data);
+      notifyLiveDataUpdated(data.updated);
+      lastKnownUpdated = data.updated;
+    } else {
+      document.getElementById('live-log').innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
+    }
   });
 
   // ── SCHEMA ──
@@ -3157,7 +3163,30 @@
   }
 
   // Trigger GitHub workflow
-  let btnLockedUntil = 0;
+  let awaitingFreshData = false;
+  let lastKnownUpdated = null;
+  let awaitTimeoutId = null;
+
+  function resetRefreshBtn(text) {
+    awaitingFreshData = false;
+    if (awaitTimeoutId) { clearTimeout(awaitTimeoutId); awaitTimeoutId = null; }
+    const btn = document.getElementById('refresh-btn');
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000);
+  }
+
+  // Kallas från onSnapshot-lyssnaren när live_status/latest ändras.
+  // Om vi väntar på en pågående uppdatering och tidsstämpeln faktiskt är
+  // nyare än innan knappen trycktes, vet vi att scrapern är klar på riktigt
+  // — inte bara att workflowen startades (vilket kan ta mer än de gamla 30s).
+  function notifyLiveDataUpdated(updatedStr) {
+    if (!awaitingFreshData) return;
+    if (updatedStr && updatedStr !== lastKnownUpdated) {
+      resetRefreshBtn('✓ Uppdaterad');
+    }
+  }
+  window.notifyLiveDataUpdated = notifyLiveDataUpdated;
+
   async function triggerWorkflow() {
     const btn = document.getElementById('refresh-btn');
     btn.disabled = true;
@@ -3176,23 +3205,23 @@
         }
       );
       if (res.status === 204) {
-        if (Date.now() >= btnLockedUntil) { btn.textContent = '✓ Startad'; setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000); }
+        awaitingFreshData = true;
+        btn.textContent = '↻ Uppdaterar...';
+        // Fallback om Firestore inte hinner (eller redan hunnit) ändras inom 2 min
+        awaitTimeoutId = setTimeout(() => {
+          if (awaitingFreshData) resetRefreshBtn('↻ Tar längre tid…');
+        }, 120000);
       } else {
-        if (Date.now() >= btnLockedUntil) { btn.textContent = '✗ Fel'; setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000); }
+        resetRefreshBtn('✗ Fel');
       }
     } catch {
-      if (Date.now() >= btnLockedUntil) { btn.textContent = '✗ Fel'; setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000); }
+      resetRefreshBtn('✗ Fel');
     }
   }
   window.triggerWorkflow = triggerWorkflow;
 
-  // Auto-trigger workflow on page load, lock button for 30s
-  btnLockedUntil = Date.now() + 30000;
+  // Auto-trigger workflow on page load
   triggerWorkflow();
-  const btn = document.getElementById('refresh-btn');
-  btn.disabled = true;
-  btn.textContent = '↻ Laddar...';
-  setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 30000);
 
   // Tab switching (desktop tabs + mobile hamburgermeny)
   const TAB_LABELS = {
