@@ -186,6 +186,7 @@
     }
     #refresh-btn:hover { color: var(--gold-light); border-color: var(--gold); }
     #refresh-btn:disabled { opacity: 0.4; cursor: default; }
+    #refresh-btn.is-done { color: var(--green); border-color: var(--green); opacity: 1; }
 
     .status-dot.live {
       background: var(--green);
@@ -3205,12 +3206,14 @@
   let lastKnownUpdated = null;
   let awaitTimeoutId = null;
 
-  function resetRefreshBtn(text) {
+  function resetRefreshBtn(text, isDone = false) {
     awaitingFreshData = false;
     if (awaitTimeoutId) { clearTimeout(awaitTimeoutId); awaitTimeoutId = null; }
     const btn = document.getElementById('refresh-btn');
     btn.textContent = text;
-    setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.disabled = false; }, 3000);
+    btn.classList.toggle('is-done', isDone);
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.classList.remove('is-done'); }, 3000);
   }
 
   // Kallas från onSnapshot-lyssnaren när live_status/latest ändras.
@@ -3220,7 +3223,7 @@
   function notifyLiveDataUpdated(updatedStr) {
     if (!awaitingFreshData) return;
     if (updatedStr && updatedStr !== lastKnownUpdated) {
-      resetRefreshBtn('✓ Uppdaterad');
+      resetRefreshBtn('✓ Klar', true);
     }
   }
   window.notifyLiveDataUpdated = notifyLiveDataUpdated;
@@ -3228,6 +3231,7 @@
   async function triggerWorkflow() {
     const btn = document.getElementById('refresh-btn');
     btn.disabled = true;
+    btn.classList.remove('is-done');
     btn.textContent = '↻ Startar...';
     try {
       const res = await fetch(
