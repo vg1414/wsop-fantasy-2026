@@ -740,7 +740,7 @@
 
     .live-row {
       display: grid;
-      grid-template-columns: minmax(180px, 280px) 24px 1fr auto;
+      grid-template-columns: minmax(180px, 280px) auto 24px 1fr;
       align-items: center;
       border: 1px solid var(--border);
       border-top: none;
@@ -811,7 +811,6 @@
     .live-bb {
       font-size: 0.8rem;
       font-weight: 400;
-      margin-left: 6px;
       color: #888;
       font-style: italic;
     }
@@ -898,8 +897,10 @@
     }
     .live-event a:hover { color: var(--gold-light); }
 
-    .live-place {
-      padding: 12px 20px 12px 8px;
+    .live-player { order: 1; }
+    .live-bb-col {
+      order: 2;
+      padding: 12px 8px;
       font-family: 'Oswald', sans-serif;
       font-size: 0.72rem;
       color: var(--muted2);
@@ -907,6 +908,8 @@
       min-width: 60px;
       white-space: nowrap;
     }
+    .live-dot { order: 3; }
+    .live-event { order: 4; }
 
     .live-legend {
       display: flex;
@@ -1498,7 +1501,13 @@
         width: 100%;
         box-sizing: border-box;
       }
-      .live-place { display: none; }
+      .live-bb-col {
+        position: absolute;
+        top: 34px;
+        right: 12px;
+        padding: 0;
+        font-size: 0.7rem;
+      }
       .live-group-header { padding: 8px 12px; font-size: 0.72rem; letter-spacing: 2px; }
       .live-legend { padding: 12px; gap: 8px 14px; }
       .live-legend-item { font-size: 0.75rem; }
@@ -2899,7 +2908,6 @@
         const eventEl = p.event_url
           ? `<a href="${p.event_url}">${p.event}</a>`
           : p.event || '—';
-        const placeEl = '';
         let rankEl = '';
         if (isPlaying && p.chip_rank) {
           const parts = p.chip_rank.split('/');
@@ -2909,7 +2917,7 @@
         } else if (isPlaying && p.players_left != null) {
           rankEl = `<span class="live-rank ${p.players_left < 30 ? 'rank-red' : p.players_left < 100 ? 'rank-yellow' : ''}">${p.players_left} kvar</span>`;
         }
-        const bbEl = isPlaying && p.bb ? `<span class="live-bb">${p.bb}</span>` : '';
+        const placeEl = isPlaying && p.bb ? `<span class="live-bb">${p.bb}</span>` : '';
         const isFinalTable = isPlaying && p.players_left != null && p.players_left < 10;
         const ftBadge = isFinalTable ? `<span class="ft-badge">FT</span>` : '';
         const evNumMatch = isPlaying && p.event && p.event.match(/Event\s*#(\d+)/i);
@@ -2920,12 +2928,12 @@
         const dots = playerDots(p.name, ownerMap);
         const salary = SALARY[p.name];
         const salaryEl = salary != null ? `<span class="live-salary">(${salary})</span>` : '';
-        const liveNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(p.name).replace(/"/g,'&quot;')})">${p.name}${salaryEl}</button>${ftBadge}${itmBadge}${rankEl}${bbEl}${dots}`;
+        const liveNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(p.name).replace(/"/g,'&quot;')})">${p.name}${salaryEl}</button>${ftBadge}${itmBadge}${rankEl}${dots}`;
         return `<div class="live-row">
           <div class="live-player">${liveNameEl}</div>
           <span class="live-dot ${dotCls}"></span>
           <div class="live-event">${eventEl}</div>
-          <div class="live-place">${placeEl}</div>
+          <div class="live-bb-col">${placeEl}</div>
         </div>`;
       }).join('');
     }
