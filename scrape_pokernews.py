@@ -90,8 +90,6 @@ def fetch_sweat_ranks():
             event_id = ev.get("id")
             event_name = ev.get("name", "")
             m_num = re.search(r'Event\s*#(\d+)', event_name, re.IGNORECASE)
-            if m_num:
-                active_event_nums.add(int(m_num.group(1)))
             print(f"  Hämtar sweat_by_event för {event_name} (id={event_id})...")
             r2 = requests.post(SWEAT_URL, headers=SWEAT_HEADERS, json={"q": "sweat_by_event", "event_id": str(event_id)}, timeout=15)
             if r2.status_code != 200:
@@ -101,6 +99,12 @@ def fetch_sweat_ranks():
 
             # Parsa tabellrader: Rank | Player | Team | Chips | BB | Bonus | Points
             rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL | re.IGNORECASE)
+            # Eventet listas i sweat_events innan det är ITM, men chip-count-
+            # tabellen är tom tills ITM faktiskt är nått. Räkna eventet som
+            # "aktivt" (ITM) bara om tabellen faktiskt innehöll minst en
+            # giltig rankad rad - annars kan "spelare saknas i tabellen"
+            # felaktigt tolkas som bustad fast eventet bara inte är ITM än.
+            had_valid_row = False
             for row in rows:
                 tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
                 tds_clean = [re.sub(r'<[^>]+>', '', td).strip() for td in tds]
@@ -111,6 +115,7 @@ def fetch_sweat_ranks():
                 player_cell = tds_clean[1]
                 if not re.match(r'^\d+\s*/\s*\d+$', rank_str):
                     continue
+                had_valid_row = True
                 # Normalisera till "5/7"
                 rank_normalized = re.sub(r'\s*/\s*', '/', rank_str)
                 # BB är kolumn 4 (index 4), formatet är "15.6 BB"
@@ -127,6 +132,8 @@ def fetch_sweat_ranks():
                         ranks[fp_canon.lower()] = {"rank": rank_normalized, "event": event_name, "bb": bb_str}
                         print(f"    {fp_canon}: {rank_normalized} {bb_str or ''} ({event_name})")
                         break
+            if had_valid_row and m_num:
+                active_event_nums.add(int(m_num.group(1)))
     except Exception as e:
         print(f"  Fel i fetch_sweat_ranks: {e}")
     return ranks, active_event_nums
