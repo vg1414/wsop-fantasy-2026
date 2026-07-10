@@ -38,8 +38,42 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 }
 
+SWEAT_URL = "https://www.25kfantasy.com/process/sweat"
+
+SWEAT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+    "Content-Type": "application/json",
+    "X-Requested-With": "XMLHttpRequest",
+    "Referer": "https://www.25kfantasy.com/sweat",
+    "Origin": "https://www.25kfantasy.com",
+}
+
 def normalize(name):
     return name.lower().strip()
+
+def fetch_sweat_itm_events():
+    """25kfantasy's sweat_events flaggar events som "(ITM)" så fort de når
+    pengarna, oftast innan PokerNews cash-sida hunnit uppdateras. Använd
+    detta som extra/snabbare källa till itm_event_nums, eftersom 25kfantasy
+    är mer uppdaterat i realtid än PokerNews."""
+    itm_nums = set()
+    try:
+        r = requests.post(SWEAT_URL, headers=SWEAT_HEADERS, json={"q": "sweat_events"}, timeout=15)
+        if r.status_code != 200:
+            print(f"  sweat_events HTTP {r.status_code}")
+            return itm_nums
+        events = r.json().get("data", {}).get("events", [])
+        for ev in events:
+            name = ev.get("name", "")
+            if "(ITM)" not in name:
+                continue
+            m = re.search(r'Event\s*#(\d+)', name, re.IGNORECASE)
+            if m:
+                itm_nums.add(int(m.group(1)))
+        print(f"  25kfantasy sweat ITM events: {sorted(itm_nums)}")
+    except Exception as e:
+        print(f"  Fel i fetch_sweat_itm_events: {e}")
+    return itm_nums
 
 def player_slug(name):
     return name.lower().replace(" ", "-")
@@ -524,6 +558,12 @@ def main():
             itm_event_nums.add(evN)
         if d.get("entrants", 0) > 0:
             event_entrants[evN] = d["entrants"]
+    # 25kfantasy är snabbare än PokerNews på att flagga events som ITM, så
+    # slå ihop dess lista med den vi redan byggt från PokerNews cashes.
+    print("Checking 25kfantasy sweat for ITM events...")
+    sweat_itm_nums = fetch_sweat_itm_events()
+    itm_event_nums |= sweat_itm_nums
+
     print(f"ITM events: {sorted(itm_event_nums)}")
     print(f"Event entrants: { {k:v for k,v in sorted(event_entrants.items())} }")
 

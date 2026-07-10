@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-07-10
+- Fix: garanterade poäng ("Låst" i Live-fliken) visade fel/för lite (t.ex. Suzuki visade 1p istället för 48p) eftersom vår egen uträkning saknade antal anmälda (entrants) för events som PokerNews inte hunnit publicera resultat för. Läser nu av 25kfantasys egna "Locked PTS"-kolumn direkt (snabbare uppdaterad än PokerNews) och faller tillbaka på vår egen formel med entrants från 25kfantasy om deras poängkolumn saknas
+- Fix: ITM-events kunde missas i appen om PokerNews cash-sida inte hunnit uppdateras. 25kfantasys sweat-lista (som flaggar events som "(ITM)") används nu som extra källa och slås ihop med PokerNews-baserad ITM-detektering
+
 ## 2026-07-09
 - Fix: Main Event (#82) och andra stora fält visade felaktigt alla spelare som bustade fast de fortfarande spelade på PokerNews. 25kfantasys sweat listar events innan de är ITM, men chip-count-tabellen är tom tills ITM faktiskt nås — ett event räknas nu bara som "ITM enligt sweat" om dess tabell faktiskt innehöll minst en rankad rad, inte bara för att eventet syns i sweat_events
 

@@ -2277,10 +2277,22 @@
       const isITM = evN != null && itmEvents && itmEvents.includes(evN);
       if (!isITM) continue;
 
+      // 25kfantasy räknar redan ut spelarens garanterade/låsta poäng (inkl.
+      // field bonus) och är snabbare uppdaterade än PokerNews - använd deras
+      // siffra direkt istället för att räkna om den själva när den finns.
+      if (lp.locked_points != null) {
+        parts.push(lp.locked_points);
+        continue;
+      }
+
       // Look up event info
       const evInfo = evN != null ? WSOP_EVENTS.find(e => e.n === evN) : null;
       const m = evInfo ? (TRIPLE_EVENTS.has(evN) ? 3 : _getMultiplier(evInfo.buyin)) : 1;
-      const entrants = evN != null ? (entrantsMap[evN] || 0) : 0;
+      // entrantsMap byggs från historiska/klara events (currentScoresData.events).
+      // Ett event som PokerNews inte hunnit publicera resultat för saknas där
+      // fast eventet redan är ITM, så falla tillbaka på entrants från
+      // 25kfantasy sweat (lp.entrants) som är snabbare uppdaterat.
+      const entrants = evN != null ? (entrantsMap[evN] || lp.entrants || 0) : 0;
       const field = entrants > 0 ? Math.min(Math.floor(entrants / 100), 100) : 0;
 
       // Worst-case placement = players_left (they finish last among remaining)

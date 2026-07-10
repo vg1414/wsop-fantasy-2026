@@ -97,6 +97,18 @@ def fetch_sweat_ranks():
                 continue
             html = r2.json().get("data", {}).get("results", "")
 
+            # Entrants står i en info-ruta högst upp i sidan, långt innan
+            # PokerNews resultatsida existerar för eventet. Sparas per
+            # spelare så field-bonusen kan räknas ut i frontend även för
+            # events som ännu inte syns i currentScoresData.events.
+            entrants_val = None
+            m_entrants = re.search(r'Entrants.*?fw-bolder[^>]*>\s*([\d,]+)', html, re.DOTALL | re.IGNORECASE)
+            if m_entrants:
+                try:
+                    entrants_val = int(m_entrants.group(1).replace(",", ""))
+                except ValueError:
+                    entrants_val = None
+
             # Parsa tabellrader: Rank | Player | Team | Chips | BB | Bonus | Points
             rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL | re.IGNORECASE)
             # Eventet listas i sweat_events innan det är ITM, men chip-count-
@@ -125,11 +137,21 @@ def fetch_sweat_ranks():
                     m = re.search(r'([\d.]+)\s*BB', bb_raw, re.IGNORECASE)
                     if m:
                         bb_str = m.group(1) + " BB"
+                # Points är sista kolumnen (index 7) - 25kfantasys egna
+                # garanterade/låsta poäng för spelaren, redan uträknade av
+                # dem (inkl. field bonus) och snabbare uppdaterade än
+                # PokerNews. Används i frontend istället för att räkna om
+                # garantin själva.
+                locked_points = None
+                if len(tds_clean) > 7:
+                    pts_raw = tds_clean[7].strip()
+                    if re.match(r'^\d+$', pts_raw):
+                        locked_points = int(pts_raw)
                 # Matcha spelarnamn mot våra fantasy-spelare
                 player_lower = player_cell.lower()
                 for fp_lower, fp_canon in FANTASY_PLAYERS_LOWER.items():
                     if fp_lower in player_lower:
-                        ranks[fp_canon.lower()] = {"rank": rank_normalized, "event": event_name, "bb": bb_str}
+                        ranks[fp_canon.lower()] = {"rank": rank_normalized, "event": event_name, "bb": bb_str, "entrants": entrants_val, "locked_points": locked_points}
                         print(f"    {fp_canon}: {rank_normalized} {bb_str or ''} ({event_name})")
                         break
             if had_valid_row and m_num:
@@ -242,6 +264,8 @@ def main():
         sweat = sweat_ranks.get(p["name"].lower())
         p["chip_rank"] = sweat["rank"] if sweat else None
         p["bb"] = sweat["bb"] if sweat else None
+        p["entrants"] = sweat["entrants"] if sweat else None
+        p["locked_points"] = sweat["locked_points"] if sweat else None
 
     # Sweat trackar bara events som är ITM. Om en spelares event är ITM enligt
     # sweat (dvs finns i sweat_events) men han inte finns i det eventets
@@ -288,6 +312,8 @@ def main():
                 existing["status"] = "currentlyPlaying"
                 existing["chip_rank"] = sweat["rank"]
                 existing["bb"] = sweat["bb"]
+                existing["entrants"] = sweat["entrants"]
+                existing["locked_points"] = sweat["locked_points"]
                 existing["event"] = event_name
                 existing["players_left"] = players_left
                 print(f"  Fallback (sweat→playing): {canon} ({sweat['rank']} i {event_name}, players_left={players_left})")
@@ -303,6 +329,8 @@ def main():
                     "players_left": players_left,
                     "chip_rank": sweat["rank"],
                     "bb": sweat["bb"],
+                    "entrants": sweat["entrants"],
+                    "locked_points": sweat["locked_points"],
                 }
                 results.append(new_record)
                 print(f"  Fallback (sweat→ny post): {canon} ({sweat['rank']} i {event_name}, players_left={players_left})")
