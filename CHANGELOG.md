@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-07-12
+- Fix: spelare kunde felaktigt flaggas som bustade (t.ex. Shaun Deeb i Main Event #82) om de saknades i 25kfantasys sweat-tabell fast de fortfarande spelade enligt PokerNews. Busted-flaggan kräver nu bekräftelse från 25kfantasys /all-scores/ (deras egen lista över spelare som redan fått slutresultat/poäng tilldelat) innan status sätts till "busted" — frånvaro i sweat-tabellen ensamt räcker inte längre
+
 ## 2026-07-10
 - Fix: garanterade poäng ("Låst" i Live-fliken) visade fel/för lite (t.ex. Suzuki visade 1p istället för 48p) eftersom vår egen uträkning saknade antal anmälda (entrants) för events som PokerNews inte hunnit publicera resultat för. Läser nu av 25kfantasys egna "Locked PTS"-kolumn direkt (snabbare uppdaterad än PokerNews) och faller tillbaka på vår egen formel med entrants från 25kfantasy om deras poängkolumn saknas
 - Fix: ITM-events kunde missas i appen om PokerNews cash-sida inte hunnit uppdateras. 25kfantasys sweat-lista (som flaggar events som "(ITM)") används nu som extra källa och slås ihop med PokerNews-baserad ITM-detektering

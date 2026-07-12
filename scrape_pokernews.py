@@ -26,6 +26,7 @@ FANTASY_PLAYERS_LOWER["joão simão peres"] = "Joao Simao Peres"
 
 API_URL = "https://www.pokernews.com/api/my-stable"
 SWEAT_URL = "https://www.25kfantasy.com/process/sweat"
+ALL_SCORES_URL = "https://www.25kfantasy.com/all-scores/"
 
 SWEAT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
@@ -160,6 +161,43 @@ def fetch_sweat_ranks():
         print(f"  Fel i fetch_sweat_ranks: {e}")
     return ranks, active_event_nums
 
+def fetch_scored_players():
+    """Hämtar 25kfantasy /all-scores/, dvs listan över spelare som redan
+    fått sitt slutresultat (poäng) tilldelat för ett event. Detta är
+    25kfantasys egen bekräftelse på att en spelare är färdigspelad
+    (bustad eller cashad), till skillnad från sweat-tabellen som bara
+    visar vem som just nu ligger i pengarna och kan sakna spelare som
+    inte hunnit synkas (t.ex. Shaun Deeb i stora fält som Main Event).
+    Returnerar set med (spelarnamn_lower, eventnummer)."""
+    scored = set()
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        }
+        resp = requests.get(ALL_SCORES_URL, headers=headers, timeout=15)
+        if resp.status_code != 200:
+            print(f"  all-scores HTTP {resp.status_code}")
+            return scored
+        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', resp.text, re.DOTALL | re.IGNORECASE)
+        for row in rows:
+            links = re.findall(r'<a[^>]*>(.*?)</a>', row, re.DOTALL | re.IGNORECASE)
+            if len(links) < 2:
+                continue
+            player_name = re.sub(r'<[^>]+>', '', links[0]).strip()
+            event_name = re.sub(r'<[^>]+>', '', links[1]).strip()
+            m_num = re.search(r'Event\s*#(\d+)', event_name, re.IGNORECASE)
+            if not m_num:
+                continue
+            player_lower = player_name.lower()
+            for fp_lower in FANTASY_PLAYERS_LOWER:
+                if fp_lower in player_lower:
+                    scored.add((fp_lower, int(m_num.group(1))))
+                    break
+        print(f"  all-scores: {len(scored)} spelare/event-par med tilldelade poäng")
+    except Exception as e:
+        print(f"  Fel i fetch_scored_players: {e}")
+    return scored
+
 def init_firebase():
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
     if not sa_json:
@@ -269,10 +307,17 @@ def main():
 
     # Sweat trackar bara events som är ITM. Om en spelares event är ITM enligt
     # sweat (dvs finns i sweat_events) men han inte finns i det eventets
-    # chip-count-tabell, har han fått poäng och är bustad. Om eventet inte är
-    # ITM än trackar sweat det inte alls, och då kan vi inte dra någon
-    # slutsats — spelare i icke-ITM-events (t.ex. de som gått vidare till en
-    # ny dag) ska inte påverkas.
+    # chip-count-tabell, är han MISSTÄNKT bustad. Sweat-tabellen kan dock
+    # sakna spelare felaktigt (t.ex. Shaun Deeb i Main Event #82 trots att
+    # PokerNews fortfarande visade honom som aktiv), så vi bekräftar mot
+    # 25kfantasy /all-scores/ — listan över spelare som faktiskt fått sitt
+    # slutresultat tilldelat. Bara om spelaren SAKNAS i sweat-tabellen OCH
+    # redan finns i all-scores för samma event sätts busted-flaggan. Om
+    # eventet inte är ITM än trackar sweat det inte alls, och då kan vi inte
+    # dra någon slutsats — spelare i icke-ITM-events (t.ex. de som gått
+    # vidare till en ny dag) ska inte påverkas.
+    print("Hämtar all-scores från 25kfantasy för bust-bekräftelse...")
+    scored_players = fetch_scored_players()
     for p in results:
         if p["status"] != "currentlyPlaying":
             continue
@@ -281,7 +326,11 @@ def main():
         m = re.search(r'Event\s*#(\d+)', p.get("event") or "", re.IGNORECASE)
         if not m or int(m.group(1)) not in active_sweat_event_nums:
             continue
-        print(f"  Bustad enligt sweat (event är ITM, spelare saknas i tabellen): {p['name']}")
+        event_num = int(m.group(1))
+        if (p["name"].lower(), event_num) not in scored_players:
+            print(f"  Misstänkt bustad enligt sweat men obekräftad i all-scores, behåller currentlyPlaying: {p['name']}")
+            continue
+        print(f"  Bustad bekräftad (saknas i sweat-tabell + finns i all-scores): {p['name']}")
         p["status"] = "busted"
         p["players_left"] = None
 
