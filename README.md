@@ -9,7 +9,6 @@ En realtids-webbapp för fem vänner att följa sin WSOP Pick 8 Fantasy-liga und
 - **Historik** – Poänghistorik grupperad per datum
 - **Poängkalkylator** – Beräkna hypotetiska poäng för en placering i valfritt event
 - **Live** – Spelare vid borden i realtid med chip counts, antal spelare kvar och BB-visning
-- **Lag-statistik** – Historiska WSOP-karriärmeriter per lag (vinster, cashes, armband, final tables) med stapeldiagram
 
 ## Navigation
 

@@ -1,6 +1,6 @@
 # WSOP Fantasy – Teknisk arkitektur och guide för framtida år
 
-> Senast uppdaterad 2026-06-25. Använd den här filen för att snabbt förstå projektet i en ny chatt,
+> Senast uppdaterad 2026-07-28. Använd den här filen för att snabbt förstå projektet i en ny chatt,
 > eller för att sätta upp en ny säsong med nya lag och ett nytt schema.
 
 ---
@@ -9,12 +9,10 @@
 
 | Komponent | Teknologi | Syfte |
 |-----------|-----------|-------|
-| `index.html` | HTML + Vanilla JS | Hela UI:t – 6 flikar, realtid via Firestore, hamburgermeny på mobil |
+| `index.html` | HTML + Vanilla JS | Hela UI:t – 5 flikar, realtid via Firestore, hamburgermeny på mobil |
 | `scrape_scores.py` | Python 3 | Hämtar poäng från 25kfantasy.com → Firestore |
 | `scrape_pokernews.py` | Python 3 | Hämtar live-status från PokerNews → Firestore |
-| `seed_wsop_stats.py` | Python 3 | Engångsskript: seedar historisk WSOP-statistik → Firestore |
 | `.github/workflows/update-scores.yml` | GitHub Actions | Kör scrapers var 30 min under WSOP-tid |
-| `.github/workflows/seed-stats.yml` | GitHub Actions | Manuell trigger för att seeda historisk statistik |
 | Firebase Firestore | NoSQL-moln-DB | Mellanlagrar all data, klienten lyssnar i realtid |
 | GitHub Pages | Statisk hosting | Serverar index.html, ingen backend behövs |
 
@@ -25,10 +23,7 @@
 ```
 25kfantasy.com  ──► scrape_scores.py ──┐
                                        ├──► Firestore ──► index.html (browser)
-pokernews.com   ──► scrape_pokernews.py┘       ▲
-                                               │
-wsop.com (manuell) ──► seed_wsop_stats.py ─────┘
-                        (körs en gång per säsong)
+pokernews.com   ──► scrape_pokernews.py┘
 
 GitHub Actions kör scrape_scores + scrape_pokernews var 30 min under WSOP
 ```
@@ -36,7 +31,6 @@ GitHub Actions kör scrape_scores + scrape_pokernews var 30 min under WSOP
 1. GitHub Actions triggar scrapers på schema (eller manuellt)
 2. Scrapers hämtar data från externa sajter och skriver till Firestore
 3. Klientens `onSnapshot()`-lyssnare tar emot data direkt — inga sidladdningar behövs
-4. Historisk statistik seedas manuellt en gång innan säsongen och ändras inte därefter
 
 ---
 
@@ -45,22 +39,28 @@ GitHub Actions kör scrape_scores + scrape_pokernews var 30 min under WSOP
 ```
 WSOP Fantasy/
 ├── .github/workflows/
-│   ├── update-scores.yml      ← Kör var 30 min (scrape_scores + scrape_pokernews)
-│   └── seed-stats.yml         ← Manuell trigger för historisk statistik
+│   └── update-scores.yml      ← Kör var 30 min (scrape_scores + scrape_pokernews)
 ├── assets/images/
 │   ├── bracelet.png           ← WSOP-bracelet-bild (inline i text)
+│   ├── favicon.png            ← Favicon + PWA-ikon (browser, iPhone, Android)
 │   ├── logo.png               ← Logotyp i headern
 │   └── World-Series-of-Poker-WSOP*.jpg
-├── .gitignore                 ← Skyddar Firebase-nycklar från commits
+├── .gitignore                 ← Skyddar Firebase-nycklar och lokala engångsskript från commits
 ├── ARCHITECTURE.md            ← Den här filen
 ├── CHANGELOG.md               ← Versionslogg
 ├── README.md                  ← Projektbeskrivning
-├── index.html                 ← Hela appen (~2800 rader)
+├── index.html                 ← Hela appen (~3600 rader)
+├── manifest.json               ← PWA-manifest (namn, ikon, tema-färg för "Lägg till på hemskärm")
 ├── scrape_pokernews.py        ← Live-status-scraper
-├── scrape_scores.py           ← Huvud-scraper (poäng)
-├── scrape_wsop_stats.py       ← Gammal scraper (fungerar ej – wsop.com JS-renderat)
-└── seed_wsop_stats.py         ← Hardkodad historisk statistik, körs manuellt
+└── scrape_scores.py           ← Huvud-scraper (poäng)
 ```
+
+> **Borttagna engångsskript:** `seed_wsop_stats.py`, `scrape_wsop_stats.py` och workflowet
+> `seed-stats.yml` togs bort 2026-07-01 efter att Lag-statistik-fliken (som de seedade data till)
+> togs bort ur `index.html` 2026-06-26. De finns kvar i git-historiken om de behövs som referens.
+>
+> `backfill_entrants.py` finns lokalt men är avsiktligt gitignoread — ett engångsskript för att
+> fylla i saknade `entrants`-värden i `score_history/all`, inte en del av den löpande driften.
 
 ---
 
@@ -69,7 +69,7 @@ WSOP Fantasy/
 Filen är ett enda HTML-dokument med inbäddad CSS och JavaScript. Inga externa beroenden
 utom Firebase SDK och Google Fonts.
 
-### Flikar (6 st)
+### Flikar (5 st)
 
 | Tab-id | Namn | Innehåll |
 |--------|------|----------|
@@ -78,7 +78,11 @@ utom Firebase SDK och Google Fonts.
 | `tab-history` | Historik | Alla cashes per datum |
 | `tab-calculator` | Poängberäknare | Hypotetisk poängkalkyl |
 | `tab-live` | Live | Spelare vid bord just nu |
-| `tab-metrics` | Lag-statistik | Historiska karriärmeriter per lag |
+
+> En sjätte flik, "Lag-statistik" (historiska karriärmeriter per lag), togs bort 2026-06-26.
+> Se avsnittet "Borttagen funktion: Lag-statistik" längre ner. Ett dött spår finns kvar i
+> `TAB_LABELS`-objektet i JS (`metrics: 'Lag-statistik'`) utan motsvarande flik eller innehåll —
+> ofarligt men kan städas bort vid tillfälle.
 
 ### Navigation (mobil vs desktop)
 
@@ -91,7 +95,7 @@ utom Firebase SDK och Google Fonts.
 
 ### JavaScript-dataobjekt (ändra varje år)
 
-**`SALARY`** (rad ~1000)
+**`SALARY`** (rad ~2033)
 ```js
 const SALARY = {
   "David Peters": 15,
@@ -101,7 +105,7 @@ const SALARY = {
 ```
 Används för "bästa värdespel"-beräkning.
 
-**`TEAMS`** (rad ~1717)
+**`TEAMS`** (rad ~2046)
 ```js
 const TEAMS = [
   { owner: "Ante",    players: ["David Peters", "Josh Arieh", ...] },
@@ -114,7 +118,7 @@ const TEAMS = [
 Index 0–4 matchar CSS-variablerna `--team-0` t.o.m. `--team-4` (blå, orange, grön, lila, guld).
 En spelare kan ingå i flera lag — hanteras automatiskt.
 
-**`WSOP_EVENTS`** (rad ~1755)
+**`WSOP_EVENTS`** (rad ~2084)
 ```js
 const WSOP_EVENTS = [
   { n: 1, name: "Mini Mystery Millions", buyin: "$550", start: "2026-05-26", end: "2026-05-30" },
@@ -160,34 +164,27 @@ API-nyckeln är publik och säker att ha i koden — Firestore Rules styr skrivr
 
 **Formel:** `(baspoäng + fältbonus) × multiplier + bracelet-bonus`
 
+> Formeln är implementerad två gånger i `index.html` (samma logik, separata funktioner):
+> en gång för huvudappens poängberäkning (`_getMultiplier`, rad ~2257) och en gång för
+> Poängkalkylator-fliken (`getMultiplier`, rad ~3365).
+
 ---
 
-## Lag-statistik (historiska WSOP-meriter)
+## Borttagen funktion: Lag-statistik
 
-Fliken "Lag-statistik" visar karriärmeriter per lag: WSOP-vinster, cashes, armband och final tables.
-Statistiken är **statisk** (hämtad manuellt inför WSOP 2026) och uppdateras inte löpande.
+En sjätte flik, "Lag-statistik", visade karriärmeriter per lag (WSOP-vinster, cashes, armband,
+final tables) som stapeldiagram. Den togs bort ur `index.html` 2026-06-26 (commit `9c93a54`,
+oavsiktligt som en bieffekt i en commit vars meddelande bara nämnde en UI-justering). Relaterade
+engångsskript (`seed_wsop_stats.py`, `scrape_wsop_stats.py`, workflowet `seed-stats.yml`) togs bort
+separat 2026-07-01 eftersom de bara seedade data till den nu borttagna fliken.
 
-> Fotnot i UI:t: "Statistiken avser karriärmeriter t.o.m. innan WSOP 2026"
+All kod finns kvar i git-historiken (`git show e452982` för när fliken lades till) om funktionen
+ska återinföras. Kort sammanfattning för den händelsen:
 
-### Datakälla och seeding
-
-All statistik är hardkodad i `seed_wsop_stats.py` och seedas till Firestore via GitHub Actions:
-
-1. Gå till GitHub → Actions → **"Seed WSOP Stats"** → **Run workflow**
-2. Scriptet skriver till `wsop_stats/latest` i Firestore
-3. UI:t hämtar datan via `onSnapshot(doc(db, "wsop_stats", "latest"), ...)`
-
-### Inför ny säsong
-
-- Kontrollera/uppdatera varje spelares siffror i `PLAYER_STATS`-dicten i `seed_wsop_stats.py`
-- Kör seed-workflowen på nytt
-- Fotnoten i `index.html` bör uppdateras med rätt år
-
-### Varför inte automatisk scraping?
-
-WSOP.com renderar statistik via JavaScript — vanlig HTML-scraping med requests/BeautifulSoup
-returnerar alltid noll. Lösning med Playwright/Selenium är möjlig men komplex. Manuell
-insamling en gång per år är enklast och tillräckligt eftersom historisk statistik inte förändras nämnvärt.
+- Statistiken var hardkodad i `seed_wsop_stats.py` (`PLAYER_STATS`-dict) och seedades manuellt
+  till Firestore (`wsop_stats/latest`) via en `Run workflow`-trigger, en gång per säsong
+- Anledningen till manuell seeding istället för scraping: wsop.com renderar statistik via
+  JavaScript, så enkel HTML-scraping med requests/BeautifulSoup returnerade alltid noll
 
 ---
 
@@ -277,12 +274,6 @@ Kör i ordning:
 1. `scrape_scores.py`
 2. `scrape_pokernews.py`
 
-### seed-stats.yml (manuell)
-
-Triggas manuellt via GitHub → Actions → "Seed WSOP Stats" → Run workflow.
-Kör `seed_wsop_stats.py` som seedar historisk statistik till Firestore.
-Behöver bara köras en gång per säsong (eller om statistiken uppdateras).
-
 ### Secrets som måste finnas i repo-inställningarna
 
 | Secret | Innehåll |
@@ -302,7 +293,7 @@ Behöver bara köras en gång per säsong (eller om statistiken uppdateras).
 | `scores/latest` | `scrape_scores.py` | Poäng, events (fullständig historik), ställning |
 | `score_history/all` | `scrape_scores.py` | Persistent händelsehistorik — ackumuleras, skrivs aldrig över |
 | `live_status/latest` | `scrape_pokernews.py` | Spelares live-status |
-| `wsop_stats/latest` | `seed_wsop_stats.py` | Historisk karriärstatistik |
+| `wsop_stats/latest` | *(borttaget skript)* | Historisk karriärstatistik — data finns kvar i Firestore men skrivs inte längre; ingen läsare finns sedan Lag-statistik-fliken togs bort |
 
 **Service account-nyckel (lokal):**
 `C:\Users\David\.firebase-keys\wsop-54e15-firebase-adminsdk.json`
@@ -344,21 +335,16 @@ Pages serverar `index.html` direkt från `main`-branchen. Ingen byggprocess — 
 - `FANTASY_PLAYERS`-listan i `scrape_scores.py` och `scrape_pokernews.py`
 - Namnen måste matcha 25kfantasy.com:s stavning
 
-### 5. Samla in historisk statistik
-- Besök wsop.com för varje spelares profilsida och notera bracelets, final tables, cashes, earnings
-- Uppdatera `PLAYER_STATS`-dicten i `seed_wsop_stats.py`
-- Kör "Seed WSOP Stats"-workflowen i GitHub Actions
-
-### 6. Förnya PokerNews-cookies
+### 5. Förnya PokerNews-cookies
 - Logga in på pokernews.com
 - Kopiera session-cookies via DevTools → Application → Cookies
 - Uppdatera GitHub Secret `POKERNEWS_COOKIES`
 
-### 7. Uppdatera GitHub Actions-schemat
+### 6. Uppdatera GitHub Actions-schemat
 - Justera cron-uttrycken i `update-scores.yml` efter årets WSOP-datum
 - WSOP 2026: maj–juli
 
-### 8. Ny Firebase (valfritt)
+### 7. Ny Firebase (valfritt)
 - Skapa nytt projekt på console.firebase.google.com
 - Byt `projectId` och `apiKey` i `index.html`
 - Generera ny service account och uppdatera GitHub Secret `FIREBASE_SERVICE_ACCOUNT`
@@ -394,6 +380,5 @@ Pages serverar `index.html` direkt från `main`-branchen. Ingen byggprocess — 
 | GitHub Actions kör inte | Cron-tid matchar inte WSOP-perioden | Uppdatera cron-uttrycket i `update-scores.yml` |
 | Spelare saknas i datan | Namnmatchning felaktig | Kontrollera stavning mot 25kfantasy.com |
 | SSL-fel lokalt | Windows certifi-problem | Kör via GitHub Actions istället (fungerar alltid) |
-| Lag-statistik visas inte | Firestore ej seedat | Kör "Seed WSOP Stats"-workflowen manuellt |
 | Modal visar fel poäng | `score_history/all` saknas eller är tom | Kör `scrape_scores.py` manuellt — den bygger upp historiken automatiskt |
 | Spelarmodal öppnas inte vid klick | Spelarnamn innehåller citattecken som bryts i onclick | Kontrollera att `JSON.stringify(name).replace(/"/g,'&quot;')` används |

@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-07-28
+- Dokumentation: README.md och ARCHITECTURE.md stämde inte längre med koden efter flera osynkade ändringar. Rättat: Lag-statistik-fliken (borttagen 2026-06-26, se rad nedan) fanns kvar beskriven som aktiv flik i båda filerna; ARCHITECTURE.md beskrev fortfarande de redan borttagna seed-skripten (`seed_wsop_stats.py`, `scrape_wsop_stats.py`, `seed-stats.yml`) som en del av arbetsflödet; radantal och rad-hänvisningar för `index.html` (~2800 → faktiska ~3600 rader, SALARY/TEAMS/WSOP_EVENTS radnummer) var inaktuella; `manifest.json` och favicon/PWA-ikoner saknades i filstrukturen
+
 ## 2026-07-12
 - Fix: spelare kunde felaktigt flaggas som bustade (t.ex. Shaun Deeb i Main Event #82) om de saknades i 25kfantasys sweat-tabell fast de fortfarande spelade enligt PokerNews. Busted-flaggan kräver nu bekräftelse från 25kfantasys /all-scores/ (deras egen lista över spelare som redan fått slutresultat/poäng tilldelat) innan status sätts till "busted" — frånvaro i sweat-tabellen ensamt räcker inte längre
 
@@ -28,6 +31,10 @@
 ## 2026-07-01
 - Bättre kontrast på alla datum/tidsstämplar (statusrad, uppdatera-knapp, datumrubriker i historik/spelarmodal/schema, "Fantasy · 2026" i headern) för läsbarhet i solljus på mobil
 - Bättre kontrast på flikarna i menyn (Översikt, Schema, Historik, Poängberäknare, Live)
+- Städning: tog bort `seed_wsop_stats.py`, `scrape_wsop_stats.py` och GitHub Actions-workflowet `seed-stats.yml` (engångsskript för Lag-statistik-fliken, redan körda och inte längre behövda sedan fliken togs bort 2026-06-26)
+
+## 2026-06-26
+- Ställning & lag: grön live-prick före lagnamn, mer luft i rader. Samtidigt togs "Lag-statistik"-fliken (historiska karriärmeriter per lag) bort ur `index.html` — flikraden gick från 6 till 5 flikar
 
 ## 2026-06-25 (uppdatering 4)
 - Modal: turneringsnamn är nu klickbar länk till 25kfantasy.com-sidan för respektive event (samma fönster)
