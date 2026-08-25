@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-08-25
+- Pausad automatisk datahämtning: schedule-triggern i `update-scores.yml` (GitHub Actions) är avstängd tills vidare. Workflowen går fortfarande att köra manuellt via workflow_dispatch
+
 ## 2026-07-28
 - Dokumentation: README.md och ARCHITECTURE.md stämde inte längre med koden efter flera osynkade ändringar. Rättat: Lag-statistik-fliken (borttagen 2026-06-26, se rad nedan) fanns kvar beskriven som aktiv flik i båda filerna; ARCHITECTURE.md beskrev fortfarande de redan borttagna seed-skripten (`seed_wsop_stats.py`, `scrape_wsop_stats.py`, `seed-stats.yml`) som en del av arbetsflödet; radantal och rad-hänvisningar för `index.html` (~2800 → faktiska ~3600 rader, SALARY/TEAMS/WSOP_EVENTS radnummer) var inaktuella; `manifest.json` och favicon/PWA-ikoner saknades i filstrukturen
 
