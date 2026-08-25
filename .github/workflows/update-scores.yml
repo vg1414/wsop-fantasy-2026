@@ -1,10 +1,11 @@
 name: Update Scores
 
 on:
-  schedule:
-    # Kör var 30:e minut under WSOP-tid (18:00–11:00 UTC = 20:00–13:00 svensk tid)
-    - cron: '0,30 18-23 * * *'
-    - cron: '0,30 0-11 * * *'
+  # PAUSAD 2026-08-25: schemat är avstängt tills vidare. Kör manuellt via workflow_dispatch.
+  # schedule:
+  #   # Kör var 30:e minut under WSOP-tid (18:00–11:00 UTC = 20:00–13:00 svensk tid)
+  #   - cron: '0,30 18-23 * * *'
+  #   - cron: '0,30 0-11 * * *'
   workflow_dispatch:
 
 jobs:
