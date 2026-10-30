@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-10-30
+- Vattenstämplar med spelkortssymboler: lagkortens symbol ligger nu bakom lagnamnet i stället för bakom poängen, och nya vattenstämplar finns bakom namnen i ställningen, bakom rubriken i lag- och spelarmodalen (lagets symbol) och runt resultatet i poängberäknaren (spader och hjärter)
+- Nya små roliga detaljer: pilar upp/ner i ställningen (jämfört med dagen innan), vändbara lagkort med nyckeltal på baksidan, guldkonfetti och eventinfo när man trycker på ett armband, guldskimmer på rader med nya poäng, en kortlek som blandas medan datan laddas och dra-ner-för-att-uppdatera på mobil
+- Färgblindsäkra lagfärger: Ante blå, Majscht orange, Olle mintgrön, Hasse rosa (var lila), Dawod gul. Blått och lila gick tidigare nästan inte att skilja åt vid röd-grön-färgblindhet
+- Fix: Antes rad (raden under ledaren) blinkade ibland. Glaseffekten (backdrop-filter) är borttagen från korten och lagskenet ritas som en vanlig färgtoning
+- Ny design "Svart & guld" (glasstilen valdes bland tre skisser och färgerna bland fem teman): nästan svart bakgrund med varmt guldsken och en aning rött som WSOP, kort av frostat glas, rundade hörn, nya typsnitt (Outfit + Plus Jakarta Sans), pallfärger (guld/silver/brons) på topp 3, lagfärgat sken bakom varje rad i ställningen och ett glanssvep över ledaren
+- Rubriken: den gamla guldfärgade WSOP-texten med spelkortssymboler, nu med mjukt guldsken. Symbolerna snurrar in en i taget
+- Hamburgermenyn på mobil ersatt av en flytande bottenmeny med ikoner. På desktop är flikraden en flytande rad med ikoner. Färglösa konturikoner, och en glasmarkering glider mellan flikarna
+- Animationer: kort och rader glider in i tur och ordning, lagens poäng räknar upp, flikinnehåll glider in från rätt håll, fjädrande knappar, mjuk utfällning i schemat, pulserande ringar på live-prickar, "Visa alla" som vippbrytare
+- Modalerna: svep ner följer fingret och stänger vid långt eller snabbt drag (fjädrar tillbaka annars). Svep på ytan utanför stänger också
+- Historik-raderna på mobil visas i två rader så att spelar- och eventnamn inte krockar
+
 ## 2026-08-25
 - Pausad automatisk datahämtning: schedule-triggern i `update-scores.yml` (GitHub Actions) är avstängd tills vidare. Workflowen går fortfarande att köra manuellt via workflow_dispatch
 

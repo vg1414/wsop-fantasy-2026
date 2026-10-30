@@ -9,7 +9,7 @@
 
 | Komponent | Teknologi | Syfte |
 |-----------|-----------|-------|
-| `index.html` | HTML + Vanilla JS | Hela UI:t – 5 flikar, realtid via Firestore, hamburgermeny på mobil |
+| `index.html` | HTML + Vanilla JS | Hela UI:t – 5 flikar, realtid via Firestore, bottenmeny på mobil |
 | `scrape_scores.py` | Python 3 | Hämtar poäng från 25kfantasy.com → Firestore |
 | `scrape_pokernews.py` | Python 3 | Hämtar live-status från PokerNews → Firestore |
 | `.github/workflows/update-scores.yml` | GitHub Actions | Kör scrapers var 30 min under WSOP-tid |
@@ -80,18 +80,18 @@ utom Firebase SDK och Google Fonts.
 | `tab-live` | Live | Spelare vid bord just nu |
 
 > En sjätte flik, "Lag-statistik" (historiska karriärmeriter per lag), togs bort 2026-06-26.
-> Se avsnittet "Borttagen funktion: Lag-statistik" längre ner. Ett dött spår finns kvar i
-> `TAB_LABELS`-objektet i JS (`metrics: 'Lag-statistik'`) utan motsvarande flik eller innehåll —
-> ofarligt men kan städas bort vid tillfälle.
+> Se avsnittet "Borttagen funktion: Lag-statistik" längre ner.
 
 ### Navigation (mobil vs desktop)
 
-- **Desktop (>640px):** Flikrad (`<nav class="tab-bar">`) visas
-- **Mobil (≤640px):** Flikraden döljs, `<div class="hamburger-bar">` visas istället
-  - Knapp: ☰ MENY med guldglimmer-animation vid sidladdning (10 pulser)
-  - Klick öppnar panel från höger som glider in via CSS-transition
-  - ☰-ikonen roterar 90° medan menyn är öppen
-  - Klick utanför (overlay) stänger menyn
+Samma `<nav class="tab-bar">` används överallt, bara olika CSS:
+
+- **Desktop (>640px):** Flytande, klistrig (sticky) rad med ikon + text längst upp
+- **Mobil (≤640px):** Fast bottenmeny med ikon över kort text ("Räkna" i stället för "Poängberäknare")
+- `.tab-indicator` är glaspillret bakom aktiv flik. Ikonerna är färglösa konturer (SVG med `stroke="currentColor"`). `moveTabIndicator()` mäter aktiv knapps
+  `offsetLeft`/`offsetWidth` och flyttar pillret med en fjädrande transition
+- `switchTab()` jämför flikarnas ordning i `TAB_ORDER` och sätter `enter-right` eller
+  `enter-left` på panelen, så att innehållet glider in från det håll man "går"
 
 ### JavaScript-dataobjekt (ändra varje år)
 
@@ -115,7 +115,7 @@ const TEAMS = [
   { owner: "Dawod",   players: [...] },
 ];
 ```
-Index 0–4 matchar CSS-variablerna `--team-0` t.o.m. `--team-4` (blå, orange, grön, lila, guld).
+Index 0–4 matchar CSS-variablerna `--team-0` t.o.m. `--team-4` (blå, orange, mintgrön, rosa, gul).
 En spelare kan ingå i flera lag — hanteras automatiskt.
 
 **`WSOP_EVENTS`** (rad ~2084)
@@ -353,19 +353,35 @@ Pages serverar `index.html` direkt från `main`-branchen. Ingen byggprocess — 
 
 ## Design och stil
 
-- **Tema:** WSOP-inspirerat, mörkt (svart `#0a0a0a`, guld `#c9982b`, vit text)
-- **Typsnitt:** Cinzel (rubriker/logga), Oswald (UI-text) – båda från Google Fonts
+- **Tema:** "Svart & guld" (sedan 2026-10-30): nästan svart, varm bakgrund `#0c0a07` med guldsken och ett svagt rött sken (`body`), kort av frostat glas (halvgenomskinlig vit yta + `backdrop-filter`), vit/krämvit text, guld `#ffc94d` som accent och `--glow` för allt som lyser. Valdes framför lila, pokerfilt, vinröd och midnattsblå som det mest WSOP-trogna. Rubriken är Oswald i guld med glödande spelkortssymboler
+- **Typsnitt:** Oswald (WSOP-rubriken), Outfit (rubriker, siffror) och Plus Jakarta Sans (brödtext) från Google Fonts. Spelkortssymbolerna använder `--font-suits` (Segoe UI Symbol m.fl.) så att Windows inte ritar dem som emoji
+- **Färgvariabler:** alla ligger i `:root` (`--bg`, `--surface`, `--ink`, `--ink-2`, `--ink-3`, `--line`, `--shadow-*`). De gamla namnen `--white`, `--muted` och `--muted2` pekar på de nya, eftersom inline-stilar i JS använder dem
+- **Animationer:** fjäderkurvan `--spring` och mjuka `--smooth`. `prefers-reduced-motion` stänger av allt rörligt
 - **Lagfärger:** CSS-variabler `--team-0` t.o.m. `--team-4`
 
 | Variable | Hex | Lag |
 |----------|-----|-----|
-| `--team-0` | `#4a9eff` | Ante (blå) |
-| `--team-1` | `#e07b39` | Majscht (orange) |
-| `--team-2` | `#7ec86a` | Olle (grön) |
-| `--team-3` | `#c97de0` | Hasse (lila) |
-| `--team-4` | `#e8b84b` | Dawod (guld/gul) |
+| `--team-0` | `#5b91f5` | Ante (blå) |
+| `--team-1` | `#e67d3e` | Majscht (orange) |
+| `--team-2` | `#6edfa7` | Olle (mintgrön) |
+| `--team-3` | `#e38cc0` | Hasse (rosa) |
+| `--team-4` | `#f1d949` | Dawod (gul) |
 
-- **Mobilanpassning:** Hamburgermeny på ≤640px, flexbox-stacking, responsiv typografi
+Färgerna är framsökta så att alla par skiljer sig med minst ΔE 25 även simulerat för deuteranopi, protanopi och tritanopi (Machado 2009). Tidigare blev blått och lila nästan identiska vid röd-grön-färgblindhet (ΔE 4,5). Byt inte en enskild färg utan att räkna om.
+
+Samma färger finns i `TEAM_COLORS` i JS (används i modalerna) – ändra båda ställena.
+
+### Små roliga detaljer (2026-10-30)
+
+- **Pilar:** `renderStandings()` drar bort poängen från det senaste datumet i `events` och sorterar om – skillnaden mot dagens placering blir ▲/▼
+- **Vändbara lagkort:** `.team-card.flippable` > `.team-flip` > `.team-face.front/.back`. Vilka kort som är vända sparas i `flippedTeams` så att de inte vänds tillbaka när datan ritas om
+- **Armband:** ikonerna har `data-bp` (spelare) eller `data-bt` (lagindex). Ett klick fångas i capture-fasen på `document` (så att radens modal inte öppnas), skjuter konfetti med Web Animations API och visar `.brac-pop`
+- **Skimmer:** `applyData()` jämför med `prevPlayerScores` och sätter `flashUntil` för spelare och lag med nya poäng (6 s)
+- **Dra ner:** touch-lyssnare på `window` när sidan är skrollad till toppen och ingen modal är öppen; anropar `triggerWorkflow()` som knappen
+- **Blinkfix:** `backdrop-filter` används inte på korten (gav band i Chrome bredvid animationer), bara på statuspillret, menyn och modalen
+
+- **Mobilanpassning:** Bottenmeny på ≤640px, en kolumn för lagkort, historikrader i två rader
+- **Modaler:** bottenark på mobil, centrerat kort på desktop. Svep ner följer fingret och stänger vid långt (>30 % av höjden) eller snabbt (>0,5 px/ms) drag, annars fjädrar rutan tillbaka. Tryck eller svep på ytan utanför stänger
 - **Signatur:** "Made by: David Hefner" i footern
 
 ---
