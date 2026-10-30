@@ -17,7 +17,7 @@ En realtids-webbapp för fem vänner att följa sin WSOP Pick 8 Fantasy-liga und
 - **Armband**: tryck på en armbandsikon så skjuts guldkonfetti ut och en ruta visar vilket event armbandet vanns i
 - **Skimmer**: rader som fått nya poäng sedan förra uppdateringen lyser upp i guld en stund
 - **Kortlek**: medan datan laddas blandas en liten kortlek
-- **Vattenstämplar**: lagens spelkortssymboler ligger svagt bakom namnen i ställningen, på lagkorten och i modalerna
+- **Vattenstämplar**: lagens spelkortssymbol ligger svagt bakom rubriken i modalerna (inte längre bakom namnen i ställningen eller på lagkorten)
 - **Dra ner för att uppdatera** (mobil): en pokermark snurrar och samma uppdatering som knappen startas
 
 ## Navigation
@@ -45,7 +45,7 @@ Färgerna är valda så att de går att skilja åt även för den som är färgb
 - Statisk HTML-sida på GitHub Pages (ingen backend)
 - Python-scrapers hämtar data från 25kfantasy.com och PokerNews
 - Data sparas till Firebase Firestore (realtidsdatabas)
-- GitHub Actions kör scrapers var 30:e minut under WSOP-tid (pausat sedan 2026-08-25, körs nu bara när någon trycker "Uppdatera")
+- GitHub Actions kör scrapers var 30:e minut under WSOP-tid (pausat sedan 2026-08-25, körs nu bara när någon öppnar sidan, trycker "Uppdatera" eller drar ner på mobilen)
 - `index.html` lyssnar på Firestore via `onSnapshot` (live-uppdateringar utan sidladdning)
 
 ## Dokumentation

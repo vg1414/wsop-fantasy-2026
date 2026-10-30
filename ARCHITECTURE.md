@@ -1,6 +1,6 @@
 # WSOP Fantasy – Teknisk arkitektur och guide för framtida år
 
-> Senast uppdaterad 2026-07-28. Använd den här filen för att snabbt förstå projektet i en ny chatt,
+> Senast uppdaterad 2026-10-30. Använd den här filen för att snabbt förstå projektet i en ny chatt,
 > eller för att sätta upp en ny säsong med nya lag och ett nytt schema.
 
 ---
@@ -269,7 +269,7 @@ Kräver inloggade session-cookies för PokerNews (lagras som GitHub Secret).
 
 **Schema:** Var 30:e minut under WSOP-tid
 - UTC 18:00–23:59 och 00:00–11:59 (= ca 20:00–13:00 svensk tid)
-- **Pausat sedan 2026-08-25.** Körs bara manuellt (workflow_dispatch), t.ex. från knappen "Uppdatera" på sidan
+- **Pausat sedan 2026-08-25.** Körs bara manuellt (workflow_dispatch): `triggerWorkflow()` anropas vid varje sidladdning, av knappen "Uppdatera" och av dra-ner på mobilen. Workflowen kör en åt gången, så många besök i rad ger en kö av körningar
 
 Kör i ordning:
 1. `scrape_scores.py`
@@ -403,6 +403,8 @@ Samma färger finns i `TEAM_COLORS` i JS (används i modalerna) – ändra båda
 - **Vändbara lagkort:** `.team-card.flippable` > `.team-flip` > `.team-face.front/.back`. Vilka kort som är vända sparas i `flippedTeams` så att de inte vänds tillbaka när datan ritas om
 - **Armband:** ikonerna har `data-bp` (spelare) eller `data-bt` (lagindex). Ett klick fångas i capture-fasen på `document` (så att radens modal inte öppnas), skjuter konfetti med Web Animations API och visar `.brac-pop`
 - **Skimmer:** `applyData()` jämför med `prevPlayerScores` och sätter `flashUntil` för spelare och lag med nya poäng (6 s)
+- **Uppdatera-knappen:** pilen ligger i en egen `<span>` så att knappens `gap` ger luft till texten. Under "Startar..."/"Uppdaterar..." visas bara snurran (`:disabled::before`), ingen pil
+- **Vattenstämplar:** bara modalens rubrik (`.hmodal-header::before`) och poängberäknaren har kvar spelkortssymbolerna. De bakom namnen i ställningen och på lagkorten togs bort 2026-10-30
 - **Dra ner:** touch-lyssnare på `window` när sidan är skrollad till toppen och ingen modal är öppen; anropar `triggerWorkflow()` som knappen
 - **Utfällda event i schemat:** sparas i `openScheduleEvents` (via `toggleScheduleEvent()`) så att de förblir utfällda när schemat ritas om
 - **Blinkfix:** `backdrop-filter` används inte på korten (gav band i Chrome bredvid animationer), bara på statuspillret, menyn och modalen
