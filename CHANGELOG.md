@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ## 2026-10-30
+- Kodstädning och säkerhet (inget ändrat i utseendet): text från scrapers (namn, event, länkar) görs ofarlig innan den visas, så att konstiga tecken inte kan tolkas som kod. Dubbel logik i schemat, live-fliken och översikten är ihopslagen, och oanvända variabler är borttagna
+- Fix: utfällda event i schemat fälldes ihop varje gång ny data kom in. Nu förblir de öppna
+- Fix: när ingen av våra spelare längre syntes i live-datan låg gamla live-prickar och FT/ITM-märken kvar på översikten
+- Fix: poängberäknaren räknade utan fältbonus om rutan "Antal deltagare" tömdes, fast fältbonusen och tabellen visade rätt
+- Fix: "✓ Klar" kunde visas direkt vid sidladdning innan någon ny data hade kommit
+- Fix: en spelarpost utan namn i live-datan kunde krascha live-fliken. Ett fel från Firestore för live-datan visar nu "Kunde inte hämta live-data"
+- Scrapers: certifikatkontrollen (HTTPS) är påslagen igen. Om 25kfantasys poängsida är trasig avbryts körningen i stället för att skriva nollor över riktiga poäng. Om PokerNews svarar konstigt (t.ex. utgångna cookies) töms inte live-listan. Ett trasigt event i 25kfantasys sweat stoppar inte de andra. `scrape_pokernews.py` kan köras lokalt med samma nyckelfil som `scrape_scores.py`
+- Workflow: bara en körning åt gången, max 15 minuter, bara läsrätt till repot, och live-steget körs även om poängsteget misslyckas
 - Vattenstämplar med spelkortssymboler: lagkortens symbol ligger nu bakom lagnamnet i stället för bakom poängen, och nya vattenstämplar finns bakom namnen i ställningen, bakom rubriken i lag- och spelarmodalen (lagets symbol) och runt resultatet i poängberäknaren (spader och hjärter)
 - Nya små roliga detaljer: pilar upp/ner i ställningen (jämfört med dagen innan), vändbara lagkort med nyckeltal på baksidan, guldkonfetti och eventinfo när man trycker på ett armband, guldskimmer på rader med nya poäng, en kortlek som blandas medan datan laddas och dra-ner-för-att-uppdatera på mobil
 - Färgblindsäkra lagfärger: Ante blå, Majscht orange, Olle mintgrön, Hasse rosa (var lila), Dawod gul. Blått och lila gick tidigare nästan inte att skilja åt vid röd-grön-färgblindhet

@@ -50,7 +50,12 @@ def fetch_my_stable(cookie_string):
     }
     resp = requests.get(API_URL, headers=headers, timeout=15)
     resp.raise_for_status()
-    return resp.json()
+    data = resp.json()
+    # Utgångna cookies kan ge ett annat svar än en spellista. Avbryt då hellre
+    # än att skriva en tom live-lista över den som finns i Firestore.
+    if not isinstance(data, list):
+        raise RuntimeError(f"Oväntat svar från PokerNews my-stable (typ {type(data).__name__}) - har cookies gått ut?")
+    return data
 
 def fetch_players_left(event_url):
     chip_url = event_url.rstrip("/") + "/chip-counts/"
@@ -92,11 +97,16 @@ def fetch_sweat_ranks():
             event_name = ev.get("name", "")
             m_num = re.search(r'Event\s*#(\d+)', event_name, re.IGNORECASE)
             print(f"  Hämtar sweat_by_event för {event_name} (id={event_id})...")
-            r2 = requests.post(SWEAT_URL, headers=SWEAT_HEADERS, json={"q": "sweat_by_event", "event_id": str(event_id)}, timeout=15)
-            if r2.status_code != 200:
-                print(f"    HTTP {r2.status_code}")
+            # Ett event som strular ska inte stoppa resten av eventen
+            try:
+                r2 = requests.post(SWEAT_URL, headers=SWEAT_HEADERS, json={"q": "sweat_by_event", "event_id": str(event_id)}, timeout=15)
+                if r2.status_code != 200:
+                    print(f"    HTTP {r2.status_code}")
+                    continue
+                html = r2.json().get("data", {}).get("results", "") or ""
+            except Exception as e:
+                print(f"    Fel för {event_name}: {e}")
                 continue
-            html = r2.json().get("data", {}).get("results", "")
 
             # Entrants står i en info-ruta högst upp i sidan, långt innan
             # PokerNews resultatsida existerar för eventet. Sparas per
@@ -198,12 +208,17 @@ def fetch_scored_players():
         print(f"  Fel i fetch_scored_players: {e}")
     return scored
 
+LOCAL_KEY_PATH = r"C:\Users\David\.firebase-keys\wsop-54e15-firebase-adminsdk.json"
+
 def init_firebase():
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
-    if not sa_json:
-        raise RuntimeError("FIREBASE_SERVICE_ACCOUNT environment variable is not set")
-    sa_dict = json.loads(sa_json)
-    cred = credentials.Certificate(sa_dict)
+    if sa_json:
+        cred = credentials.Certificate(json.loads(sa_json))
+    elif os.path.exists(LOCAL_KEY_PATH):
+        # Samma lokala nyckel som scrape_scores.py använder vid körning hemma
+        cred = credentials.Certificate(LOCAL_KEY_PATH)
+    else:
+        raise RuntimeError("Ingen Firebase-nyckel hittades (varken FIREBASE_SERVICE_ACCOUNT eller lokal fil)")
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     return firestore.client()
@@ -219,17 +234,17 @@ def main():
 
     best_by_name = {}
     for entry in players_raw:
-        name = entry.get("title", "")
+        name = entry.get("title") or ""
         canonical = FANTASY_PLAYERS_LOWER.get(name.lower())
         if not canonical:
             continue
 
         status = entry.get("status") or {}
-        widget_type = status.get("widgetType", "")
-        tournament_title = status.get("tournamentTitle", "")
-        event_title = status.get("title", "")
-        event_url = status.get("url", "")
-        latest_action = status.get("latestActionDate", "")
+        widget_type = status.get("widgetType") or ""
+        tournament_title = status.get("tournamentTitle") or ""
+        event_title = status.get("title") or ""
+        event_url = status.get("url") or ""
+        latest_action = status.get("latestActionDate") or ""
 
         if event_url and not event_url.startswith("http"):
             event_url = "https://www.pokernews.com" + event_url

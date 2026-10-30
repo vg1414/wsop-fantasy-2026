@@ -11,8 +11,6 @@ os.environ["GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"] = certifi.where()
 os.environ["SSL_CERT_FILE"] = certifi.where()
 os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 
-import firebase_admin
-from firebase_admin import credentials, firestore
 import google.auth
 import google.auth.transport.requests
 from google.oauth2 import service_account
@@ -48,6 +46,13 @@ SWEAT_HEADERS = {
     "Origin": "https://www.25kfantasy.com",
 }
 
+def fetch_html(url):
+    """GET mot 25kfantasy med timeout. Kastar fel vid HTTP-fel (t.ex. 500),
+    så att en trasig sida inte tolkas som "inga poäng"."""
+    res = requests.get(url, headers=HEADERS, timeout=15)
+    res.raise_for_status()
+    return res
+
 def normalize(name):
     return name.lower().strip()
 
@@ -79,15 +84,20 @@ def player_slug(name):
     return name.lower().replace(" ", "-")
 
 def scrape_totals(player_lookup):
+    """Totalpoäng per spelare från /players/. Returnerar None om sidan inte
+    gick att hämta eller saknar poängtabellen, så att vi aldrig skriver över
+    riktiga poäng i Firestore med nollor."""
     scores = {p: 0 for p in PLAYERS}
+    found_table = False
     try:
-        res = requests.get(f"{BASE_URL}/players/", headers=HEADERS, timeout=15, verify=False)
+        res = fetch_html(f"{BASE_URL}/players/")
         soup = BeautifulSoup(res.text, "html.parser")
         # Find the table and detect column indices from headers
         for table in soup.find_all("table"):
             headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
             if "player" not in headers or "score" not in headers:
                 continue
+            found_table = True
             player_i = headers.index("player")
             score_i = headers.index("score")
             for row in table.find_all("tr"):
@@ -102,12 +112,16 @@ def scrape_totals(player_lookup):
                         pass
     except Exception as e:
         print(f"Error scraping players page: {e}")
+        return None
+    if not found_table:
+        print("Hittade ingen poängtabell på /players/ (sidan kan ha ändrats)")
+        return None
     return scores
 
 def scrape_events(player_lookup):
     events = []
     try:
-        res = requests.get(f"{BASE_URL}/all-scores/", headers=HEADERS, timeout=15, verify=False)
+        res = fetch_html(f"{BASE_URL}/all-scores/")
         soup = BeautifulSoup(res.text, "html.parser")
 
         for table in soup.find_all("table"):
@@ -169,7 +183,7 @@ def scrape_event_details(event_urls):
         if not url:
             continue
         try:
-            res = requests.get(url, headers=HEADERS, timeout=15, verify=False)
+            res = fetch_html(url)
             soup = BeautifulSoup(res.text, "html.parser")
 
             inp = soup.find("input", {"id": "event-entrants"})
@@ -212,7 +226,7 @@ def scrape_event_statuses():
     statuses = {}
     live_event_urls = {}
     try:
-        res = requests.get(f"{BASE_URL}/events", headers=HEADERS, timeout=15, verify=False)
+        res = fetch_html(f"{BASE_URL}/events")
         soup = BeautifulSoup(res.text, "html.parser")
         for row in soup.find_all("tr"):
             cells = row.find_all("td")
@@ -249,7 +263,7 @@ def scrape_event_names():
     Returns dict {event_num: full_name}, e.g. {60: "Event #60: $50,000 Poker Players Championship"}"""
     names = {}
     try:
-        res = requests.get(f"{BASE_URL}/events", headers=HEADERS, timeout=15, verify=False)
+        res = fetch_html(f"{BASE_URL}/events")
         soup = BeautifulSoup(res.text, "html.parser")
         for row in soup.find_all("tr"):
             row_text = row.get_text(" ", strip=True)
@@ -288,7 +302,7 @@ def scrape_player_profiles(player_urls):
     wins = []
     for player, url in player_urls.items():
         try:
-            res = requests.get(url, headers=HEADERS, timeout=15, verify=False)
+            res = fetch_html(url)
             soup = BeautifulSoup(res.text, "html.parser")
             cash_count = 0
             for table in soup.find_all("table"):
@@ -338,9 +352,7 @@ def get_firebase_token():
         if not os.path.exists(key_path):
             raise RuntimeError("Ingen Firebase-nyckel hittades (varken env-variabel eller lokal fil)")
         cred = service_account.Credentials.from_service_account_file(key_path, scopes=FIRESTORE_SCOPES)
-    session = requests.Session()
-    session.verify = False
-    auth_req = google.auth.transport.requests.Request(session=session)
+    auth_req = google.auth.transport.requests.Request()
     cred.refresh(auth_req)
     return cred.token
 
@@ -500,6 +512,9 @@ def main():
     player_lookup = {normalize(p): p for p in PLAYERS}
 
     scores = scrape_totals(player_lookup)
+    if scores is None:
+        # Avbryt utan att skriva något – det som redan ligger i Firestore behålls
+        sys.exit("Avbryter: kunde inte läsa totalpoängen från 25kfantasy")
     events = scrape_events(player_lookup)
     player_urls = build_player_urls(player_lookup)
 

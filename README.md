@@ -45,7 +45,7 @@ Färgerna är valda så att de går att skilja åt även för den som är färgb
 - Statisk HTML-sida på GitHub Pages (ingen backend)
 - Python-scrapers hämtar data från 25kfantasy.com och PokerNews
 - Data sparas till Firebase Firestore (realtidsdatabas)
-- GitHub Actions kör scrapers var 30:e minut under WSOP-tid
+- GitHub Actions kör scrapers var 30:e minut under WSOP-tid (pausat sedan 2026-08-25, körs nu bara när någon trycker "Uppdatera")
 - `index.html` lyssnar på Firestore via `onSnapshot` (live-uppdateringar utan sidladdning)
 
 ## Dokumentation

@@ -269,10 +269,18 @@ Kräver inloggade session-cookies för PokerNews (lagras som GitHub Secret).
 
 **Schema:** Var 30:e minut under WSOP-tid
 - UTC 18:00–23:59 och 00:00–11:59 (= ca 20:00–13:00 svensk tid)
+- **Pausat sedan 2026-08-25.** Körs bara manuellt (workflow_dispatch), t.ex. från knappen "Uppdatera" på sidan
 
 Kör i ordning:
 1. `scrape_scores.py`
-2. `scrape_pokernews.py`
+2. `scrape_pokernews.py` (körs även om steg 1 misslyckades, så live-fliken uppdateras ändå)
+
+**Skydd:**
+- Bara en körning åt gången (`concurrency`). Startas fler samtidigt köas en och resten hoppas över
+- Avbryts efter 15 minuter (`timeout-minutes`)
+- Workflowen har bara läsrätt till repot (`permissions: contents: read`)
+- `scrape_scores.py` avbryter utan att skriva något om 25kfantasys /players/-sida inte går att läsa, så att riktiga poäng aldrig skrivs över med nollor
+- `scrape_pokernews.py` avbryter om PokerNews my-stable inte svarar med en spellista (t.ex. utgångna cookies), så att live-listan inte töms
 
 ### Secrets som måste finnas i repo-inställningarna
 
@@ -351,6 +359,24 @@ Pages serverar `index.html` direkt från `main`-branchen. Ingen byggprocess — 
 
 ---
 
+## Hjälpfunktioner i index.html (2026-10-30)
+
+Text som kommer från scrapers (spelarnamn, eventnamn, länkar) kan i teorin innehålla tecken som `<` eller `"`. Därför går den genom små hjälpfunktioner innan den stoppas in med `innerHTML`:
+
+| Funktion | Vad den gör |
+|----------|-------------|
+| `esc(text)` | Gör om `& < > " '` till säkra HTML-tecken |
+| `safeUrl(url)` | Släpper bara igenom `http://`/`https://`-länkar, annars `''` |
+| `playerClick(namn)` | Bygger `onclick="openPlayerModal(...)"` som fungerar oavsett vilka tecken namnet har |
+| `eventNum(text)` | Plockar ut eventnumret ur t.ex. `"Event #12: ..."` |
+| `OWNER_MAP` | Spelare → lag, byggs en gång (lagen ändras aldrig medan sidan är öppen) |
+| `renderOverview(data)` | Ritar om ställning + lagkort. Används av både poäng- och live-lyssnaren |
+| `eventState()`, `liveEventFor()` | Om ett event är avslutat/pågår, och vilket event en live-spelare är med i (används av schemat) |
+
+Ny kod som visar scraper-data ska använda `esc()`/`safeUrl()`.
+
+---
+
 ## Design och stil
 
 - **Tema:** "Svart & guld" (sedan 2026-10-30): nästan svart, varm bakgrund `#0c0a07` med guldsken och ett svagt rött sken (`body`), kort av frostat glas (halvgenomskinlig vit yta + `backdrop-filter`), vit/krämvit text, guld `#ffc94d` som accent och `--glow` för allt som lyser. Valdes framför lila, pokerfilt, vinröd och midnattsblå som det mest WSOP-trogna. Rubriken är Oswald i guld med glödande spelkortssymboler
@@ -378,6 +404,7 @@ Samma färger finns i `TEAM_COLORS` i JS (används i modalerna) – ändra båda
 - **Armband:** ikonerna har `data-bp` (spelare) eller `data-bt` (lagindex). Ett klick fångas i capture-fasen på `document` (så att radens modal inte öppnas), skjuter konfetti med Web Animations API och visar `.brac-pop`
 - **Skimmer:** `applyData()` jämför med `prevPlayerScores` och sätter `flashUntil` för spelare och lag med nya poäng (6 s)
 - **Dra ner:** touch-lyssnare på `window` när sidan är skrollad till toppen och ingen modal är öppen; anropar `triggerWorkflow()` som knappen
+- **Utfällda event i schemat:** sparas i `openScheduleEvents` (via `toggleScheduleEvent()`) så att de förblir utfällda när schemat ritas om
 - **Blinkfix:** `backdrop-filter` används inte på korten (gav band i Chrome bredvid animationer), bara på statuspillret, menyn och modalen
 
 - **Mobilanpassning:** Bottenmeny på ≤640px, en kolumn för lagkort, historikrader i två rader

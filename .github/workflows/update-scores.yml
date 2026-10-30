@@ -8,9 +8,20 @@ on:
   #   - cron: '0,30 0-11 * * *'
   workflow_dispatch:
 
+# Workflowen behöver bara läsa koden (den skriver till Firestore, inte till repot)
+permissions:
+  contents: read
+
+# Bara en körning åt gången. Trycker flera på "Uppdatera" samtidigt köas
+# en körning i stället för att alla startar parallellt.
+concurrency:
+  group: update-scores
+  cancel-in-progress: false
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -28,6 +39,8 @@ jobs:
         run: python scrape_scores.py
 
       - name: Fetch PokerNews live status
+        # Körs även om poängsteget ovan misslyckades, så live-fliken uppdateras ändå
+        if: ${{ !cancelled() }}
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           POKERNEWS_COOKIES: ${{ secrets.POKERNEWS_COOKIES }}

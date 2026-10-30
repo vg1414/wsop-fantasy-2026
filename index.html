@@ -2419,6 +2419,25 @@
     {n:100,name:"Super Turbo No-Limit Hold'em",                       buyin:"$1,000",   start:"2026-07-15", end:"2026-07-15"},
   ];
 
+  // Gör text från scrapers ofarlig innan den stoppas in i HTML,
+  // så att t.ex. ett "<" i ett namn visas som tecken och inte tolkas som kod
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  // Bara vanliga webblänkar (http/https) släpps igenom i href, annars ''
+  function safeUrl(u) {
+    return /^https?:\/\//i.test(u || '') ? esc(u) : '';
+  }
+  // onclick-attribut som öppnar spelarens modal – säkert även om namnet har ' " < &
+  function playerClick(name) {
+    return `onclick="openPlayerModal(${esc(JSON.stringify(String(name ?? '')))})"`;
+  }
+  // Eventnummer ur en text som "Event #12: ..." (null om det saknas)
+  function eventNum(str) {
+    const m = String(str || '').match(/Event\s*#(\d+)/i);
+    return m ? parseInt(m[1]) : null;
+  }
+
   function teamTotal(team, scores) {
     return team.players.reduce((sum, p) => sum + (scores[p] || 0), 0);
   }
@@ -2435,6 +2454,8 @@
     }
     return map;
   }
+  // Lagen ändras aldrig medan sidan är öppen, så kartan räcker att bygga en gång
+  const OWNER_MAP = buildOwnerMap(TEAMS);
 
   function renderLegend(elementId, teams) {
     const el = document.getElementById(elementId);
@@ -2468,10 +2489,10 @@
     const entrantsMap = {};
     if (currentScoresData && currentScoresData.events) {
       for (const ev of currentScoresData.events) {
-        const m = ev.event && ev.event.match(/Event\s*#(\d+)/i);
-        if (m && ev.entrants) {
+        const evN = eventNum(ev.event);
+        if (evN != null && ev.entrants) {
           const n = parseInt(String(ev.entrants).replace(/[^0-9]/g, ''));
-          if (!isNaN(n) && n > 0) entrantsMap[parseInt(m[1])] = n;
+          if (!isNaN(n) && n > 0) entrantsMap[evN] = n;
         }
       }
     }
@@ -2504,9 +2525,7 @@
       const lp = liveDetails[playerName.toLowerCase()];
       if (!lp || lp.players_left == null) continue;
 
-      // Extract event number from event string
-      const mt = lp.event && lp.event.match(/Event\s*#(\d+)/i);
-      const evN = mt ? parseInt(mt[1]) : null;
+      const evN = eventNum(lp.event);
 
       // Only show guaranteed pts if the bubble has burst (itm_events from backend covers all cashes, not just our players)
       const itmEvents = currentScoresData && currentScoresData.itm_events;
@@ -2596,7 +2615,7 @@
       <div class="standing-row rank-${i + 1}${isFlashing('t:' + t.index) ? ' just-updated' : ''}" data-team="${t.index}" data-suit="${SUITS[t.index]}" onclick="openTeamModal(${t.index})" style="cursor:pointer">
         <div class="rank-col">${i + 1}</div>
         <div class="dot-col">${liveDotStanding}</div>
-        <div class="name-col">${t.owner}${braceletStr}${ftBadgeStanding}${moveEl}</div>
+        <div class="name-col">${esc(t.owner)}${braceletStr}${ftBadgeStanding}${moveEl}</div>
         <div class="pts-col">${guaranteedEl}<span class="pts-num">0</span><small>pts</small></div>
       </div>`;
     }).join('');
@@ -2637,12 +2656,12 @@
         const isBracelet = ev.placement === 1;
         const ptsCls = 'hmodal-pts';
         const ptsStyle = `color:${ptsColor(ev.points || 0)}`;
-        const braceletMark = isBracelet ? ` <img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet" data-bp="${ev.player}" style="height:12px;vertical-align:middle;margin-left:2px">` : '';
+        const braceletMark = isBracelet ? ` <img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet" data-bp="${esc(ev.player)}" style="height:12px;vertical-align:middle;margin-left:2px">` : '';
         const fmtNum = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
         const placementTxt = ev.placement
           ? `<div class="hmodal-placement">
-              <span class="hmodal-placement-rank">${ev.placement}:a</span>${ev.entrants
-                ? `<span class="hmodal-placement-of">av</span><span class="hmodal-placement-field">${fmtNum(ev.entrants)}</span>`
+              <span class="hmodal-placement-rank">${esc(ev.placement)}:a</span>${ev.entrants
+                ? `<span class="hmodal-placement-of">av</span><span class="hmodal-placement-field">${esc(fmtNum(ev.entrants))}</span>`
                 : ''}
              </div>`
           : '';
@@ -2650,18 +2669,19 @@
           ? ` <span style="font-weight:300;font-size:0.8rem;color:var(--muted2)">(${SALARY[ev.player]})</span>`
           : '';
         const playerLine = ev._showPlayer
-          ? `<button class="hmodal-player" onclick="openPlayerModal(${JSON.stringify(ev.player).replace(/"/g,'&quot;')})">${ev.player}${salary}</button>`
+          ? `<button class="hmodal-player" ${playerClick(ev.player)}>${esc(ev.player)}${salary}</button>`
           : '';
+        const evUrl = safeUrl(ev.event_url);
         return `<div class="hmodal-row" style="animation-delay:${delay}ms">
           <div>
             ${playerLine}
-            <div class="hmodal-event">${ev.event_url ? `<a href="${ev.event_url}" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--line-strong)">${ev.event}</a>` : ev.event}${braceletMark}</div>
+            <div class="hmodal-event">${evUrl ? `<a href="${evUrl}" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--line-strong)">${esc(ev.event)}</a>` : esc(ev.event)}${braceletMark}</div>
             ${placementTxt}
           </div>
-          <div class="${ptsCls}" style="${ptsStyle}">+${ev.points}</div>
+          <div class="${ptsCls}" style="${ptsStyle}">+${esc(ev.points)}</div>
         </div>`;
       }).join('');
-      return `<div><div class="hmodal-date-header">${date}</div>${rows}</div>`;
+      return `<div><div class="hmodal-date-header">${esc(date)}</div>${rows}</div>`;
     }).join('');
   }
 
@@ -2718,13 +2738,9 @@
     const team = TEAMS[teamIndex];
     if (!team || !currentScoresData) return;
     const playerSet = new Set(team.players.map(p => p.toLowerCase()));
-    // Assign each player a distinct color from a fixed palette
-    const playerPalette = ['#5b91f5','#e67d3e','#6edfa7','#e38cc0','#f1d949','#ff7a9a','#4fe0d0','#ffb53d'];
-    const playerColorMap = {};
-    team.players.forEach((p, i) => { playerColorMap[p.toLowerCase()] = playerPalette[i % playerPalette.length]; });
     const events = (currentScoresData.events || [])
       .filter(ev => playerSet.has((ev.player || '').toLowerCase()))
-      .map(ev => ({ ...ev, _showPlayer: true, _dotColor: playerColorMap[(ev.player || '').toLowerCase()] }));
+      .map(ev => ({ ...ev, _showPlayer: true }));
     const total = events.reduce((s, ev) => s + (ev.points || 0), 0);
     const color = TEAM_COLORS[teamIndex] || null;
     const bracelets = events.filter(ev => ev.placement === 1).length;
@@ -2737,10 +2753,8 @@
       buildModalRows(events),
       SUITS[teamIndex]
     );
-    if (braceletImgs) {
-      const titleEl = document.getElementById('hmodal-title');
-      titleEl.innerHTML = titleEl.textContent + braceletImgs;
-    }
+    // Lägg armbanden efter namnet utan att läsa om namnet som HTML
+    if (braceletImgs) document.getElementById('hmodal-title').insertAdjacentHTML('beforeend', braceletImgs);
   }
 
   function openPlayerModal(playerName) {
@@ -2750,7 +2764,7 @@
       .filter(ev => (ev.player || '').toLowerCase() === nameLower);
     const total = events.reduce((s, ev) => s + (ev.points || 0), 0);
     const bracelets = events.filter(ev => ev.placement === 1).length;
-    const braceletImgs = bracelets > 0 ? Array(bracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet" data-bp="${playerName}" style="height:18px;vertical-align:middle;margin-left:3px">`).join('') : '';
+    const braceletImgs = bracelets > 0 ? Array(bracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet" data-bp="${esc(playerName)}" style="height:18px;vertical-align:middle;margin-left:3px">`).join('') : '';
     const salaryStr = SALARY[playerName] != null ? ` (${SALARY[playerName]})` : '';
     showModal(
       `${playerName}${salaryStr}`,
@@ -2760,10 +2774,7 @@
       buildModalRows(events),
       SUITS[TEAMS.findIndex(t => t.players.includes(playerName))] || '♠'
     );
-    if (braceletImgs) {
-      const titleEl = document.getElementById('hmodal-title');
-      titleEl.innerHTML = titleEl.textContent + braceletImgs;
-    }
+    if (braceletImgs) document.getElementById('hmodal-title').insertAdjacentHTML('beforeend', braceletImgs);
   }
 
   function closeHistoryModal() {
@@ -2864,7 +2875,7 @@
     });
   })();
 
-  function renderTeams(teams, scores, ownerMap, playerUrls, livePlayingSet = new Set(), finalTableSet = new Set(), braceletsByPlayer = {}, itmSet = new Set(), cashCountByPlayer = {}) {
+  function renderTeams(teams, scores, ownerMap, livePlayingSet = new Set(), finalTableSet = new Set(), braceletsByPlayer = {}, itmSet = new Set(), cashCountByPlayer = {}) {
     const el = document.getElementById('teams');
     const sorted = [...teams]
       .map((team, ti) => ({ ...team, ti }))
@@ -2882,10 +2893,9 @@
         const itmBadgeOv = isLive && itmSet.has(p.toLowerCase()) && !finalTableSet.has(p.toLowerCase()) ? `<span class="itm-badge">ITM</span>` : '';
         const salary = SALARY[p];
         const salaryEl = salary != null ? ` <span class="player-salary">(${salary})</span>` : '';
-        const url = playerUrls && playerUrls[p];
         const playerBracelets = braceletsByPlayer[p] || 0;
-        const braceletImgs = playerBracelets > 0 ? Array(playerBracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet" data-bp="${p}">`).join('') : '';
-        const nameEl = `<button class="player-name player-name-btn" onclick="openPlayerModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">${p}${salaryEl}${braceletImgs}${ftBadgeOv}${itmBadgeOv}${liveDot}${dots}</button>`;
+        const braceletImgs = playerBracelets > 0 ? Array(playerBracelets).fill(`<img src="assets/images/bracelet.png" class="bracelet-icon" alt="bracelet" data-bp="${esc(p)}">`).join('') : '';
+        const nameEl = `<button class="player-name player-name-btn" ${playerClick(p)}>${esc(p)}${salaryEl}${braceletImgs}${ftBadgeOv}${itmBadgeOv}${liveDot}${dots}</button>`;
         const cashCount = cashCountByPlayer[p] || 0;
         const cashEl = cashCount > 0 ? ` <span class="player-cash-count">(${cashCount})</span>` : '';
         return `<li class="player-row${isFlashing('p:' + p) ? ' just-updated' : ''}">
@@ -2932,8 +2942,8 @@
               ${backStat(teamBracelets, 'Armband')}
               ${backStat(`${inMoney}/${team.players.length}`, 'I pengarna')}
               ${backStat(cashes ? Math.round(total / cashes) : 0, 'Snitt per cash')}
-              ${backStat(bestPlayer && scores[bestPlayer] ? scores[bestPlayer] : 0, 'Bästa spelare', bestPlayer && scores[bestPlayer] ? bestPlayer : '')}
-              ${backStat(bestCash ? '+' + bestCash.points : 0, 'Största cash', bestCash ? bestCash.player : '')}
+              ${backStat(bestPlayer && scores[bestPlayer] ? scores[bestPlayer] : 0, 'Bästa spelare', bestPlayer && scores[bestPlayer] ? esc(bestPlayer) : '')}
+              ${backStat(bestCash ? '+' + esc(bestCash.points) : 0, 'Största cash', bestCash ? esc(bestCash.player) : '')}
             </div>
             <span class="flip-hint">↻ Vänd tillbaka</span>
           </div>
@@ -2962,8 +2972,8 @@
       const isLive = livePlayingSet.has(p.name.toLowerCase());
       const liveDot = isLive ? `<span class="live-playing-dot"></span>` : '';
       const salary = SALARY[p.name] != null ? ` <span class="player-salary">(${SALARY[p.name]})</span>` : '';
-      const inner = `${p.name}${salary}${liveDot}${dots}`;
-      const nameEl = `<button class="player-name-btn" style="font-size:0.82rem" onclick="openPlayerModal(${JSON.stringify(p.name).replace(/"/g,'&quot;')})">${inner}</button>`;
+      const inner = `${esc(p.name)}${salary}${liveDot}${dots}`;
+      const nameEl = `<button class="player-name-btn" style="font-size:0.82rem" ${playerClick(p.name)}>${inner}</button>`;
       return `<li class="stats-row">${nameEl}<span class="stats-val">${extra}</span></li>`;
     };
 
@@ -3027,7 +3037,7 @@
     const pop = document.createElement('div');
     pop.className = 'brac-pop';
     pop.innerHTML = `<h4><img src="assets/images/bracelet.png" alt="">${wins.length === 1 ? 'Armband' : wins.length + ' armband'}</h4>
-      <ul>${wins.map(ev => `<li><b>${ev.player}</b><br>${ev.event}${ev.entrants ? ` · ${ev.entrants} spelare` : ''}</li>`).join('')}</ul>`;
+      <ul>${wins.map(ev => `<li><b>${esc(ev.player)}</b><br>${esc(ev.event)}${ev.entrants ? ` · ${esc(ev.entrants)} spelare` : ''}</li>`).join('')}</ul>`;
     document.body.appendChild(pop);
     // Placera under ikonen (eller ovanför om det inte får plats), inom skärmen
     const r = icon.getBoundingClientRect();
@@ -3114,7 +3124,7 @@
     });
   })();
 
-  function renderEventLog(ownerMap, events, playerUrls) {
+  function renderEventLog(ownerMap, events) {
     const el = document.getElementById('event-log');
 
     if (!events || events.length === 0) {
@@ -3149,29 +3159,28 @@
         const dots = entries.map(e => `<span class="team-dot" data-team="${e.index}" title="${e.owner}"></span>`).join('');
         const dotWrap = dots ? `<span class="player-dots">${dots}</span>` : '';
 
-        const playerUrl = (playerUrls && playerUrls[ev.player]) || ev.player_url || '';
         const salaryLog = SALARY[ev.player] != null ? ` <span class="player-salary">(${SALARY[ev.player]})</span>` : '';
-        const playerEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(ev.player).replace(/"/g,'&quot;')})">${ev.player}${salaryLog}${dotWrap}</button>`;
+        const playerEl = `<button class="player-name-btn" ${playerClick(ev.player)}>${esc(ev.player)}${salaryLog}${dotWrap}</button>`;
 
-        const eventUrl = ev.event_url || '';
+        const eventUrl = safeUrl(ev.event_url);
         const eventEl = eventUrl
-          ? `<a class="event-link" href="${eventUrl}">${ev.event}</a>`
-          : ev.event;
+          ? `<a class="event-link" href="${eventUrl}">${esc(ev.event)}</a>`
+          : esc(ev.event);
 
         const placementEl = (ev.placement || ev.entrants)
-          ? `<span class="ev-placement">${[ev.placement || '', ev.entrants || ''].filter(Boolean).join(' / ')}</span>`
+          ? `<span class="ev-placement">${esc([ev.placement || '', ev.entrants || ''].filter(Boolean).join(' / '))}</span>`
           : '';
 
         return `<div class="event-row">
           <div class="ev-player">${playerEl}</div>
           <div class="ev-event">${eventEl}</div>
           ${placementEl}
-          <div class="ev-pts" style="color:${ptsColor(ev.points||0)}">+${ev.points}</div>
+          <div class="ev-pts" style="color:${ptsColor(ev.points||0)}">+${esc(ev.points)}</div>
         </div>`;
       }).join('');
 
       return `<div class="event-date-group">
-        <div class="event-date-header">${date}</div>
+        <div class="event-date-header">${esc(date)}</div>
         ${rows}
       </div>`;
     }).join('');
@@ -3197,6 +3206,18 @@
   let currentITM = new Set();
   let currentLiveEventNums = new Set();
 
+  // Ritar om ställningen och lagkorten. Anropas både när poängen ändras
+  // och när live-statusen ändras (FT/ITM/live-prickar).
+  function renderOverview(data) {
+    const scores = data.players || {};
+    const braceletsByPlayer = {};
+    for (const ev of data.events || []) {
+      if (ev.placement === 1) braceletsByPlayer[ev.player] = (braceletsByPlayer[ev.player] || 0) + 1;
+    }
+    renderStandings(TEAMS, scores, data.events || [], currentFinalTable);
+    renderTeams(TEAMS, scores, OWNER_MAP, currentLivePlaying, currentFinalTable, braceletsByPlayer, currentITM, data.cash_counts || {});
+  }
+
   function applyData(data) {
     currentScoresData = data;
     const scores = data.players || {};
@@ -3213,18 +3234,9 @@
       }
     }
     prevPlayerScores = { ...scores };
-    const playerUrls = data.player_urls || {};
-    const ownerMap = buildOwnerMap(TEAMS);
 
-    const braceletsByPlayer = {};
-    for (const ev of data.events || []) {
-      if (ev.placement === 1) braceletsByPlayer[ev.player] = (braceletsByPlayer[ev.player] || 0) + 1;
-    }
-    const cashCountByPlayer = data.cash_counts || {};
-
-    renderStandings(TEAMS, scores, data.events || [], currentFinalTable);
-    renderTeams(TEAMS, scores, ownerMap, playerUrls, currentLivePlaying, currentFinalTable, braceletsByPlayer, currentITM, cashCountByPlayer);
-    renderEventLog(ownerMap, data.events || [], playerUrls);
+    renderOverview(data);
+    renderEventLog(OWNER_MAP, data.events || []);
     renderSchedule();
 
     // Feed entrants data to calculator
@@ -3240,9 +3252,8 @@
       // Fallback: per-event entrants from player score entries
       if (data.events) {
         for (const ev of data.events) {
-          const m = ev.event && ev.event.match(/Event #(\d+)/i);
-          if (m && ev.entrants) {
-            const num = parseInt(m[1]);
+          const num = eventNum(ev.event);
+          if (num != null && ev.entrants) {
             const n = parseInt(String(ev.entrants).replace(/[^0-9]/g, ''));
             if (!isNaN(n) && n > 0 && !entrantsMap[num]) entrantsMap[num] = n;
           }
@@ -3255,7 +3266,8 @@
     const upd = document.getElementById('updated');
     dot.classList.add('live');
     const d = new Date(data.updated);
-    upd.textContent = 'Senast uppdaterad · ' + d.toLocaleString('sv-SE');
+    // Saknas eller är tidsstämpeln trasig visas bara texten utan "Invalid Date"
+    upd.textContent = 'Senast uppdaterad' + (isNaN(d) ? '' : ' · ' + d.toLocaleString('sv-SE'));
   }
 
   onSnapshot(doc(db, "scores", "latest"), (snap) => {
@@ -3271,7 +3283,8 @@
   // Live status
   function renderLive(data) {
     const el = document.getElementById('live-log');
-    const allPlayers = data.players || [];
+    // Poster utan namn hoppas över så att en trasig rad inte kraschar hela fliken
+    const allPlayers = (data.players || []).filter(p => p && p.name);
 
     const fantasyNames = new Set(TEAMS.flatMap(t => t.players.map(p => p.toLowerCase())));
     // Deduplicera på namn — behåll posten med event_url (mest data) per spelare
@@ -3283,24 +3296,14 @@
     }
     const players = Object.values(bestByName);
 
-    if (players.length === 0) {
-      el.innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
-      return;
-    }
-
-    function extractEventNum(p) {
-      const m = p.event && p.event.match(/Event\s*#(\d+)/i);
-      return m ? parseInt(m[1]) : null;
-    }
     // Placering i turneringen (från chip_rank "5/227" -> 5), om känd.
     function chipPosition(p) {
       if (!p.chip_rank) return null;
-      const n = parseInt(p.chip_rank.split('/')[0]);
+      const n = parseInt(String(p.chip_rank).split('/')[0]);
       return isNaN(n) ? null : n;
     }
-    const ownerMapForSort = buildOwnerMap(TEAMS);
     function firstTeamIndex(p) {
-      const owners = ownerMapForSort[p.name];
+      const owners = OWNER_MAP[p.name];
       return owners && owners.length > 0 ? owners[0].index : Infinity;
     }
     // Gruppera spelare i samma event ihop (sorterat på lägst players_left
@@ -3309,7 +3312,7 @@
     const minPlayersLeftByEvent = {};
     for (const p of players) {
       if (p.status !== 'currentlyPlaying') continue;
-      const evN = extractEventNum(p);
+      const evN = eventNum(p.event);
       if (evN == null) continue;
       const cur = minPlayersLeftByEvent[evN];
       const val = p.players_left ?? Infinity;
@@ -3317,7 +3320,7 @@
     }
     const playing = players.filter(p => p.status === 'currentlyPlaying')
       .sort((a, b) => {
-        const evA = extractEventNum(a), evB = extractEventNum(b);
+        const evA = eventNum(a.event), evB = eventNum(b.event);
         const groupA = evA != null ? (minPlayersLeftByEvent[evA] ?? Infinity) : Infinity;
         const groupB = evB != null ? (minPlayersLeftByEvent[evB] ?? Infinity) : Infinity;
         if (groupA !== groupB) return groupA - groupB;
@@ -3330,69 +3333,54 @@
       });
     const lastSeen = players.filter(p => p.status !== 'currentlyPlaying' && p.status !== '');
 
+    // Är spelarens event i pengarna (ITM) enligt scrapern?
+    const itmEvents = (currentScoresData && currentScoresData.itm_events) || [];
+    const isItmEvent = p => { const evN = eventNum(p.event); return evN != null && itmEvents.includes(evN); };
+    const isFinalTablePlayer = p => p.players_left != null && p.players_left < 10;
+
+    // Sätts även när ingen av våra spelare är med, så att gamla live-prickar
+    // och FT/ITM-märken försvinner från översikten
     currentLivePlaying = new Set(playing.map(p => p.name.toLowerCase()));
-    currentFinalTable = new Set(
-      playing.filter(p => p.players_left != null && p.players_left < 10)
-             .map(p => p.name.toLowerCase())
-    );
-    const itmEventsForSet = currentScoresData && currentScoresData.itm_events;
-    currentITM = new Set(
-      playing.filter(p => {
-        const mt = p.event && p.event.match(/Event\s*#(\d+)/i);
-        const evN = mt ? parseInt(mt[1]) : null;
-        return evN != null && itmEventsForSet && itmEventsForSet.includes(evN);
-      }).map(p => p.name.toLowerCase())
-    );
+    currentFinalTable = new Set(playing.filter(isFinalTablePlayer).map(p => p.name.toLowerCase()));
+    currentITM = new Set(playing.filter(isItmEvent).map(p => p.name.toLowerCase()));
     window._liveStatusPlayers = allPlayers;
     // Map name (lowercase) → live player object for guaranteed-pts calculation
     window._livePlayerDetails = {};
     for (const p of playing) {
       window._livePlayerDetails[p.name.toLowerCase()] = p;
     }
-    if (currentScoresData) {
-      const s = currentScoresData;
-      const ownerMap2 = buildOwnerMap(TEAMS);
-      const brac2 = {};
-      for (const ev of s.events || []) {
-        if (ev.placement === 1) brac2[ev.player] = (brac2[ev.player] || 0) + 1;
-      }
-      const cash2 = s.cash_counts || {};
-      renderStandings(TEAMS, s.players || {}, s.events || [], currentFinalTable);
-      renderTeams(TEAMS, s.players || {}, ownerMap2, s.player_urls || {}, currentLivePlaying, currentFinalTable, brac2, currentITM, cash2);
-    }
+    if (currentScoresData) renderOverview(currentScoresData);
     renderSchedule();
 
-    const updated = data.updated ? new Date(data.updated).toLocaleString('sv-SE') : '';
-    const ownerMap = buildOwnerMap(TEAMS);
+    if (players.length === 0) {
+      el.innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
+      return;
+    }
 
     function renderRows(list, type) {
       return list.map(p => {
         const isPlaying = type === 'playing';
         const dotCls = isPlaying ? 'playing' : 'last-seen';
-        const eventEl = p.event_url
-          ? `<a href="${p.event_url}">${p.event}</a>`
-          : p.event || '—';
+        const evUrl = safeUrl(p.event_url);
+        const eventEl = evUrl
+          ? `<a href="${evUrl}">${esc(p.event)}</a>`
+          : esc(p.event || '—');
         let rankEl = '';
         if (isPlaying && p.chip_rank) {
-          const parts = p.chip_rank.split('/');
-          const remaining = parseInt(parts[1]);
+          const remaining = parseInt(String(p.chip_rank).split('/')[1]);
           const rankCls = remaining < 30 ? 'rank-red' : remaining < 100 ? 'rank-yellow' : '';
-          rankEl = `<span class="live-rank ${rankCls}">${p.chip_rank} kvar</span>`;
+          rankEl = `<span class="live-rank ${rankCls}">${esc(p.chip_rank)} kvar</span>`;
         } else if (isPlaying && p.players_left != null) {
-          rankEl = `<span class="live-rank ${p.players_left < 30 ? 'rank-red' : p.players_left < 100 ? 'rank-yellow' : ''}">${p.players_left} kvar</span>`;
+          rankEl = `<span class="live-rank ${p.players_left < 30 ? 'rank-red' : p.players_left < 100 ? 'rank-yellow' : ''}">${esc(p.players_left)} kvar</span>`;
         }
-        const placeEl = isPlaying && p.bb ? `<span class="live-bb">${p.bb}</span>` : '';
-        const isFinalTable = isPlaying && p.players_left != null && p.players_left < 10;
+        const placeEl = isPlaying && p.bb ? `<span class="live-bb">${esc(p.bb)}</span>` : '';
+        const isFinalTable = isPlaying && isFinalTablePlayer(p);
         const ftBadge = isFinalTable ? `<span class="ft-badge">FT</span>` : '';
-        const evNumMatch = isPlaying && p.event && p.event.match(/Event\s*#(\d+)/i);
-        const evNum = evNumMatch ? parseInt(evNumMatch[1]) : null;
-        const itmEvents = currentScoresData && currentScoresData.itm_events;
-        const isITM = isPlaying && evNum != null && itmEvents && itmEvents.includes(evNum);
-        const itmBadge = isITM && !isFinalTable ? `<span class="itm-badge">ITM</span>` : '';
-        const dots = playerDots(p.name, ownerMap);
+        const itmBadge = isPlaying && isItmEvent(p) && !isFinalTable ? `<span class="itm-badge">ITM</span>` : '';
+        const dots = playerDots(p.name, OWNER_MAP);
         const salary = SALARY[p.name];
         const salaryEl = salary != null ? `<span class="live-salary">(${salary})</span>` : '';
-        const liveNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(p.name).replace(/"/g,'&quot;')})">${p.name}${salaryEl}</button>${ftBadge}${itmBadge}${rankEl}${dots}`;
+        const liveNameEl = `<button class="player-name-btn" ${playerClick(p.name)}>${esc(p.name)}${salaryEl}</button>${ftBadge}${itmBadge}${rankEl}${dots}`;
         return `<div class="live-row">
           <div class="live-player">${liveNameEl}</div>
           <span class="live-dot ${dotCls}"></span>
@@ -3430,6 +3418,8 @@
     } else {
       document.getElementById('live-log').innerHTML = '<div class="live-empty">Ingen live-data ännu</div>';
     }
+  }, () => {
+    document.getElementById('live-log').innerHTML = '<div class="live-empty">Kunde inte hämta live-data</div>';
   });
 
   // ── SCHEMA ──
@@ -3459,64 +3449,85 @@
     return `https://www.pokernews.com/tours/wsop/2026-wsop/${slug}/`;
   }
 
+  // Event (nummer) som är utfällda i schemat. Sparas så att de förblir
+  // utfällda när schemat ritas om vid ny data.
+  const openScheduleEvents = new Set();
+  window.toggleScheduleEvent = function (header) {
+    const box = header.parentElement;
+    box.classList.toggle('active');
+    const n = +box.dataset.event;
+    if (box.classList.contains('active')) openScheduleEvents.add(n); else openScheduleEvents.delete(n);
+  };
+
+  // Om ett event är avslutat eller pågår. 25kfantasys status gäller för
+  // completed/live; "upcoming" räknas som pågående när startdagen har kommit.
+  // Finns ingen status alls används bara datumen.
+  function eventState(ev, eventStatuses, today) {
+    const scrapedStatus = eventStatuses[ev.n] || eventStatuses[String(ev.n)];
+    const hasAnyStatuses = Object.keys(eventStatuses).length > 0;
+    const finished = scrapedStatus === 'completed'
+                     || (!hasAnyStatuses && today > ev.end);
+    const ongoing  = !finished && (scrapedStatus === 'live'
+                     || (!hasAnyStatuses && today >= ev.start)
+                     || (scrapedStatus === 'upcoming' && today >= ev.start));
+    return { finished, ongoing };
+  }
+
+  // Live-spelarens post från PokerNews (den med event_url om det finns flera)
+  function livePlayerRecord(nameLower) {
+    const allLp = (window._liveStatusPlayers || []).filter(p => p.name.toLowerCase() === nameLower);
+    return allLp.find(p => p.event_url) || allLp[0];
+  }
+
+  // Vilket event en live-spelare spelar just nu. Event-titeln ("Event #10")
+  // går före URL:en eftersom PokerNews URL kan ha fel nummer. Saknas båda
+  // används det senaste eventet spelaren fått poäng i.
+  function liveEventFor(nameLower) {
+    const lp = livePlayerRecord(nameLower);
+    const fromTitle = lp && eventNum(lp.event);
+    if (fromTitle != null) return fromTitle;
+    const fromUrl = lp && lp.event_url && lp.event_url.match(/[/-]event-(\d+)[/-]/i);
+    if (fromUrl) return parseInt(fromUrl[1]);
+    const rows = ((currentScoresData && currentScoresData.events) || [])
+      .filter(e => e.player && e.player.toLowerCase() === nameLower);
+    if (!rows.length) return null;
+    const newest = rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+    return eventNum(newest.event);
+  }
+
   function renderSchedule() {
     const el = document.getElementById('schedule-log');
     if (!el) return;
 
     const eventStatuses = (currentScoresData && currentScoresData.event_statuses) || {};
     const today = new Date().toISOString().slice(0, 10);
-    const ownerMap = buildOwnerMap(TEAMS);
+    const teamDot = e => `<span class="sch-team-dot" data-team="${e.index}" title="${esc(e.owner)}"></span>`;
 
     // Build a map: event number → list of {player, points, placement, entrants} from scores
     const eventDataMap = {};
     if (currentScoresData && currentScoresData.events) {
       for (const ev of currentScoresData.events) {
-        // match by event string like "Event #5"
-        const m = ev.event && ev.event.match(/Event #(\d+)/i);
-        if (!m) continue;
-        const num = parseInt(m[1]);
+        const num = eventNum(ev.event);
+        if (num == null || !ev.player) continue;
         if (!eventDataMap[num]) eventDataMap[num] = [];
         eventDataMap[num].push(ev);
       }
     }
 
-    // For each live player, find which event number they are currently in.
-    // Use event_url slug (".../event-8-...") as primary source, fall back to
-    // their most recently scored event in scores data.
-    const liveEventNums = new Set();
+    // Slå upp varje live-spelares event en gång: event-nummer → spelarposter
+    const liveByEvent = {};
     for (const nameLower of currentLivePlaying) {
-      const allLp = (window._liveStatusPlayers || []).filter(p => p.name.toLowerCase() === nameLower);
-      const lp = allLp.find(p => p.event_url) || allLp[0];
-      let found = false;
-      // Prioritera event-titeln ("Event #10") framför URL:en — PokerNews URL kan ha fel nummer
-      if (lp && lp.event) {
-        const mt = lp.event.match(/Event\s*#(\d+)/i);
-        if (mt) { liveEventNums.add(parseInt(mt[1])); found = true; }
-      }
-      if (!found && lp && lp.event_url) {
-        const m = lp.event_url.match(/[/-]event-(\d+)[/-]/i);
-        if (m) { liveEventNums.add(parseInt(m[1])); found = true; }
-      }
-      if (!found && currentScoresData && currentScoresData.events) {
-        const rows = currentScoresData.events.filter(e => e.player && e.player.toLowerCase() === nameLower);
-        if (rows.length) {
-          const newest = rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
-          const m = newest.event && newest.event.match(/Event\s*#(\d+)/i);
-          if (m) liveEventNums.add(parseInt(m[1]));
-        }
-      }
+      const evN = liveEventFor(nameLower);
+      if (evN == null) continue;
+      if (!liveByEvent[evN]) liveByEvent[evN] = [];
+      liveByEvent[evN].push(livePlayerRecord(nameLower) || { name: nameLower, place: null, total_players: null });
     }
-    currentLiveEventNums = liveEventNums;
+    currentLiveEventNums = new Set(Object.keys(liveByEvent).map(Number));
 
+    const ongoingNums = [];
     const html = WSOP_EVENTS.map(ev => {
-      // Trust 25kfantasy for completed/live. For "upcoming": override with start date.
-      const scrapedStatus = eventStatuses[ev.n] || eventStatuses[String(ev.n)];
-      const hasAnyStatuses = Object.keys(eventStatuses).length > 0;
-      const finished = scrapedStatus === 'completed'
-                       || (!hasAnyStatuses && today > ev.end);
-      const ongoing  = !finished && (scrapedStatus === 'live'
-                       || (!hasAnyStatuses && today >= ev.start)
-                       || (scrapedStatus === 'upcoming' && today >= ev.start));
+      const { finished, ongoing } = eventState(ev, eventStatuses, today);
+      if (ongoing) ongoingNums.push(ev.n);
 
       // Find players who cashed in this event
       const cashedRows = eventDataMap[ev.n] || [];
@@ -3530,52 +3541,23 @@
       }
       const cashed = Object.values(playerBest);
 
-      // Live players in this event — use the pre-built liveEventNums set
-      const hasLive = liveEventNums.has(ev.n);
-
-      // Live player objects for expanded body
-      const liveHere = hasLive
-        ? [...currentLivePlaying]
-            .filter(nameLower => {
-              const allLp = (window._liveStatusPlayers || []).filter(p => p.name.toLowerCase() === nameLower);
-              const lp = allLp.find(p => p.event_url) || allLp[0];
-              // Prioritera event-titeln framför URL:en
-              if (lp && lp.event) {
-                const mt = lp.event.match(/Event\s*#(\d+)/i);
-                if (mt) return parseInt(mt[1]) === ev.n;
-              }
-              if (lp && lp.event_url) {
-                const m = lp.event_url.match(/[/-]event-(\d+)[/-]/i);
-                if (m) return parseInt(m[1]) === ev.n;
-              }
-              const rows = (currentScoresData && currentScoresData.events || [])
-                .filter(e => e.player && e.player.toLowerCase() === nameLower);
-              if (!rows.length) return false;
-              const newest = rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
-              const m2 = newest.event && newest.event.match(/Event\s*#(\d+)/i);
-              return m2 && parseInt(m2[1]) === ev.n;
-            })
-            .map(nameLower => {
-              const allLp = (window._liveStatusPlayers || []).filter(p => p.name.toLowerCase() === nameLower);
-              return allLp.find(p => p.event_url) || allLp[0] || { name: nameLower, place: null, total_players: null };
-            })
-        : [];
+      // Live players in this event
+      const liveHere = liveByEvent[ev.n] || [];
+      const hasLive = liveHere.length > 0;
 
       // Collect team indices that have a player cashed or live here
       const teamIndices = new Set();
       for (const row of cashed) {
-        const entries = ownerMap[row.player] || [];
-        entries.forEach(e => teamIndices.add(e.index));
+        (OWNER_MAP[row.player] || []).forEach(e => teamIndices.add(e.index));
       }
       for (const lp of liveHere) {
-        const entries = ownerMap[lp.name] || [];
-        entries.forEach(e => teamIndices.add(e.index));
+        (OWNER_MAP[lp.name] || []).forEach(e => teamIndices.add(e.index));
       }
 
       // Build indicator dots
       const liveDotHtml = hasLive ? `<span class="sch-live-dot"></span>` : '';
-      const teamDotsHtml = [...teamIndices].sort().map(i =>
-        `<span class="sch-team-dot" data-team="${i}" title="${TEAMS[i].owner}"></span>`
+      const teamDotsHtml = [...teamIndices].sort((a, b) => a - b).map(i =>
+        teamDot({ index: i, owner: TEAMS[i].owner })
       ).join('');
 
       // Format dates
@@ -3589,39 +3571,29 @@
       let bodyHtml = '';
 
       for (const lp of liveHere) {
-        const entries = ownerMap[lp.name] || [];
-        const dots = entries.map(e =>
-          `<span class="sch-team-dot" data-team="${e.index}" title="${e.owner}"></span>`
-        ).join('');
+        const dots = (OWNER_MAP[lp.name] || []).map(teamDot).join('');
         const salaryLive = SALARY[lp.name] != null ? ` <span class="sch-salary">(${SALARY[lp.name]})</span>` : '';
-        const schLiveUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[lp.name];
-        const schLiveNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(lp.name).replace(/"/g,'&quot;')})">${lp.name}${salaryLive}</button>`;
+        const schLiveNameEl = `<button class="player-name-btn" ${playerClick(lp.name)}>${esc(lp.name)}${salaryLive}</button>`;
         bodyHtml += `<div class="sch-player-row live-now">
           <span class="sch-live-dot"></span>
           <span class="sch-player-name">${schLiveNameEl}</span>
           <span style="display:flex;gap:3px;margin-left:6px">${dots}</span>
           <span class="sch-player-spacer"></span>
-          <span class="sch-player-place">${lp.place ? 'Plats ' + lp.place + (lp.total_players ? '/' + lp.total_players : '') : ''}</span>
+          <span class="sch-player-place">${lp.place ? esc('Plats ' + lp.place + (lp.total_players ? '/' + lp.total_players : '')) : ''}</span>
         </div>`;
       }
 
       for (const row of cashed.sort((a,b) => b.points - a.points)) {
-        const entries = ownerMap[row.player] || [];
-        const dots = entries.map(e =>
-          `<span class="sch-team-dot" data-team="${e.index}" title="${e.owner}"></span>`
-        ).join('');
-        const placement = (row.placement || row.entrants)
-          ? (row.placement ? row.placement + (row.entrants ? '/' + row.entrants : '') : '')
-          : '';
+        const dots = (OWNER_MAP[row.player] || []).map(teamDot).join('');
+        const placement = row.placement ? row.placement + (row.entrants ? '/' + row.entrants : '') : '';
         const salaryCashed = SALARY[row.player] != null ? ` <span class="sch-salary">(${SALARY[row.player]})</span>` : '';
-        const schCashedUrl = currentScoresData && currentScoresData.player_urls && currentScoresData.player_urls[row.player];
-        const schCashedNameEl = `<button class="player-name-btn" onclick="openPlayerModal(${JSON.stringify(row.player).replace(/"/g,'&quot;')})">${row.player}${salaryCashed}</button>`;
+        const schCashedNameEl = `<button class="player-name-btn" ${playerClick(row.player)}>${esc(row.player)}${salaryCashed}</button>`;
         bodyHtml += `<div class="sch-player-row">
           <span class="sch-player-name">${schCashedNameEl}</span>
           <span style="display:flex;gap:3px;margin-left:6px">${dots}</span>
           <span class="sch-player-spacer"></span>
-          <span class="sch-player-place">${placement}</span>
-          <span class="sch-player-pts">+${row.points}p</span>
+          <span class="sch-player-place">${esc(placement)}</span>
+          <span class="sch-player-pts">+${esc(row.points)}p</span>
         </div>`;
       }
 
@@ -3644,9 +3616,10 @@
       }
 
       const stateClass = finished ? 'finished' : ongoing ? 'ongoing' : '';
+      const openClass = openScheduleEvents.has(ev.n) ? ' active' : '';
 
-      return `<div class="schedule-event ${stateClass}" data-event="${ev.n}">
-        <div class="schedule-event-header" onclick="this.parentElement.classList.toggle('active')">
+      return `<div class="schedule-event ${stateClass}${openClass}" data-event="${ev.n}">
+        <div class="schedule-event-header" onclick="toggleScheduleEvent(this)">
           <span class="sch-live-cell">${liveDotHtml}</span>
           <span class="sch-num">Event #${ev.n}</span>
           <span class="sch-name">${ev.name}</span>
@@ -3662,15 +3635,7 @@
     el.innerHTML = html;
 
     // Feed all ongoing events to the calculator dropdown
-    if (window._calcSetActive) {
-      const ongoingNums = WSOP_EVENTS.filter(ev => {
-        const scrapedStatus = eventStatuses[ev.n] || eventStatuses[String(ev.n)];
-        const hasAnyStatuses = Object.keys(eventStatuses).length > 0;
-        const finished = scrapedStatus === 'completed' || (!hasAnyStatuses && today > ev.end);
-        return !finished && (scrapedStatus === 'live' || (!hasAnyStatuses && today >= ev.start) || (scrapedStatus === 'upcoming' && today >= ev.start));
-      }).map(ev => ev.n);
-      window._calcSetActive(ongoingNums);
-    }
+    if (window._calcSetActive) window._calcSetActive(ongoingNums);
   }
 
   // Trigger GitHub workflow
@@ -3694,7 +3659,9 @@
   // — inte bara att workflowen startades (vilket kan ta mer än de gamla 30s).
   function notifyLiveDataUpdated(updatedStr) {
     if (!awaitingFreshData) return;
-    if (updatedStr && updatedStr !== lastKnownUpdated) {
+    // lastKnownUpdated är null tills första datan kommit. Då är det bara
+    // sidans första inläsning, inte ny data från scrapern.
+    if (lastKnownUpdated !== null && updatedStr && updatedStr !== lastKnownUpdated) {
       resetRefreshBtn('✓ Klar', true);
     }
   }
@@ -3992,7 +3959,8 @@
         return;
       }
 
-      const { pts, base, brac, field: appliedField } = calcPoints(place, m, field, entrants, ev ? ev.buyin : '');
+      // Samma antal deltagare som tabellen och fältbonusen ovan använder
+      const { pts, base, brac, field: appliedField } = calcPoints(place, m, field, effectiveEntrants, ev.buyin);
 
       // Trigger pop animation
       numEl.classList.remove('pop');
