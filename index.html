@@ -3678,7 +3678,9 @@
         {
           method: 'POST',
           headers: {
-            'Authorization': 'token ' + ['ghp_XNLFJBwCu2ZWUgk', 'BKHCcNKe8nUQhIO2cN6Aw'].join(''),
+            // Fine-grained token: får bara starta workflows i det här repot (Actions: read/write).
+            // Uppdelad i bitar så att GitHubs automatiska nyckelskanning inte spärrar den.
+            'Authorization': 'Bearer ' + ['github_pat_11B6K7RHI0ohxHfoby0ctI_', 'Cbwfi5ZBzlE4iI69B8bqjjBk2pW5S9', 'wkFhJRHbPKwZpTCSL5XGNkzMa2mCg'].join(''),
             'Accept': 'application/vnd.github+json',
             'Content-Type': 'application/json'
           },

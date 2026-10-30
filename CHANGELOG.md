@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 2026-10-30
+- Säkerhet: GitHub-nyckeln som Uppdatera-knappen använder är utbytt. Den gamla (classic) kunde läsa och ändra alla Davids repon, även privata, och är nu återkallad. Den nya (fine-grained) får bara starta workflows i det här repot
 - Kodstädning och säkerhet (inget ändrat i utseendet): text från scrapers (namn, event, länkar) görs ofarlig innan den visas, så att konstiga tecken inte kan tolkas som kod. Dubbel logik i schemat, live-fliken och översikten är ihopslagen, och oanvända variabler är borttagna
 - Fix: utfällda event i schemat fälldes ihop varje gång ny data kom in. Nu förblir de öppna
 - Fix: när ingen av våra spelare längre syntes i live-datan låg gamla live-prickar och FT/ITM-märken kvar på översikten
