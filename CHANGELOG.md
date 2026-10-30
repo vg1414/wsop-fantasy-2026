@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 2026-10-30
+- Fix: sidan såg ut att laddas om när ny data kom in (alla kort gled in igen och poängen räknades upp från 0). In-animationerna spelas nu bara vid första laddningen, och poäng räknas bara när de faktiskt ändrats, från det gamla värdet
 - Vattenstämplar med spelkortssymboler: lagkortens symbol ligger nu bakom lagnamnet i stället för bakom poängen, och nya vattenstämplar finns bakom namnen i ställningen, bakom rubriken i lag- och spelarmodalen (lagets symbol) och runt resultatet i poängberäknaren (spader och hjärter)
 - Nya små roliga detaljer: pilar upp/ner i ställningen (jämfört med dagen innan), vändbara lagkort med nyckeltal på baksidan, guldkonfetti och eventinfo när man trycker på ett armband, guldskimmer på rader med nya poäng, en kortlek som blandas medan datan laddas och dra-ner-för-att-uppdatera på mobil
 - Färgblindsäkra lagfärger: Ante blå, Majscht orange, Olle mintgrön, Hasse rosa (var lila), Dawod gul. Blått och lila gick tidigare nästan inte att skilja åt vid röd-grön-färgblindhet

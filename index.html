@@ -536,6 +536,19 @@
     .rank-move.up   { color: #7af2b2; background: var(--green-soft); }
     .rank-move.down { color: #ff9aa5; background: rgba(255, 107, 122, 0.14); }
 
+    /* När första laddningen är klar (body.settled) spelas in-animationerna inte
+       upp igen när ny data ritar om listorna – bara skimret för nya poäng */
+    body.settled .standing-row:not(.just-updated),
+    body.settled .team-card,
+    body.settled .event-date-group,
+    body.settled .live-group,
+    body.settled .schedule-event,
+    body.settled .live-legend-item,
+    body.settled .bracelet-icon,
+    body.settled .rank-move,
+    body.settled .ft-badge,
+    body.settled .itm-badge { animation: none; }
+
     /* Skimmer när en rad fått nya poäng */
     @keyframes new-pts {
       0%   { box-shadow: 0 0 0 0 rgba(255, 207, 77, 0); }
@@ -2597,13 +2610,13 @@
         <div class="rank-col">${i + 1}</div>
         <div class="dot-col">${liveDotStanding}</div>
         <div class="name-col">${t.owner}${braceletStr}${ftBadgeStanding}${moveEl}</div>
-        <div class="pts-col">${guaranteedEl}<span class="pts-num">0</span><small>pts</small></div>
+        <div class="pts-col">${guaranteedEl}<span class="pts-num">${shownCount['st:' + t.index] ?? 0}</span><small>pts</small></div>
       </div>`;
     }).join('');
 
     el.querySelectorAll('.pts-num').forEach((span, i) => {
       const target = sorted[i].total;
-      animateCount(span, target, '');
+      animateCount(span, target, '', 'st:' + sorted[i].index);
     });
   }
 
@@ -2665,13 +2678,20 @@
     }).join('');
   }
 
-  function animateCount(el, target, suffix = 'p') {
-    const duration = Math.min(600 + target * 0.4, 1200);
+  // Senast visade tal per nyckel, så att en omritning med samma data inte
+  // räknar upp från 0 igen – bara ändrade tal räknas, från det gamla värdet
+  const shownCount = {};
+
+  function animateCount(el, target, suffix = 'p', key = null) {
+    const from = key != null ? (shownCount[key] ?? 0) : 0;
+    if (key != null) shownCount[key] = target;
+    if (from === target) { el.textContent = target + suffix; return; }
+    const duration = Math.min(600 + Math.abs(target - from) * 0.4, 1200);
     const start = performance.now();
     function tick(now) {
       const t = Math.min((now - start) / duration, 1);
       const ease = 1 - Math.pow(1 - t, 3);
-      el.textContent = Math.round(ease * target) + suffix;
+      el.textContent = Math.round(from + ease * (target - from)) + suffix;
       if (t < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
@@ -2913,7 +2933,7 @@
             <div class="team-header" data-suit="${SUITS[ti]}">
               <div class="team-owner">${teamLiveDot}<button class="team-owner-btn" onclick="openTeamModal(${ti})">${team.owner}${teamBraceletImgs}</button></div>
               <div class="team-score-wrap">
-                <div class="team-score-num" data-target="${total}">0</div>
+                <div class="team-score-num" data-target="${total}" data-key="${ti}">${shownCount['t:' + ti] ?? 0}</div>
                 <span class="team-score-label">poäng</span>
               </div>
             </div>
@@ -2987,7 +3007,7 @@
 
     // Starta uppräkningen först nu – innerHTML += ovan bygger om alla kort
     el.querySelectorAll('.team-score-num').forEach(span => {
-      animateCount(span, Number(span.dataset.target), '');
+      animateCount(span, Number(span.dataset.target), '', 't:' + span.dataset.key);
     });
   }
 
@@ -3256,6 +3276,12 @@
     dot.classList.add('live');
     const d = new Date(data.updated);
     upd.textContent = 'Senast uppdaterad · ' + d.toLocaleString('sv-SE');
+
+    // Efter första renderingen: stäng av in-animationerna så att senare
+    // datauppdateringar inte får hela sidan att "laddas om" visuellt
+    if (!document.body.classList.contains('settled')) {
+      setTimeout(() => document.body.classList.add('settled'), 2200);
+    }
   }
 
   onSnapshot(doc(db, "scores", "latest"), (snap) => {
