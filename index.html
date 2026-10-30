@@ -427,22 +427,6 @@
       --team-glow: radial-gradient(120px 90px at 0% 50%, color-mix(in srgb, var(--tc, transparent) 40%, transparent), transparent);
       background-image: var(--team-glow);
     }
-    /* Lagets symbol som vattenstämpel bakom namnet */
-    .standing-row::before {
-      content: attr(data-suit);
-      position: absolute;
-      left: 78px;
-      top: 50%;
-      font-family: var(--font-suits);
-      font-size: 4.6rem;
-      line-height: 1;
-      color: var(--tc);
-      opacity: 0.1;
-      transform: translateY(-50%) rotate(-14deg);
-      transition: transform 0.6s var(--spring), opacity 0.3s;
-      pointer-events: none;
-    }
-    .standing-row:hover::before { transform: translateY(-50%) rotate(0deg) scale(1.08); opacity: 0.16; }
     .rank-col, .dot-col, .name-col, .pts-col { position: relative; }
     .standing-row[data-team="0"] { --tc: var(--team-0); }
     .standing-row[data-team="1"] { --tc: var(--team-1); }
@@ -609,21 +593,6 @@
       background: linear-gradient(160deg, color-mix(in srgb, var(--tc) 42%, transparent) 0%, transparent 100%);
     }
 
-    .team-header::before {
-      content: attr(data-suit);
-      font-family: var(--font-suits);
-      position: absolute;
-      left: -2px;
-      bottom: -22px;
-      font-size: 6.2rem;
-      line-height: 1;
-      opacity: 0.17;
-      pointer-events: none;
-      color: var(--tc);
-      transform: rotate(-14deg);
-      transition: transform 0.6s var(--spring), opacity 0.3s;
-    }
-    .team-card:hover .team-header::before { transform: rotate(0deg) scale(1.08); opacity: 0.22; }
 
     .team-owner {
       position: relative;
@@ -2130,7 +2099,7 @@
     <div class="status-dot" id="status-dot"></div>
     <span id="updated">Hämtar poäng...</span>
   </div>
-  <button id="refresh-btn" onclick="triggerWorkflow()">↻ Uppdatera</button>
+  <button id="refresh-btn" onclick="triggerWorkflow()"><span aria-hidden="true">↻</span>Uppdatera</button>
 </div>
 
 <nav class="tab-bar" id="tab-bar">
@@ -3676,7 +3645,7 @@
     btn.textContent = text;
     btn.classList.toggle('is-done', isDone);
     btn.disabled = false;
-    setTimeout(() => { btn.textContent = '↻ Uppdatera'; btn.classList.remove('is-done'); }, 3000);
+    setTimeout(() => { btn.innerHTML = '<span aria-hidden="true">↻</span>Uppdatera'; btn.classList.remove('is-done'); }, 3000);
   }
 
   // Kallas från onSnapshot-lyssnaren när live_status/latest ändras.
@@ -3697,7 +3666,7 @@
     const btn = document.getElementById('refresh-btn');
     btn.disabled = true;
     btn.classList.remove('is-done');
-    btn.textContent = '↻ Startar...';
+    btn.textContent = 'Startar...';
     try {
       const res = await fetch(
         'https://api.github.com/repos/vg1414/wsop-fantasy-2026/actions/workflows/update-scores.yml/dispatches',
@@ -3715,10 +3684,10 @@
       );
       if (res.status === 204) {
         awaitingFreshData = true;
-        btn.textContent = '↻ Uppdaterar...';
+        btn.textContent = 'Uppdaterar...';
         // Fallback om Firestore inte hinner (eller redan hunnit) ändras inom 2 min
         awaitTimeoutId = setTimeout(() => {
-          if (awaitingFreshData) resetRefreshBtn('↻ Tar längre tid…');
+          if (awaitingFreshData) resetRefreshBtn('Tar längre tid…');
         }, 120000);
       } else {
         resetRefreshBtn('✗ Fel');
