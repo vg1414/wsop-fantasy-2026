@@ -400,7 +400,7 @@ Samma färger finns i `TEAM_COLORS` i JS (används i modalerna) – ändra båda
 ### Små roliga detaljer (2026-10-30)
 
 - **Pilar:** `renderStandings()` drar bort poängen från det senaste datumet i `events` och sorterar om – skillnaden mot dagens placering blir ▲/▼
-- **Vändbara lagkort:** `.team-card.flippable` > `.team-flip` > `.team-face.front/.back`. Vilka kort som är vända sparas i `flippedTeams` så att de inte vänds tillbaka när datan ritas om
+- **Vändbara lagkort:** `.team-card.flippable` > `.team-flip` > `.team-face.front/.back`. Vilka kort som är vända sparas i `flippedTeams` så att de inte vänds tillbaka när datan ritas om. Baksidan visar `assets/avatars/<ägare i gemener>.webp` (640 px). Utöver `backface-visibility` byts `visibility` på sidorna efter 0.28 s (när fjäderkurvan passerar 90°) – annars kunde iPhone-Safari visa framsidan spegelvänd
 - **Armband:** ikonerna har `data-bp` (spelare) eller `data-bt` (lagindex). Ett klick fångas i capture-fasen på `document` (så att radens modal inte öppnas), skjuter konfetti med Web Animations API och visar `.brac-pop`
 - **Skimmer:** `applyData()` jämför med `prevPlayerScores` och sätter `flashUntil` för spelare och lag med nya poäng (6 s)
 - **Uppdatera-knappen:** pilen ligger i en egen `<span>` så att knappens `gap` ger luft till texten. Under "Startar..."/"Uppdaterar..." visas bara snurran (`:disabled::before`), ingen pil

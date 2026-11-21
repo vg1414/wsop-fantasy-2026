@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-11-21
+- Lagkortens baksida: porträtt av varje lagägare överst (bilderna ligger i `assets/avatars/`, nedskalade till 640 px webp), lagnamnet ovanpå bilden och nyckeltalen i ett kompakt rutnät under
+- Nyckeltalet "I pengarna" är borttaget från baksidan
+- Fix: på mobilen (Safari) kunde texten bli spegelvänd när man vände ett lagkort. Korten byter nu även synlig sida mitt i vändningen, så rätt sida syns alltid
+
 ## 2026-10-30
 - Dokumentation: README och ARCHITECTURE synkade med borttagna vattenstämplar, nya Uppdatera-knappen och att uppdateringen även startas vid sidladdning
 - Uppdatera-knappen: mer luft mellan pilen och texten, och pilen göms medan den laddar (bara snurran syns)
