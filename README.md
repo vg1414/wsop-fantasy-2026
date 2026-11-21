@@ -13,7 +13,7 @@ En realtids-webbapp för fem vänner att följa sin WSOP Pick 8 Fantasy-liga und
 ### Små roliga detaljer
 
 - **Pilar upp/ner** i ställningen visar hur placeringen ändrats jämfört med dagen innan
-- **Vänd lagkortet**: tryck på ett lagkort så vänds det och visar lagägarens porträtt och nyckeltal (cashes, armband, snitt per cash, bästa spelare, största cash)
+- **Vänd lagkortet**: tryck på ett lagkort så vänds det och visar ett samlarkort i modern stil: lagägarens porträtt, placering, bästa spelare och poäng, cashes, armband och största cash, med en regnbågsram som sakta skiftar färg
 - **Armband**: tryck på en armbandsikon så skjuts guldkonfetti ut och en ruta visar vilket event armbandet vanns i
 - **Skimmer**: rader som fått nya poäng sedan förra uppdateringen lyser upp i guld en stund
 - **Kortlek**: medan datan laddas blandas en liten kortlek

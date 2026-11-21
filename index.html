@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#0c0a07" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;700&family=Bebas+Neue&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
   <style>
     :root {
       /* Ytor – frostat glas ovanpå en nästan svart, varm bakgrund */
@@ -701,25 +701,76 @@
     .team-card.flipped .team-face.front { visibility: hidden; }
     .team-card.flipped .team-face.back { visibility: visible; }
 
-    /* Porträtt på baksidan: stor bild överst som tonar ut nedåt, namnet
-       ovanpå bilden och nyckeltalen i ett kompakt rutnät under */
+    /* Baksidan som modernt samlarkort ("refractor"): regnbågsram, porträtt
+       över hela kortet, placering uppe till vänster och nyckeltal i glasrutor */
+    @property --ref-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+    @keyframes ref-spin { to { --ref-ang: 360deg; } }
+    .team-face.back {
+      padding: 7px;
+      border: none;
+      background: conic-gradient(from var(--ref-ang), #ff6fd8, #7af0ff, #fff36b, #7cff9b, var(--tc), #ff6fd8);
+      box-shadow: 0 0 30px -8px var(--tc);
+    }
+    /* Ramen roterar långsamt bara när kortet är vänt – annars står den still */
+    .team-card.flipped .team-face.back { animation: ref-spin 8s linear infinite; }
+    .ref-in {
+      position: relative;
+      flex: 1;
+      border-radius: calc(var(--r-lg) - 6px);
+      overflow: hidden;
+      background: #000;
+    }
+    .ref-in::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.85) 76%, #000 100%);
+    }
     .back-photo {
-      display: block; width: 100%; height: 52%; flex: none;
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
       object-fit: cover; object-position: center 25%;
-      -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
-      mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
     }
-    .team-face.back .team-header {
-      position: absolute; top: 0; left: 0; right: 0; z-index: 1;
-      background: linear-gradient(180deg, rgba(8, 6, 18, 0.75), transparent);
+    .ref-rank {
+      position: absolute; top: 6px; left: 12px; z-index: 2;
+      font: 400 4.4rem/0.9 'Bebas Neue', var(--font-display);
+      color: var(--tc);
+      filter: drop-shadow(0 2px 0 #000) drop-shadow(0 0 10px rgba(0, 0, 0, 0.65));
     }
-    .team-face.back .team-score-wrap { display: none; }
-    /* 5 rutor: 3 på första raden, 2 bredare på andra (6-kolumnsrutnät) */
-    .team-face.back .back-stats { grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 4px 10px 10px; }
-    .team-face.back .back-stat { grid-column: span 2; padding: 8px; }
-    .team-face.back .back-stat:nth-child(n+4) { grid-column: span 3; }
-    .team-face.back .back-stat b { font-size: 1.1rem; }
-    .team-face.back .back-stat span { font-size: 0.6rem; letter-spacing: 0.2px; white-space: nowrap; }
+    .ref-brand {
+      position: absolute; top: 14px; right: 14px; z-index: 2;
+      font: 800 0.62rem var(--font-display); letter-spacing: 3px;
+      color: #fff; background: rgba(0, 0, 0, 0.55);
+      padding: 3px 7px; border-radius: 3px;
+    }
+    .ref-bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px 14px 6px; }
+    .ref-name {
+      font: 400 2.8rem/0.9 'Bebas Neue', var(--font-display); letter-spacing: 1px;
+      background: linear-gradient(90deg, #fff, var(--tc));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .ref-line {
+      display: flex; gap: 6px; align-items: center;
+      font: 700 0.6rem var(--font-display); letter-spacing: 2px; text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.75);
+      margin: 3px 0 10px;
+      white-space: nowrap;
+    }
+    .ref-line i { flex: 1; height: 1px; background: linear-gradient(90deg, var(--tc), transparent); }
+    .ref-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+    .ref-stats div {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 6px; text-align: center; padding: 6px 2px;
+    }
+    .ref-stats b { display: block; font: 400 1.35rem/1 'Bebas Neue', var(--font-display); color: var(--tc); }
+    .ref-stats span { font: 700 0.5rem var(--font-display); letter-spacing: 0.5px; color: rgba(255, 255, 255, 0.65); text-transform: uppercase; }
+    .team-face.back .flip-hint { padding: 8px 0 0; color: rgba(255, 255, 255, 0.55); }
+    .team-card.flipped .ref-stats div { animation: rise-in 0.5s var(--smooth) backwards; }
+    .team-card.flipped .ref-stats div:nth-child(1) { animation-delay: 0.30s; }
+    .team-card.flipped .ref-stats div:nth-child(2) { animation-delay: 0.36s; }
+    .team-card.flipped .ref-stats div:nth-child(3) { animation-delay: 0.42s; }
+    .team-card.flipped .ref-stats div:nth-child(4) { animation-delay: 0.48s; }
     .flip-hint {
       display: block;
       text-align: center;
@@ -730,51 +781,6 @@
       transition: color 0.2s;
     }
     .team-card.flippable:hover .flip-hint { color: var(--tc); }
-    .back-stats {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      align-content: start;
-      gap: 8px;
-      padding: 12px;
-    }
-    .back-stat {
-      min-width: 0;
-      padding: 12px;
-      background: var(--surface-2);
-      border-radius: var(--r-sm);
-    }
-    .back-stat b {
-      display: block;
-      font-family: var(--font-display);
-      font-size: 1.4rem;
-      font-weight: 800;
-      line-height: 1.1;
-      color: var(--tc);
-    }
-    .back-stat span {
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: var(--ink-3);
-    }
-    .back-stat small {
-      display: block;
-      margin-top: 2px;
-      font-size: 0.76rem;
-      color: var(--ink-2);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .team-card.flipped .back-stat { animation: rise-in 0.5s var(--smooth) backwards; }
-    .team-card.flipped .back-stat:nth-child(1) { animation-delay: 0.30s; }
-    .team-card.flipped .back-stat:nth-child(2) { animation-delay: 0.36s; }
-    .team-card.flipped .back-stat:nth-child(3) { animation-delay: 0.42s; }
-    .team-card.flipped .back-stat:nth-child(4) { animation-delay: 0.48s; }
-    .team-card.flipped .back-stat:nth-child(5) { animation-delay: 0.54s; }
-    .team-card.flipped .back-stat:nth-child(6) { animation-delay: 0.60s; }
 
     .stats-section { padding: 14px 20px 8px; }
     .stats-section + .stats-section { border-top: 1px dashed var(--line-strong); }
@@ -2931,7 +2937,8 @@
       const cashes = team.players.reduce((sum, p) => sum + (cashCountByPlayer[p] || 0), 0) || teamEvents.length;
       const bestPlayer = sortedPlayers[0];
       const bestCash = teamEvents.reduce((best, ev) => (ev.points || 0) > (best ? best.points : 0) ? ev : best, null);
-      const backStat = (value, label, sub = '') => `<div class="back-stat"><span>${label}</span><b>${value}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+      // Placering: 1 + antal lag med fler poäng (lika poäng ger samma placering)
+      const rank = 1 + teams.filter(o => teamTotal(o, scores) > total).length;
 
       return `<div class="team-card flippable${flippedTeams.has(ti) ? ' flipped' : ''}" data-team="${ti}">
         <div class="team-flip">
@@ -2947,21 +2954,22 @@
             <span class="flip-hint">↻ Vänd kortet</span>
           </div>
           <div class="team-face back">
-            <img class="back-photo" src="assets/avatars/${team.owner.toLowerCase()}.webp" alt="${team.owner}" loading="lazy" decoding="async">
-            <div class="team-header" data-suit="${SUITS[ti]}">
-              <div class="team-owner">${team.owner}</div>
-              <div class="team-score-wrap">
-                <span class="team-score-label">nyckeltal</span>
+            <div class="ref-in">
+              <img class="back-photo" src="assets/avatars/${team.owner.toLowerCase()}.webp" alt="${team.owner}" loading="lazy" decoding="async">
+              <div class="ref-rank">#${rank}</div>
+              <div class="ref-brand">WSOP ${SUITS[ti]} 26</div>
+              <div class="ref-bottom">
+                <div class="ref-name">${team.owner}</div>
+                <div class="ref-line">${bestPlayer && scores[bestPlayer] ? `Bäst: ${esc(bestPlayer)} · ${scores[bestPlayer]} p` : 'Inga poäng än'}<i></i></div>
+                <div class="ref-stats">
+                  <div><b>${total}</b><span>Poäng</span></div>
+                  <div><b>${cashes}</b><span>Cashes</span></div>
+                  <div><b>${teamBracelets}</b><span>Armband</span></div>
+                  <div><b>${bestCash ? '+' + esc(bestCash.points) : 0}</b><span>Största</span></div>
+                </div>
+                <span class="flip-hint">↻ Vänd tillbaka</span>
               </div>
             </div>
-            <div class="back-stats">
-              ${backStat(cashes, 'Cashes')}
-              ${backStat(teamBracelets, 'Armband')}
-              ${backStat(cashes ? Math.round(total / cashes) : 0, 'Snitt per cash')}
-              ${backStat(bestPlayer && scores[bestPlayer] ? scores[bestPlayer] : 0, 'Bästa spelare', bestPlayer && scores[bestPlayer] ? esc(bestPlayer) : '')}
-              ${backStat(bestCash ? '+' + esc(bestCash.points) : 0, 'Största cash', bestCash ? esc(bestCash.player) : '')}
-            </div>
-            <span class="flip-hint">↻ Vänd tillbaka</span>
           </div>
         </div>
       </div>`;

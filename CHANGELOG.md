@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 2026-11-21
+- Lagkortens baksida är nu ett samlarkort i modern stil: regnbågsram som sakta skiftar färg, porträtt över hela kortet, placering (#1–#5) i lagets färg, bästa spelare och fyra rutor med poäng, cashes, armband och största cash
 - Lagkortens baksida: porträtt av varje lagägare överst (bilderna ligger i `assets/avatars/`, nedskalade till 640 px webp), lagnamnet ovanpå bilden och nyckeltalen i ett kompakt rutnät under
 - Nyckeltalet "I pengarna" är borttaget från baksidan
 - Fix: på mobilen (Safari) kunde texten bli spegelvänd när man vände ett lagkort. Korten byter nu även synlig sida mitt i vändningen, så rätt sida syns alltid
